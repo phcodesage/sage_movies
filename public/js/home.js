@@ -109,12 +109,15 @@ function animatePosters() {
   });
 }
 
-// --- Carousel Logic for Movies List ---
-function setupMoviesCarousel() {
-  const list = document.getElementById('movies-list');
-  const leftBtn = document.getElementById('movies-left-btn');
-  const rightBtn = document.getElementById('movies-right-btn');
-  let itemWidth = 220; // poster width + margin
+// --- Carousel Logic for All Lists ---
+function setupCarousel(listId, leftBtnId, rightBtnId) {
+  const list = document.getElementById(listId);
+  const leftBtn = document.getElementById(leftBtnId);
+  const rightBtn = document.getElementById(rightBtnId);
+  
+  if (!list || !leftBtn || !rightBtn) return;
+  
+  let itemWidth = 220; // Default poster width + margin
   
   function updateScrollAmount() {
     const firstImg = list.querySelector('img');
@@ -148,7 +151,14 @@ function setupMoviesCarousel() {
   }, { passive: false });
 }
 
-document.addEventListener('DOMContentLoaded', setupMoviesCarousel);
+// Initialize all carousels
+function setupAllCarousels() {
+  setupCarousel('movies-list', 'movies-left-btn', 'movies-right-btn');
+  setupCarousel('tvshows-list', 'tvshows-left-btn', 'tvshows-right-btn');
+  setupCarousel('anime-list', 'anime-left-btn', 'anime-right-btn');
+}
+
+document.addEventListener('DOMContentLoaded', setupAllCarousels);
 
 // Display banner with movie info
 function displayBanner(item) {
@@ -199,7 +209,6 @@ function displayList(items, containerId, isFiltered = false) {
   });
   
   animatePosters();
-  if (containerId === 'movies-list') setupMoviesCarousel();
 }
 
 // --- Genre Filter Functionality ---
