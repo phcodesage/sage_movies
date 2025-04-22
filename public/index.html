@@ -155,89 +155,74 @@
         <h2 class="text-xl md:text-2xl font-bold">Trending Movies <span id="movies-count" class="text-sm text-netflix-red font-normal"></span></h2>
       </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-left-btn" aria-label="Scroll Left">
+        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="movies-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-right-btn" aria-label="Scroll Right">
+        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
+        <!-- Slider Bar -->
+        <div class="slider-container w-full h-1 bg-gray-800 mt-4 rounded-full overflow-hidden">
+          <div id="movies-slider" class="slider-progress h-full bg-netflix-red w-0 transition-all duration-300"></div>
+        </div>
       </div>
       <div id="no-movies-message" class="hidden text-center py-8 text-lg text-gray-400"></div>
     </section>
 
     <!-- TV Shows -->
     <section id="tvshows" class="mb-10">
-      <h2 class="text-xl md:text-2xl font-bold mb-4">Trending TV Shows</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl md:text-2xl font-bold">TV Shows <span id="tv-count" class="text-sm text-netflix-red font-normal"></span></h2>
+      </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-left-btn" aria-label="Scroll Left">
+        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="tvshows-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-right-btn" aria-label="Scroll Right">
+        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
+        <!-- Slider Bar -->
+        <div class="slider-container w-full h-1 bg-gray-800 mt-4 rounded-full overflow-hidden">
+          <div id="tvshows-slider" class="slider-progress h-full bg-netflix-red w-0 transition-all duration-300"></div>
+        </div>
       </div>
     </section>
 
     <!-- Anime -->
     <section id="anime" class="mb-10">
-      <h2 class="text-xl md:text-2xl font-bold mb-4">Trending Anime</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl md:text-2xl font-bold">Anime <span id="anime-count" class="text-sm text-netflix-red font-normal"></span></h2>
+      </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-left-btn" aria-label="Scroll Left">
+        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="anime-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-right-btn" aria-label="Scroll Right">
+        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
+        <!-- Slider Bar -->
+        <div class="slider-container w-full h-1 bg-gray-800 mt-4 rounded-full overflow-hidden">
+          <div id="anime-slider" class="slider-progress h-full bg-netflix-red w-0 transition-all duration-300"></div>
+        </div>
       </div>
     </section>
   </div>
 
   <!-- Search Modal -->
-  <div class="search-modal fixed inset-0 z-50 bg-black/95 hidden flex-col items-center pt-20 px-4" id="search-modal">
+  <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-20 px-4">
     <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl">
       <i class="fas fa-times"></i>
     </button>
-    <div class="w-full max-w-2xl">
+    <div class="w-full max-w-2xl mx-auto">
       <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
         class="w-full bg-gray-800 text-white border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-netflix-red" />
     </div>
     
-    <!-- Loading Skeleton -->
-    <div id="search-loading" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 hidden">
-      <div class="animate-pulse flex flex-col">
-        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
-        <div class="bg-gray-700 h-4 rounded mt-2 w-3/4"></div>
-      </div>
-      <div class="animate-pulse flex flex-col">
-        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
-        <div class="bg-gray-700 h-4 rounded mt-2 w-2/3"></div>
-      </div>
-      <div class="animate-pulse flex flex-col">
-        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
-        <div class="bg-gray-700 h-4 rounded mt-2 w-3/4"></div>
-      </div>
-      <div class="animate-pulse flex flex-col">
-        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
-        <div class="bg-gray-700 h-4 rounded mt-2 w-1/2"></div>
-      </div>
-      <div class="animate-pulse flex flex-col hidden sm:flex">
-        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
-        <div class="bg-gray-700 h-4 rounded mt-2 w-3/5"></div>
-      </div>
-    </div>
-    
-    <!-- No Results Message -->
-    <div id="search-no-results" class="w-full max-w-5xl flex flex-col items-center justify-center py-16 mt-8 hidden">
-      <i class="fas fa-search text-4xl text-gray-600 mb-4"></i>
-      <h3 class="text-xl text-gray-400 font-medium">No results found</h3>
-      <p class="text-gray-500 mt-2 text-center">Try different keywords or check your spelling</p>
-    </div>
-    
     <!-- Results Grid -->
-    <div class="results w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 overflow-y-auto" id="search-results"></div>
+    <div id="search-results" class="w-full max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 overflow-y-auto px-4"></div>
   </div>
 
   <!-- Footer -->

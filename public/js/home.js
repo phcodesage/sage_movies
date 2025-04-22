@@ -82,25 +82,153 @@ function closeMovieDetail() {
   document.getElementById('detail-video').src = '';
 }
 
-// Show search modal with fade animation
+// Open search modal
 function openSearchModal() {
-  const modal = document.getElementById('search-modal');
-  modal.style.display = 'flex';
-  setTimeout(() => modal.classList.add('show'), 10);
-  document.getElementById('search-input').focus();
+  const searchModal = document.getElementById('search-modal');
+  const searchInput = document.getElementById('search-input');
+  
+  // Show the modal by removing hidden class and adding flex display
+  searchModal.classList.remove('hidden');
+  searchModal.classList.add('flex');
+  
+  // Focus the search input
+  setTimeout(() => {
+    searchInput.focus();
+  }, 100);
+  
+  console.log('Search modal opened');
 }
 
 // Close search modal
 function closeSearchModal() {
-  const modal = document.getElementById('search-modal');
-  modal.classList.remove('show');
-  setTimeout(() => {
-    modal.style.display = 'none';
-    document.getElementById('search-results').innerHTML = '';
-    document.getElementById('search-loading').classList.add('hidden');
-    document.getElementById('search-no-results').classList.add('hidden');
-    document.getElementById('search-input').value = '';
-  }, 300);
+  const searchModal = document.getElementById('search-modal');
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  
+  // Clear search input and results
+  searchInput.value = '';
+  searchResults.innerHTML = '';
+  
+  // Hide the modal
+  searchModal.classList.add('hidden');
+  searchModal.classList.remove('flex');
+  
+  console.log('Search modal closed');
+}
+
+// Search TMDB
+async function searchTMDB() {
+  const query = document.getElementById('search-input').value;
+  const searchResults = document.getElementById('search-results');
+  const searchModal = document.getElementById('search-modal');
+  
+  if (!query) {
+    searchResults.innerHTML = '';
+    searchResults.classList.add('hidden');
+    return;
+  }
+  
+  // Show loading skeleton
+  searchResults.innerHTML = '';
+  searchResults.classList.remove('hidden');
+  
+  for (let i = 0; i < 8; i++) {
+    const skeletonItem = document.createElement('div');
+    skeletonItem.className = 'search-result-item skeleton-item';
+    skeletonItem.innerHTML = `
+      <div class="skeleton-loader w-full h-[150px] rounded bg-gray-800 animate-pulse"></div>
+      <div class="skeleton-loader w-3/4 h-4 mt-2 rounded bg-gray-800 animate-pulse"></div>
+    `;
+    searchResults.appendChild(skeletonItem);
+  }
+  
+  try {
+    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    
+    searchResults.innerHTML = '';
+    
+    if (data.results && data.results.length > 0) {
+      // Group results by relevance category
+      const exactMatches = data.results.filter(item => item.relevance_score === 100);
+      const startsWithMatches = data.results.filter(item => item.relevance_score === 90);
+      const containsWordMatches = data.results.filter(item => item.relevance_score === 80);
+      const containsMatches = data.results.filter(item => item.relevance_score === 70);
+      const otherMatches = data.results.filter(item => item.relevance_score === 50);
+      
+      // Function to create result items
+      const createResultItems = (items, isExactMatch = false) => {
+        items.forEach(item => {
+          const resultItem = document.createElement('div');
+          resultItem.className = 'search-result-item';
+          if (isExactMatch) {
+            resultItem.classList.add('exact-match');
+          }
+          
+          const title = item.title || item.name || 'Unknown Title';
+          const posterPath = item.poster_path 
+            ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+            : 'https://via.placeholder.com/200x300?text=No+Image';
+          
+          resultItem.innerHTML = `
+            <div class="relative group cursor-pointer">
+              <img src="${posterPath}" alt="${title}" class="w-full h-auto rounded transition-all duration-300 group-hover:opacity-75">
+              <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent">
+                <h3 class="text-sm font-semibold truncate">${title}</h3>
+                <div class="flex items-center text-xs text-gray-400">
+                  <span>${item.media_type === 'movie' ? 'Movie' : 'TV'}</span>
+                  ${item.vote_average ? `<span class="ml-2">★ ${item.vote_average.toFixed(1)}</span>` : ''}
+                  ${item.release_date || item.first_air_date ? 
+                    `<span class="ml-2">${new Date(item.release_date || item.first_air_date).getFullYear()}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+          
+          resultItem.addEventListener('click', () => {
+            // Close the search modal
+            closeSearchModal();
+            // Show movie details
+            showDetails(item);
+          });
+          
+          searchResults.appendChild(resultItem);
+        });
+      };
+      
+      // Add section headers and results for each relevance category
+      if (exactMatches.length > 0) {
+        const header = document.createElement('h3');
+        header.className = 'text-netflix-red font-bold text-lg px-2 py-1';
+        header.textContent = 'Exact Matches';
+        searchResults.appendChild(header);
+        createResultItems(exactMatches, true);
+      }
+      
+      if (startsWithMatches.length > 0) {
+        const header = document.createElement('h3');
+        header.className = 'text-white font-bold text-lg px-2 py-1 mt-2';
+        header.textContent = 'Starts With';
+        searchResults.appendChild(header);
+        createResultItems(startsWithMatches);
+      }
+      
+      // Combine the rest of the results
+      const otherResults = [...containsWordMatches, ...containsMatches, ...otherMatches];
+      if (otherResults.length > 0) {
+        const header = document.createElement('h3');
+        header.className = 'text-white font-bold text-lg px-2 py-1 mt-2';
+        header.textContent = 'Related Results';
+        searchResults.appendChild(header);
+        createResultItems(otherResults);
+      }
+    } else {
+      searchResults.innerHTML = '<p class="text-center py-4 text-gray-400">No results found.</p>';
+    }
+  } catch (error) {
+    console.error('Error searching:', error);
+    searchResults.innerHTML = '<p class="text-center py-4 text-gray-400">Error searching. Please try again.</p>';
+  }
 }
 
 // --- Enhanced: Animate posters on load ---
@@ -113,10 +241,11 @@ function animatePosters() {
 }
 
 // --- Carousel Logic for All Lists ---
-function setupCarousel(listId, leftBtnId, rightBtnId) {
+function setupCarousel(listId, leftBtnId, rightBtnId, sliderId) {
   const list = document.getElementById(listId);
   const leftBtn = document.getElementById(leftBtnId);
   const rightBtn = document.getElementById(rightBtnId);
+  const slider = document.getElementById(sliderId);
   
   if (!list || !leftBtn || !rightBtn) return;
   
@@ -139,6 +268,24 @@ function setupCarousel(listId, leftBtnId, rightBtnId) {
     list.scrollLeft += itemWidth * 3;
   };
   
+  // Update slider position on scroll
+  function updateSliderPosition() {
+    if (!slider) return;
+    
+    // Calculate scroll percentage
+    const scrollableWidth = list.scrollWidth - list.clientWidth;
+    if (scrollableWidth <= 0) return;
+    
+    const scrollPercentage = (list.scrollLeft / scrollableWidth) * 100;
+    slider.style.width = `${scrollPercentage}%`;
+  }
+  
+  // Listen for scroll events
+  list.addEventListener('scroll', updateSliderPosition);
+  
+  // Initial update
+  setTimeout(updateSliderPosition, 500);
+  
   // Disable mouse wheel horizontal scroll
   list.addEventListener('wheel', (e) => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
@@ -156,9 +303,9 @@ function setupCarousel(listId, leftBtnId, rightBtnId) {
 
 // Initialize all carousels
 function setupAllCarousels() {
-  setupCarousel('movies-list', 'movies-left-btn', 'movies-right-btn');
-  setupCarousel('tvshows-list', 'tvshows-left-btn', 'tvshows-right-btn');
-  setupCarousel('anime-list', 'anime-left-btn', 'anime-right-btn');
+  setupCarousel('movies-list', 'movies-left-btn', 'movies-right-btn', 'movies-slider');
+  setupCarousel('tvshows-list', 'tvshows-left-btn', 'tvshows-right-btn', 'tvshows-slider');
+  setupCarousel('anime-list', 'anime-left-btn', 'anime-right-btn', 'anime-slider');
 }
 
 document.addEventListener('DOMContentLoaded', setupAllCarousels);
@@ -166,8 +313,51 @@ document.addEventListener('DOMContentLoaded', setupAllCarousels);
 // Display banner with movie info
 function displayBanner(item) {
   bannerMovie = item;
-  document.getElementById('banner').style.backgroundImage = `url(${IMG_URL}${item.backdrop_path})`;
-  document.getElementById('banner-title').textContent = item.title || item.name;
+  
+  // Create a fade-in effect
+  const banner = document.getElementById('banner');
+  banner.classList.add('opacity-0');
+  
+  // Set the new background image
+  setTimeout(() => {
+    banner.style.backgroundImage = `url(${IMG_URL}${item.backdrop_path})`;
+    document.getElementById('banner-title').textContent = item.title || item.name;
+    banner.classList.remove('opacity-0');
+  }, 300);
+}
+
+// Auto-rotating banner functionality
+let bannerRotationInterval;
+let currentBannerIndex = 0;
+let bannerMovies = [];
+
+function startBannerRotation(movies) {
+  // Store movies for rotation
+  bannerMovies = movies.filter(movie => movie.backdrop_path);
+  
+  // Clear any existing interval
+  if (bannerRotationInterval) {
+    clearInterval(bannerRotationInterval);
+  }
+  
+  // Set initial banner
+  if (bannerMovies.length > 0) {
+    currentBannerIndex = 0;
+    displayBanner(bannerMovies[currentBannerIndex]);
+  }
+  
+  // Set up rotation interval (every 5 seconds)
+  bannerRotationInterval = setInterval(() => {
+    currentBannerIndex = (currentBannerIndex + 1) % bannerMovies.length;
+    displayBanner(bannerMovies[currentBannerIndex]);
+  }, 5000);
+}
+
+// Stop banner rotation (e.g., when showing movie details)
+function stopBannerRotation() {
+  if (bannerRotationInterval) {
+    clearInterval(bannerRotationInterval);
+  }
 }
 
 // Banner play button
@@ -175,8 +365,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.querySelector('.banner-btn.play');
   if (playBtn) {
     playBtn.onclick = () => {
-      if (bannerMovie) showDetails(bannerMovie);
+      if (bannerMovie) {
+        stopBannerRotation(); // Stop rotation when showing details
+        showDetails(bannerMovie);
+      }
     };
+  }
+  
+  // Add transition to banner
+  const banner = document.getElementById('banner');
+  if (banner) {
+    banner.classList.add('transition-opacity', 'duration-300');
   }
 });
 
@@ -238,155 +437,113 @@ async function fetchGenres() {
   }
 }
 
+// Fetch movies by genre
+async function fetchMoviesByGenre(genreId) {
+  try {
+    const loadingElement = document.createElement('div');
+    loadingElement.className = 'text-center py-8';
+    loadingElement.innerHTML = '<div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-netflix-red"></div><p class="mt-2 text-gray-400">Loading movies...</p>';
+    
+    const container = document.getElementById('movies-list');
+    container.innerHTML = '';
+    container.appendChild(loadingElement);
+    
+    // Use the dedicated genre API endpoint
+    const res = await fetch(`/api/movies/genre/${genreId}`);
+    const data = await res.json();
+    
+    if (data.results && data.results.length > 0) {
+      // Update global movies for this genre
+      allMovies = data.results;
+      displayList(data.results, 'movies-list');
+    } else {
+      container.innerHTML = '<p class="text-center py-8 text-gray-400">No movies found for this genre.</p>';
+    }
+  } catch (error) {
+    console.error('Error fetching movies by genre:', error);
+    const container = document.getElementById('movies-list');
+    container.innerHTML = '<p class="text-center py-8 text-gray-400">Error loading movies. Please try again.</p>';
+  }
+}
+
 // Filter movies by genre
 function filterByGenre() {
   const genreId = document.getElementById('genre-select').value;
-  let filtered = allMovies;
   
   if (genreId && genreId !== "") {
-    filtered = allMovies.filter(movie => movie.genre_ids && movie.genre_ids.includes(Number(genreId)));
+    // Fetch movies for this genre
+    fetchMoviesByGenre(genreId);
+  } else {
+    // Reset to trending movies
+    displayList(allMovies, 'movies-list');
   }
   
-  displayList(filtered, 'movies-list', genreId !== "");
-}
-
-// Search TMDB
-async function searchTMDB() {
-  const query = document.getElementById('search-input').value;
-  const resultsContainer = document.getElementById('search-results');
-  const loadingElement = document.getElementById('search-loading');
-  const noResultsElement = document.getElementById('search-no-results');
+  // Update section title
+  const genreName = genreId ? window.SAGE_MOVIES_CONFIG.GENRES[genreId] : 'Trending';
+  document.querySelector('#movies h2').innerHTML = `${genreName} Movies <span id="movies-count" class="text-sm text-netflix-red font-normal"></span>`;
   
-  // Clear previous results
-  resultsContainer.innerHTML = '';
-  
-  // Hide no results message
-  noResultsElement.classList.add('hidden');
-  
-  // If empty query, hide everything and return
-  if (!query.trim()) {
-    loadingElement.classList.add('hidden');
-    return;
-  }
-  
-  // Show loading skeleton
-  loadingElement.classList.remove('hidden');
-  resultsContainer.classList.add('hidden');
-  
-  try {
-    // Add a small delay to show loading state (min 500ms)
-    const startTime = Date.now();
-    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-    const data = await res.json();
+  // Scroll to movies section with proper offset for fixed header
+  setTimeout(() => {
+    const moviesSection = document.getElementById('movies');
+    const headerHeight = document.querySelector('.navbar').offsetHeight;
+    const yOffset = -headerHeight - 20; // Additional 20px buffer
+    const y = moviesSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
     
-    // Ensure loading shows for at least 500ms for better UX
-    const elapsedTime = Date.now() - startTime;
-    if (elapsedTime < 500) {
-      await new Promise(resolve => setTimeout(resolve, 500 - elapsedTime));
-    }
-    
-    // Hide loading skeleton
-    loadingElement.classList.add('hidden');
-    resultsContainer.classList.remove('hidden');
-    
-    // Check if we have results
-    if (!data.results || data.results.length === 0 || !data.results.some(item => item.poster_path)) {
-      noResultsElement.classList.remove('hidden');
-      return;
-    }
-    
-    // Display results
-    data.results.forEach(item => {
-      if (!item.title && !item.name) return;
-      
-      // Create result card container
-      const card = document.createElement('div');
-      card.className = 'flex flex-col';
-      
-      // Create skeleton placeholder that will be replaced by image
-      const skeletonDiv = document.createElement('div');
-      skeletonDiv.className = 'bg-gray-700 rounded-md aspect-[2/3] w-full animate-pulse';
-      
-      // Create image that will replace skeleton when loaded
-      const img = document.createElement('img');
-      img.src = item.poster_path ? `${IMG_URL}${item.poster_path}` : '';
-      img.alt = item.title || item.name;
-      img.className = 'w-full rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 hidden';
-      
-      // Add title below the image
-      const title = document.createElement('p');
-      title.className = 'text-sm mt-2 text-white truncate';
-      title.textContent = item.title || item.name;
-      
-      // Handle image load
-      img.onload = () => {
-        skeletonDiv.remove();
-        img.classList.remove('hidden');
-      };
-      
-      // Handle image error
-      img.onerror = () => {
-        // Keep skeleton but remove animation
-        skeletonDiv.classList.remove('animate-pulse');
-        skeletonDiv.classList.add('bg-gray-800');
-        
-        // Add a placeholder icon
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'flex items-center justify-center h-full';
-        iconDiv.innerHTML = '<i class="fas fa-film text-gray-600 text-3xl"></i>';
-        skeletonDiv.appendChild(iconDiv);
-      };
-      
-      // Set click handler for the entire card
-      card.onclick = () => {
-        closeSearchModal();
-        showDetails(item);
-      };
-      
-      // Add elements to card
-      card.appendChild(skeletonDiv);
-      card.appendChild(img);
-      card.appendChild(title);
-      
-      // Add card to results container
-      resultsContainer.appendChild(card);
+    window.scrollTo({
+      top: y,
+      behavior: 'smooth'
     });
-  } catch (error) {
-    console.error('Error searching:', error);
-    loadingElement.classList.add('hidden');
-    resultsContainer.classList.remove('hidden');
-    noResultsElement.classList.remove('hidden');
-  }
+  }, 100); // Small delay to ensure DOM is updated
 }
 
-// Fetch trending movies
-async function fetchTrending(type) {
+// Fetch trending items
+async function fetchTrending(type, containerId) {
   try {
-    const res = await fetch(`/api/trending/${type}`);
-    const data = await res.json();
-    return data.results;
-  } catch (error) {
-    console.error(`Error fetching trending ${type}:`, error);
-    return [];
-  }
-}
-
-// Fetch trending anime (TV shows with anime genre)
-async function fetchTrendingAnime() {
-  try {
-    let allResults = [];
-    const res = await fetch('/api/trending/tv');
+    const container = document.getElementById(containerId);
+    
+    // Show loading skeleton
+    container.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const skeleton = document.createElement('div');
+      skeleton.className = 'skeleton-loader min-w-[150px] h-[225px] rounded bg-gray-800 animate-pulse';
+      container.appendChild(skeleton);
+    }
+    
+    // Use the new collection endpoints for more comprehensive results
+    let endpoint = '';
+    if (type === 'movie') {
+      endpoint = '/api/movies/collection';
+    } else if (type === 'tv') {
+      endpoint = '/api/tv/collection';
+    } else if (type === 'anime') {
+      endpoint = '/api/anime/collection';
+    } else {
+      endpoint = `/api/trending/${type}`;
+    }
+    
+    const res = await fetch(endpoint);
     const data = await res.json();
     
-    // Filter for Japanese language and animation genre (16)
-    const filtered = data.results.filter(item =>
-      item.original_language === 'ja' && item.genre_ids && item.genre_ids.includes(16)
-    );
-    
-    return filtered;
+    if (data.results && data.results.length > 0) {
+      if (type === 'movie') {
+        // Store all movies globally for filtering
+        allMovies = data.results;
+      }
+      
+      displayList(data.results, containerId);
+      
+      // Update count display
+      const countElement = document.getElementById(`${type}-count`);
+      if (countElement) {
+        countElement.textContent = `(${data.results.length})`;
+      }
+    } else {
+      container.innerHTML = '<p class="text-center py-8 text-gray-400">No items found.</p>';
+    }
   } catch (error) {
-    console.error('Error fetching anime:', error);
-    return [];
+    console.error(`Error fetching ${type}:`, error);
+    const container = document.getElementById(containerId);
+    container.innerHTML = '<p class="text-center py-8 text-gray-400">Error loading content. Please try again.</p>';
   }
 }
 
@@ -395,19 +552,13 @@ async function init() {
   try {
     await fetchGenres();
     
-    const movies = await fetchTrending('movie');
-    allMovies = movies;
+    await fetchTrending('movie', 'movies-list');
+    await fetchTrending('tv', 'tvshows-list');
+    await fetchTrending('anime', 'anime-list');
     
-    const tvShows = await fetchTrending('tv');
-    const anime = await fetchTrendingAnime();
-    
-    if (movies.length > 0) {
-      displayBanner(movies[Math.floor(Math.random() * movies.length)]);
+    if (allMovies.length > 0) {
+      startBannerRotation(allMovies);
     }
-    
-    displayList(movies, 'movies-list');
-    displayList(tvShows, 'tvshows-list');
-    displayList(anime, 'anime-list');
   } catch (error) {
     console.error('Error initializing app:', error);
   }

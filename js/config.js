@@ -1,6 +1,0 @@
-// This file is auto-generated from .env
-window.SAGE_MOVIES_CONFIG = {
-  TMDB_API_KEY: "a1e72fd93ed59f56e6332813b9f8dcae",
-  TMDB_BASE_URL: "https://api.themoviedb.org/3",
-  TMDB_IMG_URL: "https://image.tmdb.org/t/p/original"
-};
