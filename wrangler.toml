@@ -1,0 +1,22 @@
+[site]
+site_name = "sage-movies"
+compatibility_date = "2023-12-01"
+
+[build]
+command = "npm run build"
+publish = "dist"
+
+[build.environment]
+NODE_VERSION = "18"
+
+[functions]
+directory = "functions"
+
+[[routes]]
+pattern = "/api/*"
+script = "server.js"
+
+[[routes]]
+pattern = "*"
+static = "dist"
+fallback = "index.html"
