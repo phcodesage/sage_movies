@@ -3,13 +3,19 @@
 window.addEventListener('scroll', function() {
   const navbar = document.querySelector('.navbar');
   if (window.scrollY > 50) {
-    navbar.classList.add('scrolled');
+    navbar.classList.add('navbar-scrolled');
   } else {
-    navbar.classList.remove('scrolled');
+    navbar.classList.remove('navbar-scrolled');
   }
 });
 
-// Show modal with fade/scale animation
+// Global variables
+const IMG_URL = 'https://image.tmdb.org/t/p/original';
+let currentItem;
+let allMovies = [];
+let bannerMovie = null;
+
+// Show movie details in fullscreen view
 function showDetails(item) {
   // Store current item for server switching
   currentItem = item;
@@ -51,27 +57,29 @@ function showDetails(item) {
   changeServer();
 }
 
+// Change video server
+async function changeServer() {
+  const server = document.getElementById('server-select').value;
+  const type = currentItem.media_type === "tv" ? "tv" : "movie";
+  
+  try {
+    // Get embed URL from our server
+    const response = await fetch(`/api/video-sources/${type}/${currentItem.id}?server=${server}`);
+    const data = await response.json();
+    
+    // Set the iframe source
+    document.getElementById('detail-video').src = data.embedURL;
+  } catch (error) {
+    console.error('Error changing server:', error);
+  }
+}
+
+// Close movie detail view
 function closeMovieDetail() {
   document.body.classList.remove('overflow-hidden');
   document.getElementById('movie-detail').classList.add('hidden');
   document.getElementById('movie-detail').classList.remove('flex');
   document.getElementById('detail-video').src = '';
-}
-
-function changeServer() {
-  const server = document.getElementById('server-select').value;
-  const type = currentItem.media_type === "tv" ? "tv" : "movie";
-  let embedURL = "";
-  
-  if (server === "vidsrc.cc") {
-    embedURL = `https://vidsrc.cc/v2/embed/${type}/${currentItem.id}`;
-  } else if (server === "vidsrc.me") {
-    embedURL = `https://vidsrc.net/embed/${type}/?tmdb=${currentItem.id}`;
-  } else if (server === "player.videasy.net") {
-    embedURL = `https://player.videasy.net/${type}/${currentItem.id}`;
-  }
-  
-  document.getElementById('detail-video').src = embedURL;
 }
 
 // Show search modal with fade animation
@@ -82,6 +90,7 @@ function openSearchModal() {
   document.getElementById('search-input').focus();
 }
 
+// Close search modal
 function closeSearchModal() {
   const modal = document.getElementById('search-modal');
   modal.classList.remove('show');
@@ -90,20 +99,6 @@ function closeSearchModal() {
     document.getElementById('search-results').innerHTML = '';
   }, 300);
 }
-
-// Horizontal scroll by mouse wheel for Netflix row effect
-function enableHorizontalScroll() {
-  document.querySelectorAll('.list').forEach(list => {
-    list.addEventListener('wheel', function(e) {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        list.scrollLeft += e.deltaY;
-      }
-    }, { passive: false });
-  });
-}
-
-document.addEventListener('DOMContentLoaded', enableHorizontalScroll);
 
 // --- Enhanced: Animate posters on load ---
 function animatePosters() {
@@ -119,28 +114,32 @@ function setupMoviesCarousel() {
   const list = document.getElementById('movies-list');
   const leftBtn = document.getElementById('movies-left-btn');
   const rightBtn = document.getElementById('movies-right-btn');
-  let scrollAmount = 0;
   let itemWidth = 220; // poster width + margin
+  
   function updateScrollAmount() {
     const firstImg = list.querySelector('img');
     if (firstImg) {
       itemWidth = firstImg.offsetWidth + 20;
     }
   }
+  
   leftBtn.onclick = () => {
     updateScrollAmount();
     list.scrollLeft -= itemWidth * 3;
   };
+  
   rightBtn.onclick = () => {
     updateScrollAmount();
     list.scrollLeft += itemWidth * 3;
   };
+  
   // Disable mouse wheel horizontal scroll
   list.addEventListener('wheel', (e) => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
       e.preventDefault();
     }
   }, { passive: false });
+  
   // Also disable touch horizontal scroll
   list.addEventListener('touchmove', (e) => {
     if (e.touches.length === 1) {
@@ -151,34 +150,14 @@ function setupMoviesCarousel() {
 
 document.addEventListener('DOMContentLoaded', setupMoviesCarousel);
 
-// --- Existing Code ---
-// --- Config from config.js ---
-const API_KEY = window.SAGE_MOVIES_CONFIG.TMDB_API_KEY;
-const BASE_URL = window.SAGE_MOVIES_CONFIG.TMDB_BASE_URL;
-const IMG_URL = window.SAGE_MOVIES_CONFIG.TMDB_IMG_URL;
-
-let currentItem;
-
-async function fetchTrending(type) {
-  const res = await fetch(`${BASE_URL}/trending/${type}/week?api_key=${API_KEY}`);
-  const data = await res.json();
-  return data.results;
+// Display banner with movie info
+function displayBanner(item) {
+  bannerMovie = item;
+  document.getElementById('banner').style.backgroundImage = `url(${IMG_URL}${item.backdrop_path})`;
+  document.getElementById('banner-title').textContent = item.title || item.name;
 }
 
-async function fetchTrendingAnime() {
-  let allResults = [];
-  for (let page = 1; page <= 3; page++) {
-    const res = await fetch(`${BASE_URL}/trending/tv/week?api_key=${API_KEY}&page=${page}`);
-    const data = await res.json();
-    const filtered = data.results.filter(item =>
-      item.original_language === 'ja' && item.genre_ids.includes(16)
-    );
-    allResults = allResults.concat(filtered);
-  }
-  return allResults;
-}
-
-let bannerMovie = null;
+// Banner play button
 document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.querySelector('.banner-btn.play');
   if (playBtn) {
@@ -188,102 +167,163 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function displayBanner(item) {
-  bannerMovie = item;
-  document.getElementById('banner').style.backgroundImage = `url(${IMG_URL}${item.backdrop_path})`;
-  document.getElementById('banner-title').textContent = item.title || item.name;
-}
-
+// Display movies/shows in a container
 function displayList(items, containerId, isFiltered = false) {
   const container = document.getElementById(containerId);
   const countSpan = document.getElementById('movies-count');
   const noMoviesMsg = document.getElementById('no-movies-message');
+  
   if (containerId === 'movies-list') {
     if (countSpan) countSpan.textContent = `(${items.length})`;
     if (noMoviesMsg) {
       if (items.length === 0 && isFiltered) {
-        noMoviesMsg.style.display = 'block';
+        noMoviesMsg.classList.remove('hidden');
         noMoviesMsg.textContent = 'No movies found for this genre.';
       } else {
-        noMoviesMsg.style.display = 'none';
+        noMoviesMsg.classList.add('hidden');
         noMoviesMsg.textContent = '';
       }
     }
   }
+  
   container.innerHTML = '';
   items.forEach(item => {
+    if (!item.poster_path) return;
+    
     const img = document.createElement('img');
     img.src = `${IMG_URL}${item.poster_path}`;
     img.alt = item.title || item.name;
+    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110';
     img.onclick = () => showDetails(item);
     container.appendChild(img);
   });
+  
   animatePosters();
   if (containerId === 'movies-list') setupMoviesCarousel();
 }
 
 // --- Genre Filter Functionality ---
-let allMovies = [];
-let allGenres = [];
-
 async function fetchGenres() {
-  const res = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}`);
-  const data = await res.json();
-  window.SAGE_MOVIES_CONFIG = window.SAGE_MOVIES_CONFIG || {};
-  window.SAGE_MOVIES_CONFIG.GENRES = {};
-  data.genres.forEach(g => { window.SAGE_MOVIES_CONFIG.GENRES[g.id] = g.name; });
-  const genreSelect = document.getElementById('genre-select');
-  data.genres.forEach(genre => {
-    const option = document.createElement('option');
-    option.value = genre.id;
-    option.textContent = genre.name;
-    genreSelect.appendChild(option);
-  });
+  try {
+    const res = await fetch('/api/genres');
+    const data = await res.json();
+    
+    // Store genres globally
+    window.SAGE_MOVIES_CONFIG = window.SAGE_MOVIES_CONFIG || {};
+    window.SAGE_MOVIES_CONFIG.GENRES = {};
+    data.genres.forEach(g => { window.SAGE_MOVIES_CONFIG.GENRES[g.id] = g.name; });
+    
+    // Populate genre dropdown
+    const genreSelect = document.getElementById('genre-select');
+    data.genres.forEach(genre => {
+      const option = document.createElement('option');
+      option.value = genre.id;
+      option.textContent = genre.name;
+      genreSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error fetching genres:', error);
+  }
 }
 
+// Filter movies by genre
 function filterByGenre() {
   const genreId = document.getElementById('genre-select').value;
   let filtered = allMovies;
+  
   if (genreId && genreId !== "") {
     filtered = allMovies.filter(movie => movie.genre_ids && movie.genre_ids.includes(Number(genreId)));
   }
+  
   displayList(filtered, 'movies-list', genreId !== "");
 }
 
+// Search TMDB
 async function searchTMDB() {
   const query = document.getElementById('search-input').value;
   if (!query.trim()) {
     document.getElementById('search-results').innerHTML = '';
     return;
   }
-  const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}`);
-  const data = await res.json();
-  const container = document.getElementById('search-results');
-  container.innerHTML = '';
-  data.results.forEach(item => {
-    if (!item.poster_path) return;
-    const img = document.createElement('img');
-    img.src = `${IMG_URL}${item.poster_path}`;
-    img.alt = item.title || item.name;
-    img.onclick = () => {
-      closeSearchModal();
-      showDetails(item);
-    };
-    container.appendChild(img);
-  });
-  animatePosters();
+  
+  try {
+    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    
+    const container = document.getElementById('search-results');
+    container.innerHTML = '';
+    
+    data.results.forEach(item => {
+      if (!item.poster_path) return;
+      
+      const img = document.createElement('img');
+      img.src = `${IMG_URL}${item.poster_path}`;
+      img.alt = item.title || item.name;
+      img.className = 'w-full rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-105';
+      img.onclick = () => {
+        closeSearchModal();
+        showDetails(item);
+      };
+      container.appendChild(img);
+    });
+  } catch (error) {
+    console.error('Error searching:', error);
+  }
 }
 
+// Fetch trending movies
+async function fetchTrending(type) {
+  try {
+    const res = await fetch(`/api/trending/${type}`);
+    const data = await res.json();
+    return data.results;
+  } catch (error) {
+    console.error(`Error fetching trending ${type}:`, error);
+    return [];
+  }
+}
+
+// Fetch trending anime (TV shows with anime genre)
+async function fetchTrendingAnime() {
+  try {
+    let allResults = [];
+    const res = await fetch('/api/trending/tv');
+    const data = await res.json();
+    
+    // Filter for Japanese language and animation genre (16)
+    const filtered = data.results.filter(item =>
+      item.original_language === 'ja' && item.genre_ids && item.genre_ids.includes(16)
+    );
+    
+    return filtered;
+  } catch (error) {
+    console.error('Error fetching anime:', error);
+    return [];
+  }
+}
+
+// Initialize the app
 async function init() {
-  await fetchGenres();
-  const movies = await fetchTrending('movie');
-  allMovies = movies;
-  const tvShows = await fetchTrending('tv');
-  const anime = await fetchTrendingAnime();
-  displayBanner(movies[Math.floor(Math.random() * movies.length)]);
-  displayList(movies, 'movies-list');
-  displayList(tvShows, 'tvshows-list');
-  displayList(anime, 'anime-list');
+  try {
+    await fetchGenres();
+    
+    const movies = await fetchTrending('movie');
+    allMovies = movies;
+    
+    const tvShows = await fetchTrending('tv');
+    const anime = await fetchTrendingAnime();
+    
+    if (movies.length > 0) {
+      displayBanner(movies[Math.floor(Math.random() * movies.length)]);
+    }
+    
+    displayList(movies, 'movies-list');
+    displayList(tvShows, 'tvshows-list');
+    displayList(anime, 'anime-list');
+  } catch (error) {
+    console.error('Error initializing app:', error);
+  }
 }
 
+// Start the app
 init();

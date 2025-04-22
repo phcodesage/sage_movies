@@ -1,0 +1,50 @@
+/* Enhanced Netflix-style for Sage Movies */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Basic styling handled by Tailwind */
+.animated-poster {
+  opacity: 1;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ensure the list containers work properly */
+.list {
+  display: flex;
+  overflow-x: auto;
+  padding: 20px 0;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but allow scrolling */
+.list::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.list {
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Banner styling */
+.banner {
+  background-size: cover;
+  background-position: center;
+  color: white;
+  height: 80vh;
+  position: relative;
+}
+
+/* Search modal animation */
+.search-modal {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.search-modal.show {
+  opacity: 1;
+}

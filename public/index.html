@@ -26,7 +26,6 @@
       }
     }
   </script>
-  <script src="js/config.js"></script>
   <script defer src="js/home.js"></script>
   <style>
     body {
@@ -60,9 +59,22 @@
 
 <body class="bg-netflix-black text-white min-h-screen">
   <!-- Movie Detail Fullscreen Section -->
-  <section id="movie-detail" class="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center hidden transition-all duration-300">
-    <button onclick="closeMovieDetail()" class="absolute top-5 left-5 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-netflix-red transition"><i class="fas fa-arrow-left"></i></button>
-    <div class="w-full max-w-7xl px-2 md:px-8 flex flex-col mt-14 md:mt-0">
+  <section id="movie-detail" class="fixed inset-0 z-50 bg-black/95 flex flex-col items-center overflow-y-auto py-16 hidden transition-all duration-300">
+    <button onclick="closeMovieDetail()" class="fixed top-5 left-5 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-netflix-red transition"><i class="fas fa-arrow-left"></i></button>
+    
+    <!-- Content Container with Max Width -->
+    <div class="w-full max-w-7xl px-4 md:px-8 flex flex-col">
+      <!-- Title at the top -->
+      <div class="w-full mb-6">
+        <h2 id="detail-title" class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-center md:text-left break-words"></h2>
+        <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-3">
+          <span id="detail-rating" class="text-yellow-400 font-semibold text-lg"></span>
+          <span id="detail-genres" class="text-neutral-400 text-base"></span>
+          <span id="detail-release" class="text-neutral-400 text-base"></span>
+        </div>
+      </div>
+      
+      <!-- Video and Poster Section -->
       <div class="flex flex-col md:flex-row gap-6 mb-8">
         <!-- Video Section - 70% Width -->
         <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl">
@@ -85,15 +97,10 @@
         </div>
       </div>
       
-      <!-- Info Section - Full Width Below Video -->
-      <div class="w-full">
-        <h2 id="detail-title" class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight"></h2>
-        <div class="flex flex-wrap items-center gap-4 mb-4">
-          <span id="detail-rating" class="text-yellow-400 font-semibold text-lg"></span>
-          <span id="detail-genres" class="text-neutral-400 text-base"></span>
-          <span id="detail-release" class="text-neutral-400 text-base"></span>
-        </div>
-        <p id="detail-description" class="text-lg md:text-xl text-neutral-300 mb-8 max-w-4xl"></p>
+      <!-- Description Section - Full Width Below Video with Larger Text -->
+      <div class="w-full bg-netflix-dark/50 p-6 rounded-lg mb-8">
+        <h3 class="text-xl font-semibold mb-3 text-white/90">Overview</h3>
+        <p id="detail-description" class="text-base sm:text-lg md:text-xl text-neutral-300 leading-relaxed"></p>
       </div>
     </div>
   </section>
@@ -101,9 +108,9 @@
   <!-- Netflix-style Navbar -->
   <nav class="navbar fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-12 py-3 transition-all duration-300">
     <div class="flex items-center">
-      <a href="index.html" class="text-netflix-red text-3xl font-bold mr-8">SAGE</a>
+      <a href="/" class="text-netflix-red text-3xl font-bold mr-8">SAGE</a>
       <div class="hidden md:flex space-x-6">
-        <a href="index.html" class="text-sm font-medium hover:text-gray-300">Home</a>
+        <a href="/" class="text-sm font-medium hover:text-gray-300">Home</a>
         <a href="#movies" class="text-sm font-medium hover:text-gray-300">Movies</a>
         <a href="#tvshows" class="text-sm font-medium hover:text-gray-300">TV Shows</a>
         <a href="#anime" class="text-sm font-medium hover:text-gray-300">Anime</a>
