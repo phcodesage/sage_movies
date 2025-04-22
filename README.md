@@ -11,6 +11,23 @@ A Netflix-style movie streaming application built with Node.js and Express.
 - Genre filtering
 - Secure API key handling through server-side proxying
 
+## Deployment on Cloudflare Pages
+
+This application is configured for deployment on Cloudflare Pages with Cloudflare Functions handling the API requests.
+
+### Deployment Steps
+
+1. Fork or clone this repository
+2. Connect your GitHub repository to Cloudflare Pages
+3. Configure the following settings:
+   - Build command: `npm run build`
+   - Build output directory: `public`
+   - Environment variables: Add `TMDB_API_KEY` with your TMDB API key
+
+### Environment Variables
+
+- `TMDB_API_KEY`: Your API key from [The Movie Database](https://www.themoviedb.org/documentation/api)
+
 ## Technology Stack
 
 - **Frontend**: HTML, CSS, JavaScript, Tailwind CSS
