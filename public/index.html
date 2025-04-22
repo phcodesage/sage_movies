@@ -204,6 +204,39 @@
       <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
         class="w-full bg-gray-800 text-white border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-netflix-red" />
     </div>
+    
+    <!-- Loading Skeleton -->
+    <div id="search-loading" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 hidden">
+      <div class="animate-pulse flex flex-col">
+        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
+        <div class="bg-gray-700 h-4 rounded mt-2 w-3/4"></div>
+      </div>
+      <div class="animate-pulse flex flex-col">
+        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
+        <div class="bg-gray-700 h-4 rounded mt-2 w-2/3"></div>
+      </div>
+      <div class="animate-pulse flex flex-col">
+        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
+        <div class="bg-gray-700 h-4 rounded mt-2 w-3/4"></div>
+      </div>
+      <div class="animate-pulse flex flex-col">
+        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
+        <div class="bg-gray-700 h-4 rounded mt-2 w-1/2"></div>
+      </div>
+      <div class="animate-pulse flex flex-col hidden sm:flex">
+        <div class="bg-gray-700 rounded-md aspect-[2/3] w-full"></div>
+        <div class="bg-gray-700 h-4 rounded mt-2 w-3/5"></div>
+      </div>
+    </div>
+    
+    <!-- No Results Message -->
+    <div id="search-no-results" class="w-full max-w-5xl flex flex-col items-center justify-center py-16 mt-8 hidden">
+      <i class="fas fa-search text-4xl text-gray-600 mb-4"></i>
+      <h3 class="text-xl text-gray-400 font-medium">No results found</h3>
+      <p class="text-gray-500 mt-2 text-center">Try different keywords or check your spelling</p>
+    </div>
+    
+    <!-- Results Grid -->
     <div class="results w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 overflow-y-auto" id="search-results"></div>
   </div>
 

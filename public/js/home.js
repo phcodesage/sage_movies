@@ -97,6 +97,9 @@ function closeSearchModal() {
   setTimeout(() => {
     modal.style.display = 'none';
     document.getElementById('search-results').innerHTML = '';
+    document.getElementById('search-loading').classList.add('hidden');
+    document.getElementById('search-no-results').classList.add('hidden');
+    document.getElementById('search-input').value = '';
   }, 300);
 }
 
@@ -250,33 +253,109 @@ function filterByGenre() {
 // Search TMDB
 async function searchTMDB() {
   const query = document.getElementById('search-input').value;
+  const resultsContainer = document.getElementById('search-results');
+  const loadingElement = document.getElementById('search-loading');
+  const noResultsElement = document.getElementById('search-no-results');
+  
+  // Clear previous results
+  resultsContainer.innerHTML = '';
+  
+  // Hide no results message
+  noResultsElement.classList.add('hidden');
+  
+  // If empty query, hide everything and return
   if (!query.trim()) {
-    document.getElementById('search-results').innerHTML = '';
+    loadingElement.classList.add('hidden');
     return;
   }
   
+  // Show loading skeleton
+  loadingElement.classList.remove('hidden');
+  resultsContainer.classList.add('hidden');
+  
   try {
+    // Add a small delay to show loading state (min 500ms)
+    const startTime = Date.now();
     const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
     const data = await res.json();
     
-    const container = document.getElementById('search-results');
-    container.innerHTML = '';
+    // Ensure loading shows for at least 500ms for better UX
+    const elapsedTime = Date.now() - startTime;
+    if (elapsedTime < 500) {
+      await new Promise(resolve => setTimeout(resolve, 500 - elapsedTime));
+    }
     
+    // Hide loading skeleton
+    loadingElement.classList.add('hidden');
+    resultsContainer.classList.remove('hidden');
+    
+    // Check if we have results
+    if (!data.results || data.results.length === 0 || !data.results.some(item => item.poster_path)) {
+      noResultsElement.classList.remove('hidden');
+      return;
+    }
+    
+    // Display results
     data.results.forEach(item => {
-      if (!item.poster_path) return;
+      if (!item.title && !item.name) return;
       
+      // Create result card container
+      const card = document.createElement('div');
+      card.className = 'flex flex-col';
+      
+      // Create skeleton placeholder that will be replaced by image
+      const skeletonDiv = document.createElement('div');
+      skeletonDiv.className = 'bg-gray-700 rounded-md aspect-[2/3] w-full animate-pulse';
+      
+      // Create image that will replace skeleton when loaded
       const img = document.createElement('img');
-      img.src = `${IMG_URL}${item.poster_path}`;
+      img.src = item.poster_path ? `${IMG_URL}${item.poster_path}` : '';
       img.alt = item.title || item.name;
-      img.className = 'w-full rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-105';
-      img.onclick = () => {
+      img.className = 'w-full rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 hidden';
+      
+      // Add title below the image
+      const title = document.createElement('p');
+      title.className = 'text-sm mt-2 text-white truncate';
+      title.textContent = item.title || item.name;
+      
+      // Handle image load
+      img.onload = () => {
+        skeletonDiv.remove();
+        img.classList.remove('hidden');
+      };
+      
+      // Handle image error
+      img.onerror = () => {
+        // Keep skeleton but remove animation
+        skeletonDiv.classList.remove('animate-pulse');
+        skeletonDiv.classList.add('bg-gray-800');
+        
+        // Add a placeholder icon
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'flex items-center justify-center h-full';
+        iconDiv.innerHTML = '<i class="fas fa-film text-gray-600 text-3xl"></i>';
+        skeletonDiv.appendChild(iconDiv);
+      };
+      
+      // Set click handler for the entire card
+      card.onclick = () => {
         closeSearchModal();
         showDetails(item);
       };
-      container.appendChild(img);
+      
+      // Add elements to card
+      card.appendChild(skeletonDiv);
+      card.appendChild(img);
+      card.appendChild(title);
+      
+      // Add card to results container
+      resultsContainer.appendChild(card);
     });
   } catch (error) {
     console.error('Error searching:', error);
+    loadingElement.classList.add('hidden');
+    resultsContainer.classList.remove('hidden');
+    noResultsElement.classList.remove('hidden');
   }
 }
 
