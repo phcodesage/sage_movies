@@ -6,11 +6,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist || true",
     "prebuild": "npm run clean",
     "build": "npm run build:client && npm run build:server && node build-helper.js",
-    "build:client": "mkdirp dist/public && copyfiles -u 2 \"src/public/**/*\" dist/public",
-    "build:server": "copyfiles src/server.js .env.production package.json dist/ && copyfiles -u 1 \"src/functions/**/*\" dist/functions",
+    "build:client": "mkdir -p dist/public && cp -r src/public/* dist/public/ || true",
+    "build:server": "cp src/server.js .env.production package.json dist/ && mkdir -p dist/functions && cp -r src/functions/* dist/functions/ || true",
     "postbuild": "cd dist && npm install --production",
     "start:prod": "set NODE_ENV=production && node dist/server.js"
   },
