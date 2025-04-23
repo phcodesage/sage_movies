@@ -1,13 +1,15 @@
 name = "sagemovies"
 compatibility_date = "2023-12-01"
-main = "dist/server.js"
-compatibility_flags = ["nodejs_compat"]
+# Remove the main entry point since we're not deploying the server
+# main = "dist/server.js"
+# compatibility_flags = ["nodejs_compat"]
 
+# Configure as a static site
 [site]
 bucket = "dist/public"
 
 [build]
-command = "npm run build"
+command = "npm run static-build"
 watch_dir = "src"
 
 [env.production]
