@@ -1,17 +1,17 @@
 [build]
 command = "npm run build"
-publish = "public"
+publish = "dist"
 
 [build.environment]
 NODE_VERSION = "18"
 
 [functions]
-directory = "functions"
+directory = "dist/functions"
 
 [site]
-bucket = "public"
+bucket = "dist/public"
 
 [[redirects]]
 from = "/api/*"
-to = "/.netlify/functions/_middleware"
+to = "/server.js"
 status = 200

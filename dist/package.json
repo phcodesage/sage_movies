@@ -2,16 +2,17 @@
   "name": "sage-movies",
   "version": "1.0.0",
   "description": "Netflix-style movie streaming application",
-  "main": "server.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "build": "npm run build:client && npm run build:server",
-    "build:client": "mkdirp dist/public && copyfiles -u 1 public/**/* dist/public",
-    "build:server": "copyfiles server.js .env.production package.json dist/ && copyfiles -u 1 functions/**/* dist/functions",
-    "postbuild": "cd dist && npm install --production"
+    "build": "npm run build:client && npm run build:server && node build-helper.js",
+    "build:client": "mkdirp dist/public && copyfiles -u 2 \"src/public/**/*\" dist/public",
+    "build:server": "copyfiles src/server.js .env.production package.json dist/ && copyfiles -u 1 \"src/functions/**/*\" dist/functions",
+    "postbuild": "cd dist && npm install --production",
+    "start:prod": "set NODE_ENV=production && node dist/server.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
