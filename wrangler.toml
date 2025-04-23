@@ -1,13 +1,13 @@
-[site]
 name = "sage-movies"
 compatibility_date = "2023-12-01"
+main = "dist/server.js"
+
+[site]
+bucket = "dist/public"
 
 [build]
 command = "npm run build"
-output_directory = "dist"
+watch_dir = "src"
 
-[build.environment]
-NODE_VERSION = "18"
-
-[functions]
-directory = "functions"
+[env.production]
+vars = { NODE_ENV = "production" }
