@@ -1,6 +1,7 @@
-name = "sage-movies"
+name = "sagemovies"
 compatibility_date = "2023-12-01"
 main = "dist/server.js"
+compatibility_flags = ["nodejs_compat"]
 
 [site]
 bucket = "dist/public"
