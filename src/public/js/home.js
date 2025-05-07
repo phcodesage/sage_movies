@@ -79,7 +79,14 @@ function closeMovieDetail() {
   document.body.classList.remove('overflow-hidden');
   document.getElementById('movie-detail').classList.add('hidden');
   document.getElementById('movie-detail').classList.remove('flex');
-  document.getElementById('detail-video').src = '';
+  
+  // Restart banner rotation if it was stopped
+  if (bannerMovies.length > 0) {
+    startBannerRotation(bannerMovies);
+  }
+  
+  // Show interstitial popup ad when closing movie details
+  showInterstitialAd();
 }
 
 // Open search modal
@@ -655,9 +662,62 @@ async function init() {
     if (allMovies.length > 0) {
       startBannerRotation(allMovies);
     }
+    
+    // Initialize popup ads
+    initPopupAds();
   } catch (error) {
     console.error('Error initializing app:', error);
   }
+}
+
+// --- Popup Ad Implementation ---
+
+// Initialize popup ads from different networks
+function initPopupAds() {
+  // Set up PropellerAds as a secondary popup ad network
+  setupPropellerAds();
+  
+  // Set up click-triggered popup ads
+  setupClickPopups();
+}
+
+// Setup PropellerAds (secondary popup ad network)
+function setupPropellerAds() {
+  const script = document.createElement('script');
+  script.src = '//propu.sh/pfe/current/tag.min.js?z=5432109';
+  script.setAttribute('data-cfasync', 'false');
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+// Show interstitial ad when user performs certain actions
+function showInterstitialAd() {
+  // Only show ads every few interactions to avoid annoying users
+  const lastAdTime = localStorage.getItem('sage_last_ad_time');
+  const now = Date.now();
+  
+  // Don't show ads more frequently than every 3 minutes
+  if (!lastAdTime || now - parseInt(lastAdTime) > 3 * 60 * 1000) {
+    // Trigger PopAds popup
+    if (window._pop && typeof window._pop.push === 'function') {
+      window._pop.push(['showPopunder']);
+      localStorage.setItem('sage_last_ad_time', now.toString());
+    }
+  }
+}
+
+// Setup click-triggered popup ads
+function setupClickPopups() {
+  // Add event listeners to movie posters to trigger ads on click
+  document.addEventListener('click', function(e) {
+    // Only trigger on movie poster clicks, and only occasionally
+    if (e.target.closest('.movie-poster') && Math.random() < 0.2) { // 20% chance
+      // Small delay to not interfere with the user experience
+      setTimeout(function() {
+        showInterstitialAd();
+      }, 500);
+    }
+  });
 }
 
 // Start the app
