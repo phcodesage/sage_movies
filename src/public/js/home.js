@@ -104,14 +104,16 @@ function closeSearchModal() {
   const searchModal = document.getElementById('search-modal');
   const searchInput = document.getElementById('search-input');
   const searchResults = document.getElementById('search-results');
+  const searchAd = document.getElementById('search-ad');
   
   // Clear search input and results
   searchInput.value = '';
   searchResults.innerHTML = '';
   
-  // Hide the modal
+  // Hide the modal and ad
   searchModal.classList.add('hidden');
   searchModal.classList.remove('flex');
+  searchAd.classList.add('hidden');
   
   console.log('Search modal closed');
 }
@@ -120,17 +122,20 @@ function closeSearchModal() {
 async function searchTMDB() {
   const query = document.getElementById('search-input').value;
   const searchResults = document.getElementById('search-results');
+  const searchModal = document.getElementById('search-modal');
+  const searchAd = document.getElementById('search-ad');
   const resultsCount = document.getElementById('results-count');
   
   if (!query) {
     searchResults.innerHTML = '';
-    resultsCount.classList.add('hidden');
+    searchResults.classList.add('hidden');
+    searchAd.classList.add('hidden');
     return;
   }
   
   // Show loading skeleton
   searchResults.innerHTML = '';
-  resultsCount.classList.add('hidden');
+  searchResults.classList.remove('hidden');
   
   // Add loading indicator
   for (let i = 0; i < 10; i++) {
@@ -233,6 +238,9 @@ async function searchTMDB() {
           searchResults.appendChild(resultItem);
         });
       };
+      
+      // Show ad when we have search results
+      searchAd.classList.remove('hidden');
       
       // Add section headers and results for each relevance category
       if (exactMatches.length > 0) {

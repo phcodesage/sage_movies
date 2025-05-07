@@ -55,16 +55,18 @@
       background: linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0) 100%);
     }
   </style>
-  <!-- Ad Code Integration -->
-  <script type="text/javascript" data-cfasync="false">
-  /*<![CDATA[/* */
-  (function(){var s=window,l="d2c3775c018b9b078676b93a2f928450",n=[["siteId",343-507+1000+911+5192705],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],x=["d3d3LmJsb2NrYWRzbm90LmNvbS93Y29sb3JzLm1pbi5jc3M=","ZG5oZmk1bm4yZHQ2Ny5jbG91ZGZyb250Lm5ldC9IL3hjbGFyaW5ldC5taW4uanM="],v=-1,p,i,t=function(){clearTimeout(i);v++;if(x[v]&&!(1771438887000<(new Date).getTime()&&1<v)){p=s.document.createElement("script");p.type="text/javascript";p.async=!0;var d=s.document.getElementsByTagName("script")[0];p.src="https://"+atob(x[v]);p.crossOrigin="anonymous";p.onerror=t;p.onload=function(){clearTimeout(i);s[l.slice(0,16)+l.slice(0,16)]||t()};i=setTimeout(t,5E3);d.parentNode.insertBefore(p,d)}};if(!s[l]){try{Object.freeze(s[l]=n)}catch(e){}t()}})();
-  /*]]>/* */
-  </script>
-  
-  <!-- Google AdSense Code -->
+  <!-- Google AdSense Code - Single Implementation -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5533902591486843"
      crossorigin="anonymous"></script>
+  <script>
+     window.onload = function() {
+       // Initialize AdSense after page is fully loaded
+       (adsbygoogle = window.adsbygoogle || []).push({
+         google_ad_client: "ca-pub-5533902591486843",
+         enable_page_level_ads: true
+       });
+     };
+  </script>
 </head>
 
 <body class="bg-netflix-black text-white min-h-screen">
@@ -112,6 +114,14 @@
         <h3 class="text-xl font-semibold mb-3 text-white/90">Overview</h3>
         <p id="detail-description" class="text-base sm:text-lg md:text-xl text-neutral-300 leading-relaxed"></p>
       </div>
+      
+      <!-- Ad Placeholder in Movie Detail View -->
+      <div class="w-full bg-netflix-dark/30 p-4 rounded-lg mb-8 text-center overflow-hidden">
+        <p class="text-xs text-gray-400 mb-2">Advertisement</p>
+        <div class="ad-placeholder" style="width:300px;height:250px;background-color:#1a1a1a;margin:0 auto;display:flex;align-items:center;justify-content:center;">
+          <span class="text-gray-500">Ad Space</span>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -132,13 +142,10 @@
           <option value="">All Genres</option>
         </select>
       </div>
-      <div class="search-container relative group">
-        <button onclick="openSearchModal()" class="flex items-center bg-black/30 hover:bg-black/60 border border-gray-700 rounded-md px-3 py-1.5 transition-all duration-300 group-hover:border-netflix-red">
-          <i class="fas fa-search text-lg mr-2"></i>
-          <span class="text-sm hidden md:inline">Search Movies</span>
-        </button>
-        <div class="absolute -bottom-8 left-0 w-full text-xs text-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Find your favorite movies</div>
-      </div>
+      <button onclick="openSearchModal()" class="flex items-center bg-netflix-red/80 hover:bg-netflix-red text-white px-3 py-1.5 rounded-md transition-colors duration-200">
+        <i class="fas fa-search mr-1"></i>
+        <span class="hidden sm:inline">Search</span>
+      </button>
       <div class="profile-avatar" title="Profile">
         <img src="https://ui-avatars.com/api/?name=Sage&background=222&color=fff&rounded=true&size=32" alt="Profile" class="w-8 h-8 rounded-md" />
       </div>
@@ -183,6 +190,16 @@
       </div>
       <div id="no-movies-message" class="hidden text-center py-8 text-lg text-gray-400"></div>
     </section>
+    
+    <!-- Ad Placeholder Between Sections -->
+    <div class="w-full max-w-7xl mx-auto px-4 md:px-12 mb-10">
+      <div class="bg-netflix-dark/30 p-4 rounded-lg text-center overflow-hidden">
+        <p class="text-xs text-gray-400 mb-2">Advertisement</p>
+        <div class="ad-placeholder" style="width:728px;height:90px;background-color:#1a1a1a;margin:0 auto;display:flex;align-items:center;justify-content:center;">
+          <span class="text-gray-500">Ad Space</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Romance Movies -->
     <section id="romance" class="mb-10">
@@ -226,29 +243,25 @@
   </div>
 
   <!-- Enhanced Search Modal -->
-  <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-16 px-4">
-    <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl transition-all duration-300 hover:rotate-90">
+  <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-20 px-4">
+    <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl">
       <i class="fas fa-times"></i>
     </button>
-    
-    <!-- Search Header -->
-    <div class="w-full max-w-2xl mx-auto text-center mb-6">
-      <h2 class="text-2xl md:text-3xl font-bold mb-2">Find Your Favorite Movies</h2>
-      <p class="text-gray-400 text-sm md:text-base">Search by title, actor, or genre</p>
-    </div>
-    
-    <!-- Search Input with Icon -->
-    <div class="w-full max-w-2xl mx-auto relative">
-      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <i class="fas fa-search text-gray-500 text-xl"></i>
-      </div>
-      <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
-        class="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-netflix-red transition-all duration-300" 
-        autofocus />
-      <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-        <button onclick="document.getElementById('search-input').value = ''; searchTMDB();" class="text-gray-500 hover:text-white transition-colors duration-300">
-          <i class="fas fa-times-circle"></i>
-        </button>
+    <div class="w-full max-w-2xl mx-auto">
+      <h2 class="text-2xl font-bold mb-4 text-center">Search Movies & TV Shows</h2>
+      <div class="relative">
+        <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
+          class="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg pl-12 pr-10 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-netflix-red transition-all duration-300" 
+          autofocus />
+        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-netflix-red">
+          <i class="fas fa-search text-xl"></i>
+        </div>
+        <div class="absolute right-3 top-1/2 -translate-y-1/2">
+          <button onclick="document.getElementById('search-input').value = ''; searchTMDB();" class="text-gray-500 hover:text-white transition-colors duration-300">
+            <i class="fas fa-times-circle text-xl"></i>
+          </button>
+        </div>
+        <p class="text-gray-400 text-sm mt-2">Type to search instantly across thousands of movies and shows</p>
       </div>
     </div>
     
@@ -264,7 +277,15 @@
     <!-- Results Grid with Header -->
     <div class="w-full max-w-5xl mx-auto mt-8">
       <h3 id="results-count" class="text-xl font-semibold mb-4 px-4 hidden">Search Results</h3>
-      <div id="search-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto px-4 pb-16"></div>
+      <div id="search-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6 hidden"></div>
+    
+    <!-- Ad Placeholder in Search Results -->
+    <div id="search-ad" class="mt-8 bg-netflix-dark/30 p-4 rounded-lg text-center overflow-hidden hidden">
+      <p class="text-xs text-gray-400 mb-2">Advertisement</p>
+      <div class="ad-placeholder" style="width:300px;height:250px;background-color:#1a1a1a;margin:0 auto;display:flex;align-items:center;justify-content:center;">
+        <span class="text-gray-500">Ad Space</span>
+      </div>
+    </div>
     </div>
   </div>
 
