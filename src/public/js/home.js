@@ -120,19 +120,20 @@ function closeSearchModal() {
 async function searchTMDB() {
   const query = document.getElementById('search-input').value;
   const searchResults = document.getElementById('search-results');
-  const searchModal = document.getElementById('search-modal');
+  const resultsCount = document.getElementById('results-count');
   
   if (!query) {
     searchResults.innerHTML = '';
-    searchResults.classList.add('hidden');
+    resultsCount.classList.add('hidden');
     return;
   }
   
   // Show loading skeleton
   searchResults.innerHTML = '';
-  searchResults.classList.remove('hidden');
+  resultsCount.classList.add('hidden');
   
-  for (let i = 0; i < 8; i++) {
+  // Add loading indicator
+  for (let i = 0; i < 10; i++) {
     const skeletonItem = document.createElement('div');
     skeletonItem.className = 'search-result-item skeleton-item';
     skeletonItem.innerHTML = `
@@ -142,13 +143,50 @@ async function searchTMDB() {
     searchResults.appendChild(skeletonItem);
   }
   
+  // Check cache first
+  const cacheKey = `sage_movies_search_${query.toLowerCase()}`;
+  const cachedResults = localStorage.getItem(cacheKey);
+  let data = null;
+  
+  if (cachedResults) {
+    try {
+      const parsed = JSON.parse(cachedResults);
+      // Cache search results for 1 hour
+      if (parsed.timestamp && (Date.now() - parsed.timestamp < 60 * 60 * 1000)) {
+        console.log(`[CACHE] Using cached search results for: ${query}`);
+        data = parsed.data;
+      }
+    } catch (e) {
+      console.error('Error parsing cached search results:', e);
+    }
+  }
+  
   try {
-    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-    const data = await res.json();
+    // Only fetch if we don't have cached data
+    if (!data) {
+      const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+      data = await res.json();
+      
+      // Cache the search results
+      if (data.results && data.results.length > 0) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: data
+          }));
+          console.log(`[CACHE] Saved search results for: ${query}`);
+        } catch (e) {
+          console.error('Error caching search results:', e);
+        }
+      }
+    }
     
     searchResults.innerHTML = '';
     
     if (data.results && data.results.length > 0) {
+      // Update results count
+      resultsCount.textContent = `Search Results (${data.results.length})`;
+      resultsCount.classList.remove('hidden');
       // Group results by relevance category
       const exactMatches = data.results.filter(item => item.relevance_score === 100);
       const startsWithMatches = data.results.filter(item => item.relevance_score === 90);
@@ -223,7 +261,13 @@ async function searchTMDB() {
         createResultItems(otherResults);
       }
     } else {
-      searchResults.innerHTML = '<p class="text-center py-4 text-gray-400">No results found.</p>';
+      searchResults.innerHTML = `
+        <div class="col-span-full text-center py-8">
+          <div class="text-gray-400 mb-4">No results found for "${query}"</div>
+          <div class="text-sm text-gray-500">Try a different search term or check out our suggestions above.</div>
+        </div>
+      `;
+      resultsCount.classList.add('hidden');
     }
   } catch (error) {
     console.error('Error searching:', error);
@@ -385,10 +429,13 @@ function displayList(items, containerId, isFiltered = false) {
   const countSpan = document.getElementById('movies-count');
   const noMoviesMsg = document.getElementById('no-movies-message');
   
+  // Limit to 20 items for faster loading
+  const limitedItems = items.slice(0, 20);
+  
   if (containerId === 'movies-list') {
-    if (countSpan) countSpan.textContent = `(${items.length})`;
+    if (countSpan) countSpan.textContent = `(${limitedItems.length})`;
     if (noMoviesMsg) {
-      if (items.length === 0 && isFiltered) {
+      if (limitedItems.length === 0 && isFiltered) {
         noMoviesMsg.classList.remove('hidden');
         noMoviesMsg.textContent = 'No movies found for this genre.';
       } else {
@@ -399,7 +446,9 @@ function displayList(items, containerId, isFiltered = false) {
   }
   
   container.innerHTML = '';
-  items.forEach(item => {
+  
+  // Use limited items instead of all items
+  limitedItems.forEach(item => {
     if (!item.poster_path) return;
     
     const img = document.createElement('img');
@@ -496,33 +545,72 @@ function filterByGenre() {
   }, 100); // Small delay to ensure DOM is updated
 }
 
-// Fetch trending items
+// Fetch trending items with caching
 async function fetchTrending(type, containerId) {
   try {
     const container = document.getElementById(containerId);
+    const cacheKey = `sage_movies_${type}_cache`;
+    const cacheTTL = 30 * 60 * 1000; // 30 minutes in milliseconds
     
-    // Show loading skeleton
-    container.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
-      const skeleton = document.createElement('div');
-      skeleton.className = 'skeleton-loader min-w-[150px] h-[225px] rounded bg-gray-800 animate-pulse';
-      container.appendChild(skeleton);
+    // Check if we have cached data that's still valid
+    const cachedData = localStorage.getItem(cacheKey);
+    let data = null;
+    
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        // Check if the cache is still valid (not expired)
+        if (parsed.timestamp && (Date.now() - parsed.timestamp < cacheTTL)) {
+          console.log(`[CACHE] Using cached data for ${type}`);
+          data = parsed.data;
+        } else {
+          console.log(`[CACHE] Cache expired for ${type}`);
+        }
+      } catch (e) {
+        console.error('Error parsing cached data:', e);
+      }
     }
     
-    // Use the new collection endpoints for more comprehensive results
-    let endpoint = '';
-    if (type === 'movie') {
-      endpoint = '/api/movies/collection';
-    } else if (type === 'tv') {
-      endpoint = '/api/tv/collection';
-    } else if (type === 'anime') {
-      endpoint = '/api/anime/collection';
-    } else {
-      endpoint = `/api/trending/${type}`;
+    // Show loading skeleton if we don't have cached data
+    if (!data) {
+      container.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton-loader min-w-[150px] h-[225px] rounded bg-gray-800 animate-pulse';
+        container.appendChild(skeleton);
+      }
     }
     
-    const res = await fetch(endpoint);
-    const data = await res.json();
+    // If we don't have valid cached data, fetch from server
+    if (!data) {
+      // Use the collection endpoints for more comprehensive results
+      let endpoint = '';
+      if (type === 'movie') {
+        endpoint = '/api/movies/collection';
+      } else if (type === 'tv') {
+        endpoint = '/api/tv/collection';
+      } else if (type === 'anime') {
+        endpoint = '/api/anime/collection';
+      } else {
+        endpoint = `/api/trending/${type}`;
+      }
+      
+      const res = await fetch(endpoint);
+      data = await res.json();
+      
+      // Cache the new data
+      if (data.results && data.results.length > 0) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: data
+          }));
+          console.log(`[CACHE] Saved new data for ${type}`);
+        } catch (e) {
+          console.error('Error caching data:', e);
+        }
+      }
+    }
     
     if (data.results && data.results.length > 0) {
       if (type === 'movie') {

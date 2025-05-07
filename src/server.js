@@ -382,63 +382,68 @@ app.get('/api/movies/collection', async (req, res) => {
     // Sort by popularity
     uniqueResults.sort((a, b) => b.popularity - a.popularity);
     
-    console.log(`[API] Found ${uniqueResults.length} movies in collection`);
-    res.json({ results: uniqueResults });
+    // Limit to 20 items for faster loading
+    const limitedResults = uniqueResults.slice(0, 20);
+    console.log(`[API] Found ${limitedResults.length} movies in collection (limited from ${uniqueResults.length})`);
+    res.json({ results: limitedResults });
   } catch (error) {
     console.error('Error fetching movie collection:', error);
     res.status(500).json({ error: 'Failed to fetch movie collection' });
   }
 });
 
-// Create a new endpoint for fetching a large collection of TV shows
+// Create a new endpoint for fetching a large collection of romance movies
 app.get('/api/tv/collection', async (req, res) => {
   try {
     const { page = 1 } = req.query;
-    console.log(`[API] Fetching TV collection`);
+    console.log(`[API] Fetching romance movies collection`);
     const results = [];
     
-    // 1. Popular TV shows (4 pages)
+    // Romance genre ID is 10749
+    const romanceGenreId = 10749;
+    
+    // 1. Popular romance movies (4 pages)
     for (let currentPage = 1; currentPage <= 4; currentPage++) {
       const popularResponse = await fetch(
-        `https://api.themoviedb.org/3/tv/popular?api_key=${process.env.TMDB_API_KEY}&page=${currentPage}`
+        `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.TMDB_API_KEY}&with_genres=${romanceGenreId}&sort_by=popularity.desc&page=${currentPage}`
       );
       const popularData = await popularResponse.json();
       
       if (popularData.results && popularData.results.length > 0) {
         popularData.results.forEach(item => {
-          item.media_type = 'tv';
+          item.media_type = 'movie';
         });
         results.push(...popularData.results);
       }
     }
     
-    // 2. Top rated TV shows (3 pages)
+    // 2. Top rated romance movies (3 pages)
     for (let currentPage = 1; currentPage <= 3; currentPage++) {
       const topRatedResponse = await fetch(
-        `https://api.themoviedb.org/3/tv/top_rated?api_key=${process.env.TMDB_API_KEY}&page=${currentPage}`
+        `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.TMDB_API_KEY}&with_genres=${romanceGenreId}&sort_by=vote_average.desc&vote_count.gte=100&page=${currentPage}`
       );
       const topRatedData = await topRatedResponse.json();
       
       if (topRatedData.results && topRatedData.results.length > 0) {
         topRatedData.results.forEach(item => {
-          item.media_type = 'tv';
+          item.media_type = 'movie';
         });
         results.push(...topRatedData.results);
       }
     }
     
-    // 3. TV shows airing today (2 pages)
+    // 3. Latest romance movies (2 pages)
     for (let currentPage = 1; currentPage <= 2; currentPage++) {
-      const airingResponse = await fetch(
-        `https://api.themoviedb.org/3/tv/airing_today?api_key=${process.env.TMDB_API_KEY}&page=${currentPage}`
+      const latestResponse = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.TMDB_API_KEY}&with_genres=${romanceGenreId}&sort_by=release_date.desc&page=${currentPage}`
       );
-      const airingData = await airingResponse.json();
+      const latestData = await latestResponse.json();
       
-      if (airingData.results && airingData.results.length > 0) {
-        airingData.results.forEach(item => {
-          item.media_type = 'tv';
+      if (latestData.results && latestData.results.length > 0) {
+        latestData.results.forEach(item => {
+          item.media_type = 'movie';
         });
-        results.push(...airingData.results);
+        results.push(...latestData.results);
       }
     }
     
@@ -448,11 +453,13 @@ app.get('/api/tv/collection', async (req, res) => {
     // Sort by popularity
     uniqueResults.sort((a, b) => b.popularity - a.popularity);
     
-    console.log(`[API] Found ${uniqueResults.length} TV shows in collection`);
-    res.json({ results: uniqueResults });
+    // Limit to 20 items for faster loading
+    const limitedResults = uniqueResults.slice(0, 20);
+    console.log(`[API] Found ${limitedResults.length} romance movies in collection (limited from ${uniqueResults.length})`);
+    res.json({ results: limitedResults });
   } catch (error) {
-    console.error('Error fetching TV collection:', error);
-    res.status(500).json({ error: 'Failed to fetch TV collection' });
+    console.error('Error fetching romance movies collection:', error);
+    res.status(500).json({ error: 'Failed to fetch romance movies collection' });
   }
 });
 
@@ -464,8 +471,8 @@ app.get('/api/anime/collection', async (req, res) => {
     // Animation genre ID is 16
     const animationGenreId = 16;
     
-    // Fetch 5 pages of animation TV shows
-    for (let currentPage = 1; currentPage <= 5; currentPage++) {
+    // Fetch 2 pages of animation TV shows (reduced from 5 to 2 for faster loading)
+    for (let currentPage = 1; currentPage <= 2; currentPage++) {
       const response = await fetch(
         `https://api.themoviedb.org/3/discover/tv?api_key=${process.env.TMDB_API_KEY}&with_genres=${animationGenreId}&sort_by=popularity.desc&page=${currentPage}`
       );
@@ -479,8 +486,8 @@ app.get('/api/anime/collection', async (req, res) => {
       }
     }
     
-    // Also fetch animation movies (2 pages)
-    for (let currentPage = 1; currentPage <= 2; currentPage++) {
+    // Also fetch animation movies (1 page instead of 2 for faster loading)
+    for (let currentPage = 1; currentPage <= 1; currentPage++) {
       const response = await fetch(
         `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.TMDB_API_KEY}&with_genres=${animationGenreId}&sort_by=popularity.desc&page=${currentPage}`
       );
@@ -500,8 +507,10 @@ app.get('/api/anime/collection', async (req, res) => {
     // Sort by popularity
     uniqueResults.sort((a, b) => b.popularity - a.popularity);
     
-    console.log(`[API] Found ${uniqueResults.length} anime items in collection`);
-    res.json({ results: uniqueResults });
+    // Limit to 20 items for faster loading
+    const limitedResults = uniqueResults.slice(0, 20);
+    console.log(`[API] Found ${limitedResults.length} anime items in collection (limited from ${uniqueResults.length})`);
+    res.json({ results: limitedResults });
   } catch (error) {
     console.error('Error fetching anime collection:', error);
     res.status(500).json({ error: 'Failed to fetch anime collection' });

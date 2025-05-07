@@ -122,7 +122,7 @@
       <div class="hidden md:flex space-x-6">
         <a href="/" class="text-sm font-medium hover:text-gray-300">Home</a>
         <a href="#movies" class="text-sm font-medium hover:text-gray-300">Movies</a>
-        <a href="#tvshows" class="text-sm font-medium hover:text-gray-300">TV Shows</a>
+        <a href="#romance" class="text-sm font-medium hover:text-gray-300">Romance</a>
         <a href="#anime" class="text-sm font-medium hover:text-gray-300">Anime</a>
       </div>
     </div>
@@ -132,9 +132,13 @@
           <option value="">All Genres</option>
         </select>
       </div>
-      <button onclick="openSearchModal()" class="text-white hover:text-netflix-red">
-        <i class="fas fa-search text-lg"></i>
-      </button>
+      <div class="search-container relative group">
+        <button onclick="openSearchModal()" class="flex items-center bg-black/30 hover:bg-black/60 border border-gray-700 rounded-md px-3 py-1.5 transition-all duration-300 group-hover:border-netflix-red">
+          <i class="fas fa-search text-lg mr-2"></i>
+          <span class="text-sm hidden md:inline">Search Movies</span>
+        </button>
+        <div class="absolute -bottom-8 left-0 w-full text-xs text-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Find your favorite movies</div>
+      </div>
       <div class="profile-avatar" title="Profile">
         <img src="https://ui-avatars.com/api/?name=Sage&background=222&color=fff&rounded=true&size=32" alt="Profile" class="w-8 h-8 rounded-md" />
       </div>
@@ -180,10 +184,10 @@
       <div id="no-movies-message" class="hidden text-center py-8 text-lg text-gray-400"></div>
     </section>
 
-    <!-- TV Shows -->
-    <section id="tvshows" class="mb-10">
+    <!-- Romance Movies -->
+    <section id="romance" class="mb-10">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl md:text-2xl font-bold">TV Shows <span id="tv-count" class="text-sm text-netflix-red font-normal"></span></h2>
+        <h2 class="text-xl md:text-2xl font-bold">Romance Movies <span id="tv-count" class="text-sm text-netflix-red font-normal"></span></h2>
       </div>
       <div class="carousel-wrapper relative">
         <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-left-btn" aria-label="Scroll Left">
@@ -221,18 +225,47 @@
     </section>
   </div>
 
-  <!-- Search Modal -->
-  <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-20 px-4">
-    <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl">
+  <!-- Enhanced Search Modal -->
+  <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-16 px-4">
+    <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl transition-all duration-300 hover:rotate-90">
       <i class="fas fa-times"></i>
     </button>
-    <div class="w-full max-w-2xl mx-auto">
-      <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
-        class="w-full bg-gray-800 text-white border border-gray-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-netflix-red" />
+    
+    <!-- Search Header -->
+    <div class="w-full max-w-2xl mx-auto text-center mb-6">
+      <h2 class="text-2xl md:text-3xl font-bold mb-2">Find Your Favorite Movies</h2>
+      <p class="text-gray-400 text-sm md:text-base">Search by title, actor, or genre</p>
     </div>
     
-    <!-- Results Grid -->
-    <div id="search-results" class="w-full max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8 overflow-y-auto px-4"></div>
+    <!-- Search Input with Icon -->
+    <div class="w-full max-w-2xl mx-auto relative">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <i class="fas fa-search text-gray-500 text-xl"></i>
+      </div>
+      <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
+        class="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-netflix-red transition-all duration-300" 
+        autofocus />
+      <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+        <button onclick="document.getElementById('search-input').value = ''; searchTMDB();" class="text-gray-500 hover:text-white transition-colors duration-300">
+          <i class="fas fa-times-circle"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Search Suggestions -->
+    <div class="w-full max-w-2xl mx-auto mt-4 flex flex-wrap justify-center gap-2">
+      <span class="text-sm text-gray-400">Popular searches:</span>
+      <button onclick="document.getElementById('search-input').value = 'Action'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Action</button>
+      <button onclick="document.getElementById('search-input').value = 'Romance'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Romance</button>
+      <button onclick="document.getElementById('search-input').value = 'Comedy'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Comedy</button>
+      <button onclick="document.getElementById('search-input').value = 'Anime'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Anime</button>
+    </div>
+    
+    <!-- Results Grid with Header -->
+    <div class="w-full max-w-5xl mx-auto mt-8">
+      <h3 id="results-count" class="text-xl font-semibold mb-4 px-4 hidden">Search Results</h3>
+      <div id="search-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto px-4 pb-16"></div>
+    </div>
   </div>
 
   <!-- Footer -->
