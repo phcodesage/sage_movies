@@ -35,8 +35,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files
+// Serve static files - make sure this comes AFTER any API routes but BEFORE the catch-all routes
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Route handler for movie and TV show details to support browser history
+app.get('/movie/:id/:title?', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/tv/:id/:title?', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // API proxy routes to protect API key
 app.get('/api/trending/:type', async (req, res) => {
@@ -115,16 +124,70 @@ app.get('/api/trending/:type', async (req, res) => {
 
 app.get('/api/genres', async (req, res) => {
   try {
+    // Check if API key is available
+    if (!process.env.TMDB_API_KEY) {
+      console.error('[API] TMDB_API_KEY is missing in environment variables');
+      // Return a fallback genres list
+      return res.json({
+        genres: [
+          { id: 28, name: 'Action' },
+          { id: 12, name: 'Adventure' },
+          { id: 16, name: 'Animation' },
+          { id: 35, name: 'Comedy' },
+          { id: 80, name: 'Crime' },
+          { id: 18, name: 'Drama' },
+          { id: 10751, name: 'Family' },
+          { id: 14, name: 'Fantasy' },
+          { id: 36, name: 'History' },
+          { id: 27, name: 'Horror' },
+          { id: 10402, name: 'Music' },
+          { id: 9648, name: 'Mystery' },
+          { id: 10749, name: 'Romance' },
+          { id: 878, name: 'Science Fiction' },
+          { id: 53, name: 'Thriller' },
+          { id: 10752, name: 'War' },
+          { id: 37, name: 'Western' }
+        ]
+      });
+    }
+    
     console.log(`[API] Fetching genres list`);
     const response = await fetch(
       `https://api.themoviedb.org/3/genre/movie/list?api_key=${process.env.TMDB_API_KEY}`
     );
+    
+    // Check if response is ok
+    if (!response.ok) {
+      console.error(`[API] TMDB API returned status ${response.status}`);
+      throw new Error(`TMDB API returned status ${response.status}`);
+    }
+    
     const data = await response.json();
-    console.log(`[API] Found ${data.genres?.length || 0} genres`);
+    
+    // Validate that data has genres array
+    if (!data.genres || !Array.isArray(data.genres)) {
+      console.error('[API] Invalid response format from TMDB API');
+      throw new Error('Invalid response format from TMDB API');
+    }
+    
+    console.log(`[API] Found ${data.genres.length} genres`);
     res.json(data);
   } catch (error) {
     console.error('Error fetching genres:', error);
-    res.status(500).json({ error: 'Failed to fetch genres' });
+    // Return a fallback genres list on error
+    res.json({
+      genres: [
+        { id: 28, name: 'Action' },
+        { id: 12, name: 'Adventure' },
+        { id: 16, name: 'Animation' },
+        { id: 35, name: 'Comedy' },
+        { id: 80, name: 'Crime' },
+        { id: 18, name: 'Drama' },
+        { id: 10749, name: 'Romance' },
+        { id: 878, name: 'Science Fiction' },
+        { id: 53, name: 'Thriller' }
+      ]
+    });
   }
 });
 
@@ -283,15 +346,33 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/video-sources/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const { server } = req.query;
+    const { server, details } = req.query;
     
     console.log(`[API] Fetching video sources for ${type} ID: ${id}`);
+    
+    // If details=true, fetch media details from TMDB
+    let mediaDetails = null;
+    if (details === 'true') {
+      try {
+        const detailsUrl = `https://api.themoviedb.org/3/${type === 'movie' ? 'movie' : 'tv'}/${id}?api_key=${process.env.TMDB_API_KEY}`;
+        const detailsResponse = await fetch(detailsUrl);
+        
+        if (detailsResponse.ok) {
+          mediaDetails = await detailsResponse.json();
+          console.log(`[API] Found details for ${type} ID: ${id}`);
+        } else {
+          console.error(`[API] Failed to get details for ${type} ID: ${id}`);
+        }
+      } catch (detailsError) {
+        console.error('Error fetching media details:', detailsError);
+      }
+    }
     
     // Return the video source information
     // This is just the URL structure, not the actual video content
     let embedURL = "";
     
-    if (server === "vidsrc.cc") {
+    if (!server || server === "vidsrc.cc") {
       embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
     } else if (server === "vidsrc.me") {
       embedURL = `https://vidsrc.net/embed/${type}/?tmdb=${id}`;
@@ -300,7 +381,13 @@ app.get('/api/video-sources/:type/:id', async (req, res) => {
     }
     
     console.log(`[API] Found video source for ${type} ID: ${id}`);
-    res.json({ embedURL });
+    
+    // Return both the embed URL and media details if requested
+    if (mediaDetails) {
+      res.json({ embedURL, details: mediaDetails });
+    } else {
+      res.json({ embedURL });
+    }
   } catch (error) {
     console.error('Error getting video sources:', error);
     res.status(500).json({ error: 'Failed to get video sources' });

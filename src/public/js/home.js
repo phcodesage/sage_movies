@@ -16,7 +16,7 @@ let allMovies = [];
 let bannerMovie = null;
 
 // Show movie details in fullscreen view
-function showDetails(item) {
+function showDetails(item, updateHistory = true) {
   // Store current item for server switching
   currentItem = item;
   
@@ -26,11 +26,15 @@ function showDetails(item) {
   document.getElementById('movie-detail').classList.add('flex');
 
   // Populate detail section
-  document.getElementById('detail-title').textContent = item.title || item.name;
+  const title = item.title || item.name;
+  document.getElementById('detail-title').textContent = title;
   document.getElementById('detail-description').textContent = item.overview || '';
   document.getElementById('detail-rating').textContent = item.vote_average ? `★ ${item.vote_average.toFixed(1)}` : '';
   document.getElementById('detail-release').textContent = item.release_date ? `Released: ${item.release_date}` : '';
-  document.getElementById('detail-poster').src = item.poster_path ? `${IMG_URL}${item.poster_path}` : '';
+  
+  // Set poster image
+  const posterUrl = item.poster_path ? `${IMG_URL}${item.poster_path}` : '';
+  document.getElementById('detail-poster').src = posterUrl;
 
   // Genres
   let genres = [];
@@ -53,8 +57,90 @@ function showDetails(item) {
     }
   }
   
+  // Update browser history if requested
+  if (updateHistory) {
+    // Create URL-friendly title
+    const urlTitle = title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+    
+    // Create new history entry
+    const newUrl = `/${item.media_type}/${item.id}/${urlTitle}`;
+    const historyState = { id: item.id, type: item.media_type, item: item };
+    
+    // Update page title
+    document.title = `${title} - Sage Movies`;
+    
+    // Push to browser history
+    history.pushState(historyState, document.title, newUrl);
+    
+    // Save to localStorage for persistence
+    saveToWatchHistory(item);
+  }
+  
   // Change server (this will set the video URL)
   changeServer();
+}
+
+// Save movie to watch history
+function saveToWatchHistory(item) {
+  try {
+    // Get existing history
+    let watchHistory = JSON.parse(localStorage.getItem('sage_watch_history') || '[]');
+    
+    // Limit history size
+    const MAX_HISTORY = 50;
+    if (watchHistory.length >= MAX_HISTORY) {
+      watchHistory = watchHistory.slice(0, MAX_HISTORY - 1);
+    }
+    
+    // Remove if already exists (to move to top)
+    watchHistory = watchHistory.filter(i => i.id !== item.id || i.media_type !== item.media_type);
+    
+    // Add to beginning of array
+    watchHistory.unshift({
+      id: item.id,
+      title: item.title || item.name,
+      poster_path: item.poster_path,
+      media_type: item.media_type,
+      timestamp: Date.now()
+    });
+    
+    // Save back to localStorage
+    localStorage.setItem('sage_watch_history', JSON.stringify(watchHistory));
+  } catch (error) {
+    console.error('Error saving to watch history:', error);
+  }
+}
+
+// Handle video loaded event - must be defined in global scope
+window.videoLoaded = function() {
+  // Hide loading spinner after a short delay (to ensure video is actually ready)
+  setTimeout(() => {
+    // Hide loading spinner
+    const videoLoading = document.getElementById('video-loading');
+    if (videoLoading) videoLoading.classList.add('hidden');
+    
+    // Show ready banner briefly
+    const videoReady = document.getElementById('video-ready');
+    if (videoReady) {
+      videoReady.classList.remove('hidden');
+      
+      // Hide ready banner after 2 seconds
+      setTimeout(() => {
+        videoReady.classList.add('hidden');
+      }, 2000);
+    }
+  }, 500);
+}
+
+// Show video loading state
+function showVideoLoading() {
+  // Show loading spinner
+  const videoLoading = document.getElementById('video-loading');
+  if (videoLoading) videoLoading.classList.remove('hidden');
+  
+  // Hide ready banner
+  const videoReady = document.getElementById('video-ready');
+  if (videoReady) videoReady.classList.add('hidden');
 }
 
 // Change video server
@@ -62,20 +148,51 @@ async function changeServer() {
   const server = document.getElementById('server-select').value;
   const type = currentItem.media_type === "tv" ? "tv" : "movie";
   
+  // Show loading state
+  showVideoLoading();
+  
   try {
     // Get embed URL from our server
     const response = await fetch(`/api/video-sources/${type}/${currentItem.id}?server=${server}`);
     const data = await response.json();
     
-    // Set the iframe source
-    document.getElementById('detail-video').src = data.embedURL;
+    // Get the iframe element
+    const videoFrame = document.getElementById('detail-video');
+    if (videoFrame) {
+      // Set the iframe source
+      videoFrame.src = data.embedURL;
+      
+      // Add onload handler programmatically in case the HTML attribute doesn't work
+      videoFrame.onload = function() {
+        window.videoLoaded();
+      };
+    } else {
+      console.error('Video iframe element not found');
+      // Hide loading spinner if iframe not found
+      const videoLoading = document.getElementById('video-loading');
+      if (videoLoading) videoLoading.classList.add('hidden');
+    }
   } catch (error) {
     console.error('Error changing server:', error);
+    // Hide loading spinner on error
+    const videoLoading = document.getElementById('video-loading');
+    if (videoLoading) videoLoading.classList.add('hidden');
   }
 }
 
 // Close movie detail view
 function closeMovieDetail() {
+  // Stop video playback by setting iframe src to empty
+  const videoFrame = document.getElementById('detail-video');
+  if (videoFrame) {
+    // Store the current src to clear it
+    const currentSrc = videoFrame.src;
+    // Clear the src to stop playback
+    videoFrame.src = '';
+    // Force a reflow to ensure the video stops
+    void videoFrame.offsetWidth;
+  }
+  
   document.body.classList.remove('overflow-hidden');
   document.getElementById('movie-detail').classList.add('hidden');
   document.getElementById('movie-detail').classList.remove('flex');
@@ -83,6 +200,12 @@ function closeMovieDetail() {
   // Restart banner rotation if it was stopped
   if (bannerMovies.length > 0) {
     startBannerRotation(bannerMovies);
+  }
+  
+  // Update browser history to go back to home
+  if (window.location.pathname !== '/') {
+    history.pushState(null, 'Sage Movies', '/');
+    document.title = 'Sage Movies';
   }
   
   // Show interstitial popup ad when closing movie details
@@ -478,6 +601,46 @@ function displayList(items, containerId, isFiltered = false) {
 }
 
 // --- Genre Filter Functionality ---
+// Toggle genre grid visibility
+function toggleGenreGrid() {
+  const genreGrid = document.getElementById('genre-grid');
+  genreGrid.classList.toggle('hidden');
+  
+  // Close the grid when clicking outside
+  if (!genreGrid.classList.contains('hidden')) {
+    document.addEventListener('click', closeGenreGridOnClickOutside);
+  } else {
+    document.removeEventListener('click', closeGenreGridOnClickOutside);
+  }
+}
+
+// Close genre grid when clicking outside
+function closeGenreGridOnClickOutside(event) {
+  const genreGrid = document.getElementById('genre-grid');
+  const genreFilterBtn = document.getElementById('genre-filter-btn');
+  
+  if (!genreGrid.contains(event.target) && !genreFilterBtn.contains(event.target)) {
+    genreGrid.classList.add('hidden');
+    document.removeEventListener('click', closeGenreGridOnClickOutside);
+  }
+}
+
+// Select a genre and update UI
+function selectGenre(genreId, genreName) {
+  // Update the current genre text
+  document.getElementById('current-genre').textContent = genreName;
+  
+  // Update the hidden select element
+  const genreSelect = document.getElementById('genre-select');
+  genreSelect.value = genreId;
+  
+  // Trigger the filter function
+  filterByGenre();
+  
+  // Hide the grid
+  document.getElementById('genre-grid').classList.add('hidden');
+}
+
 async function fetchGenres() {
   try {
     const res = await fetch('/api/genres');
@@ -488,13 +651,26 @@ async function fetchGenres() {
     window.SAGE_MOVIES_CONFIG.GENRES = {};
     data.genres.forEach(g => { window.SAGE_MOVIES_CONFIG.GENRES[g.id] = g.name; });
     
-    // Populate genre dropdown
+    // Populate hidden genre select for compatibility
     const genreSelect = document.getElementById('genre-select');
+    
+    // Populate the genre grid
+    const genreGrid = document.getElementById('genre-grid').querySelector('div');
+    
+    // Add each genre as a button in the grid
     data.genres.forEach(genre => {
+      // Add to hidden select
       const option = document.createElement('option');
       option.value = genre.id;
       option.textContent = genre.name;
       genreSelect.appendChild(option);
+      
+      // Add to grid
+      const button = document.createElement('button');
+      button.className = 'text-left px-4 py-2 text-white hover:bg-netflix-red/20 focus:bg-netflix-red/20 rounded transition-colors duration-200 text-sm';
+      button.textContent = genre.name;
+      button.onclick = () => selectGenre(genre.id, genre.name);
+      genreGrid.appendChild(button);
     });
   } catch (error) {
     console.error('Error fetching genres:', error);
@@ -650,27 +826,158 @@ async function fetchTrending(type, containerId) {
   }
 }
 
+// Check URL for movie/TV show ID on page load
+function checkUrlForMedia() {
+  const path = window.location.pathname;
+  const match = path.match(/\/(movie|tv)\/(\d+)/);
+  
+  if (match) {
+    const mediaType = match[1]; // 'movie' or 'tv'
+    const mediaId = match[2]; // the ID
+    
+    console.log(`Loading ${mediaType} with ID ${mediaId} from URL`);
+    
+    // Fetch the media details
+    fetch(`/api/video-sources/${mediaType}/${mediaId}?details=true`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data && data.details) {
+          // Set media type explicitly
+          data.details.media_type = mediaType;
+          // Show details without updating history (to avoid duplicate entries)
+          showDetails(data.details, false);
+        } else {
+          // Fallback to using cached data or creating a minimal item
+          const fallbackItem = {
+            id: parseInt(mediaId),
+            media_type: mediaType,
+            title: `${mediaType === 'movie' ? 'Movie' : 'TV Show'} #${mediaId}`,
+            overview: 'Details could not be loaded.',
+            poster_path: null
+          };
+          showDetails(fallbackItem, false);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading media from URL:', error);
+        // Try to load from watch history as fallback
+        tryLoadFromHistory(mediaType, mediaId);
+      });
+  }
+}
+
+// Try to load media from watch history
+function tryLoadFromHistory(mediaType, mediaId) {
+  try {
+    const watchHistory = JSON.parse(localStorage.getItem('sage_watch_history') || '[]');
+    const historyItem = watchHistory.find(item => item.id == mediaId && item.media_type === mediaType);
+    
+    if (historyItem) {
+      // Create a minimal item from history data
+      const item = {
+        id: parseInt(mediaId),
+        media_type: mediaType,
+        title: historyItem.title,
+        poster_path: historyItem.poster_path,
+        overview: 'Additional details could not be loaded.'
+      };
+      showDetails(item, false);
+    } else {
+      // Create a minimal fallback item
+      const fallbackItem = {
+        id: parseInt(mediaId),
+        media_type: mediaType,
+        title: `${mediaType === 'movie' ? 'Movie' : 'TV Show'} #${mediaId}`,
+        overview: 'Details could not be loaded.',
+        poster_path: null
+      };
+      showDetails(fallbackItem, false);
+    }
+  } catch (error) {
+    console.error('Error loading from history:', error);
+  }
+}
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', function(event) {
+  // Close detail view if we're navigating to home
+  if (window.location.pathname === '/') {
+    if (!document.getElementById('movie-detail').classList.contains('hidden')) {
+      closeMovieDetail();
+    }
+    document.title = 'Sage Movies';
+  } 
+  // Show movie/show details if navigating to a media URL
+  else {
+    const path = window.location.pathname;
+    const match = path.match(/\/(movie|tv)\/(\d+)/);
+    
+    if (match) {
+      const mediaType = match[1]; // 'movie' or 'tv'
+      const mediaId = match[2]; // the ID
+      
+      // If we have the item data in history state
+      if (event.state && event.state.item) {
+        showDetails(event.state.item, false);
+      } 
+      // Otherwise fetch it
+      else {
+        fetch(`/api/video-sources/${mediaType}/${mediaId}?details=true`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data && data.details) {
+              data.details.media_type = mediaType;
+              showDetails(data.details, false);
+            } else {
+              // Try to load from watch history as fallback
+              tryLoadFromHistory(mediaType, mediaId);
+            }
+          })
+          .catch(error => {
+            console.error('Error loading media from history:', error);
+            // Try to load from watch history as fallback
+            tryLoadFromHistory(mediaType, mediaId);
+          });
+      }
+    }
+  }
+});
+
 // Initialize the app
 async function init() {
   try {
+    // Fetch genres first for filter functionality
     await fetchGenres();
     
+    // Fetch trending movies
     await fetchTrending('movie', 'movies-list');
+    
+    // Fetch trending TV shows
     await fetchTrending('tv', 'tvshows-list');
+    
+    // Fetch anime
     await fetchTrending('anime', 'anime-list');
     
-    if (allMovies.length > 0) {
-      startBannerRotation(allMovies);
-    }
+    // Set up carousels
+    setupAllCarousels();
     
-    // Initialize popup ads
-    initPopupAds();
+    // Check URL for movie/TV show ID
+    checkUrlForMedia();
   } catch (error) {
     console.error('Error initializing app:', error);
   }
 }
 
-// --- Popup Ad Implementation ---
 
 // Initialize popup ads from different networks
 function initPopupAds() {
@@ -683,11 +990,19 @@ function initPopupAds() {
 
 // Setup PropellerAds (secondary popup ad network)
 function setupPropellerAds() {
+  // Use the latest PropellerAds script format
   const script = document.createElement('script');
-  script.src = '//propu.sh/pfe/current/tag.min.js?z=5432109';
+  script.src = '//ads.themoneytizer.com/s/gen.js?type=1';
   script.setAttribute('data-cfasync', 'false');
   script.async = true;
   document.head.appendChild(script);
+  
+  // Add the zone ID script
+  const zoneScript = document.createElement('script');
+  zoneScript.src = '//ads.themoneytizer.com/s/requestform.js?siteId=5432109';
+  zoneScript.setAttribute('data-cfasync', 'false');
+  zoneScript.async = true;
+  document.head.appendChild(zoneScript);
 }
 
 // Show interstitial ad when user performs certain actions
