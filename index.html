@@ -80,8 +80,16 @@
       <!-- Video and Poster Section -->
       <div class="flex flex-col md:flex-row gap-6 mb-8">
         <!-- Video Section - 70% Width -->
-        <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl">
-          <iframe id="detail-video" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+        <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl relative">
+          <!-- Netflix-themed loading animation -->
+          <div class="netflix-loader absolute inset-0 z-10 bg-black/80" id="video-loader">
+            <div class="netflix-logo">
+              <div class="middle-bar"></div>
+            </div>
+            <div class="loading-text">Loading player</div>
+          </div>
+          <!-- Video container that will be populated by JavaScript -->
+          <div id="video-container" class="w-full h-full"></div>
         </div>
         
         <!-- Poster and Server Selector - 30% Width -->
@@ -92,8 +100,8 @@
           <div class="bg-netflix-dark p-4 rounded-lg">
             <label for="server-select" class="block text-neutral-300 mb-2 font-medium">Change Server:</label>
             <select id="server-select" onchange="changeServer()" class="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-netflix-red">
-              <option value="vidsrc.cc">Vidsrc.cc</option>
-              <option value="vidsrc.me">Vidsrc.me</option>
+             <!-- <option value="vidsrc.cc">Vidsrc.cc</option> -->
+              <!-- <option value="vidsrc.me">Vidsrc.me</option> -->
               <option value="player.videasy.net">Player.Videasy.net</option>
             </select>
           </div>

@@ -57,20 +57,74 @@ function showDetails(item) {
   changeServer();
 }
 
+// Create a custom video player container
+function createCustomVideoPlayer(url, containerId) {
+  // Get the container
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  // Clear any existing content
+  container.innerHTML = '';
+  
+  // Create a new iframe with proper settings
+  const iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.className = 'w-full h-full';
+  iframe.setAttribute('frameborder', '0');
+  iframe.setAttribute('allowfullscreen', 'true');
+  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+  iframe.setAttribute('loading', 'lazy');
+  iframe.setAttribute('referrerpolicy', 'no-referrer');
+  
+  // Add the iframe to the container
+  container.appendChild(iframe);
+  
+  return iframe;
+}
+
 // Change video server
 async function changeServer() {
   const server = document.getElementById('server-select').value;
   const type = currentItem.media_type === "tv" ? "tv" : "movie";
   
   try {
+    // Show loading animation
+    const videoLoader = document.getElementById('video-loader');
+    videoLoader.style.display = 'flex';
+    
+    // Clear current container
+    const videoContainer = document.getElementById('video-container');
+    videoContainer.innerHTML = '';
+    
     // Get embed URL from our server
     const response = await fetch(`/api/video-sources/${type}/${currentItem.id}?server=${server}`);
     const data = await response.json();
     
-    // Set the iframe source
-    document.getElementById('detail-video').src = data.embedURL;
+    // Create a custom iframe for the video
+    const iframe = createCustomVideoPlayer(data.embedURL, 'video-container');
+    
+    // Hide loader after a short delay to allow the iframe to initialize
+    setTimeout(() => {
+      videoLoader.style.display = 'none';
+    }, 3000);
+    
+    // Set a longer timeout as a fallback
+    setTimeout(() => {
+      videoLoader.style.display = 'none';
+    }, 10000);
+    
   } catch (error) {
     console.error('Error changing server:', error);
+    // Hide loader
+    document.getElementById('video-loader').style.display = 'none';
+    
+    // Show error message
+    const videoContainer = document.getElementById('video-container');
+    videoContainer.innerHTML = '';
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'w-full h-full flex items-center justify-center bg-black/80 text-white text-center p-4';
+    errorMsg.innerHTML = '<p>Error loading video player. Please try another server.</p>';
+    videoContainer.appendChild(errorMsg);
   }
 }
 
@@ -128,19 +182,14 @@ async function searchTMDB() {
     return;
   }
   
-  // Show loading skeleton
+  // Show Netflix-themed loading animation
   searchResults.innerHTML = '';
   searchResults.classList.remove('hidden');
   
-  for (let i = 0; i < 8; i++) {
-    const skeletonItem = document.createElement('div');
-    skeletonItem.className = 'search-result-item skeleton-item';
-    skeletonItem.innerHTML = `
-      <div class="skeleton-loader w-full h-[150px] rounded bg-gray-800 animate-pulse"></div>
-      <div class="skeleton-loader w-3/4 h-4 mt-2 rounded bg-gray-800 animate-pulse"></div>
-    `;
-    searchResults.appendChild(skeletonItem);
-  }
+  // Create a smaller version of the Netflix loader for search results
+  const searchLoader = createNetflixLoader(`Searching for "${query}"`);
+  searchLoader.style.transform = 'scale(0.7)';
+  searchResults.appendChild(searchLoader);
   
   try {
     const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
@@ -341,7 +390,7 @@ function startBannerRotation(movies) {
   }
   
   // Set initial banner
-  if (bannerMovies.length > 0) {
+  if (bannerMovies.length > 0) {  
     currentBannerIndex = 0;
     displayBanner(bannerMovies[currentBannerIndex]);
   }
@@ -379,6 +428,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Create Netflix-themed loading animation
+function createNetflixLoader(message = 'Loading') {
+  const loaderContainer = document.createElement('div');
+  loaderContainer.className = 'netflix-loader';
+  
+  const netflixLogo = document.createElement('div');
+  netflixLogo.className = 'netflix-logo';
+  
+  const middleBar = document.createElement('div');
+  middleBar.className = 'middle-bar';
+  netflixLogo.appendChild(middleBar);
+  
+  loaderContainer.appendChild(netflixLogo);
+  
+  const loadingText = document.createElement('div');
+  loadingText.className = 'loading-text';
+  loadingText.textContent = message;
+  loaderContainer.appendChild(loadingText);
+  
+  return loaderContainer;
+}
+
+// Show loading animation in container
+function showLoading(containerId, message = 'Loading') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  // Add Netflix-themed loader
+  const loader = createNetflixLoader(message);
+  container.appendChild(loader);
+}
+
 // Display movies/shows in a container
 function displayList(items, containerId, isFiltered = false) {
   const container = document.getElementById(containerId);
@@ -399,6 +483,16 @@ function displayList(items, containerId, isFiltered = false) {
   }
   
   container.innerHTML = '';
+  
+  // If no items, show empty state
+  if (!items || items.length === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'w-full text-center py-8';
+    emptyState.innerHTML = '<p class="text-gray-400 text-lg">No content available.</p>';
+    container.appendChild(emptyState);
+    return;
+  }
+  
   items.forEach(item => {
     if (!item.poster_path) return;
     
@@ -450,13 +544,10 @@ async function fetchGenres() {
 // Fetch movies by genre
 async function fetchMoviesByGenre(genreId) {
   try {
-    const loadingElement = document.createElement('div');
-    loadingElement.className = 'text-center py-8';
-    loadingElement.innerHTML = '<div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-netflix-red"></div><p class="mt-2 text-gray-400">Loading movies...</p>';
-    
     const container = document.getElementById('movies-list');
-    container.innerHTML = '';
-    container.appendChild(loadingElement);
+    
+    // Show Netflix-themed loading animation
+    showLoading('movies-list', 'Loading movies');
     
     // Use the dedicated genre API endpoint
     const res = await fetch(`/api/movies/genre/${genreId}`);
@@ -510,67 +601,89 @@ function filterByGenre() {
 async function fetchTrending(type, containerId) {
   try {
     const container = document.getElementById(containerId);
+    if (!container) return;
     
-    // Show loading skeleton
-    container.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
-      const skeleton = document.createElement('div');
-      skeleton.className = 'skeleton-loader min-w-[150px] h-[225px] rounded bg-gray-800 animate-pulse';
-      container.appendChild(skeleton);
-    }
+    // Show Netflix-themed loading animation
+    showLoading(containerId, `Loading ${type}`);
     
-    // Use the new collection endpoints for more comprehensive results
-    let endpoint = '';
-    if (type === 'movie') {
-      endpoint = '/api/movies/collection';
-    } else if (type === 'tv') {
-      endpoint = '/api/tv/collection';
-    } else if (type === 'anime') {
-      endpoint = '/api/anime/collection';
-    } else {
-      endpoint = `/api/trending/${type}`;
-    }
-    
-    const res = await fetch(endpoint);
+    // Use the appropriate API endpoint
+    const res = await fetch(`/api/trending/${type}`);
     const data = await res.json();
     
     if (data.results && data.results.length > 0) {
-      if (type === 'movie') {
-        // Store all movies globally for filtering
+      // Store movies globally if it's the movies list
+      if (containerId === 'movies-list') {
         allMovies = data.results;
       }
       
+      // Display the items
       displayList(data.results, containerId);
       
-      // Update count display
-      const countElement = document.getElementById(`${type}-count`);
-      if (countElement) {
-        countElement.textContent = `(${data.results.length})`;
+      // If it's movies, use them for banner rotation
+      if (containerId === 'movies-list') {
+        startBannerRotation(data.results);
+      }
+      
+      // Update count spans
+      if (containerId === 'movies-list') {
+        const countSpan = document.getElementById('movies-count');
+        if (countSpan) countSpan.textContent = `(${data.results.length})`;
+      } else if (containerId === 'tvshows-list') {
+        const countSpan = document.getElementById('tv-count');
+        if (countSpan) countSpan.textContent = `(${data.results.length})`;
+      } else if (containerId === 'anime-list') {
+        const countSpan = document.getElementById('anime-count');
+        if (countSpan) countSpan.textContent = `(${data.results.length})`;
       }
     } else {
-      container.innerHTML = '<p class="text-center py-8 text-gray-400">No items found.</p>';
+      // If no results, show empty state
+      container.innerHTML = `<p class="text-center py-8 text-gray-400">No ${type} available.</p>`;
     }
   } catch (error) {
-    console.error(`Error fetching ${type}:`, error);
+    console.error(`Error fetching trending ${type}:`, error);
     const container = document.getElementById(containerId);
-    container.innerHTML = '<p class="text-center py-8 text-gray-400">Error loading content. Please try again.</p>';
+    if (container) {
+      container.innerHTML = `<p class="text-center py-8 text-gray-400">Error loading ${type}. Please try again.</p>`;
+    }
   }
 }
 
 // Initialize the app
 async function init() {
   try {
+    // Show initial loading animations
+    showLoading('movies-list', 'Loading movies');
+    showLoading('tvshows-list', 'Loading TV shows');
+    showLoading('anime-list', 'Loading anime');
+    
+    // Show loading animation in banner
+    const banner = document.getElementById('banner');
+    if (banner) {
+      banner.innerHTML = '';
+      const bannerLoader = document.createElement('div');
+      bannerLoader.className = 'w-full h-full flex flex-col items-center justify-center';
+      bannerLoader.appendChild(createNetflixLoader('Preparing your experience'));
+      banner.appendChild(bannerLoader);
+    }
+    
+    // Fetch genres first
     await fetchGenres();
     
+    // Fetch content for each section
     await fetchTrending('movie', 'movies-list');
     await fetchTrending('tv', 'tvshows-list');
     await fetchTrending('anime', 'anime-list');
     
+    // Start banner rotation if we have movies
     if (allMovies.length > 0) {
       startBannerRotation(allMovies);
     }
   } catch (error) {
     console.error('Error initializing app:', error);
+    // Show error message
+    document.querySelectorAll('.list').forEach(list => {
+      list.innerHTML = '<p class="text-center py-8 text-gray-400">Error loading content. Please refresh the page.</p>';
+    });
   }
 }
 
