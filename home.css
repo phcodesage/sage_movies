@@ -18,6 +18,8 @@
   overflow-x: auto;
   padding: 20px 0;
   scroll-behavior: smooth;
+  background-color: rgba(229, 9, 20, 0.1);
+  border-radius: 8px;
 }
 
 /* Hide scrollbar but allow scrolling */
@@ -106,4 +108,56 @@
 
 #search-results::-webkit-scrollbar-thumb:hover {
   background: rgba(229, 9, 20, 1);
+}
+
+/* Custom scrollbar for movie lists */
+.list::-webkit-scrollbar-track {
+  background: rgba(229, 9, 20, 0.1);
+  border-radius: 4px;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: rgba(229, 9, 20, 0.7);
+  border-radius: 4px;
+}
+
+.list::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 9, 20, 1);
+}
+
+/* Movie poster hover effect with red glow */
+.list img:hover {
+  box-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
+  border: 2px solid #e50914;
+}
+
+/* Genre select dropdown styling */
+#genre-select {
+  background-color: rgba(20, 20, 20, 0.8);
+  border-color: #e50914;
+  transition: all 0.3s ease;
+}
+
+#genre-select:hover {
+  background-color: rgba(229, 9, 20, 0.1);
+  box-shadow: 0 0 8px rgba(229, 9, 20, 0.5);
+}
+
+#genre-select:focus {
+  background-color: rgba(20, 20, 20, 0.9);
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.7);
+  border-color: #e50914;
+}
+
+/* Style the dropdown options */
+#genre-select option {
+  background-color: #141414;
+  color: white;
+}
+
+#genre-select option:hover,
+#genre-select option:focus,
+#genre-select option:checked {
+  background-color: #e50914;
+  color: white;
 }

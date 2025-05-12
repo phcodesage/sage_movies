@@ -405,9 +405,19 @@ function displayList(items, containerId, isFiltered = false) {
     const img = document.createElement('img');
     img.src = `${IMG_URL}${item.poster_path}`;
     img.alt = item.title || item.name;
-    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110';
+    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110 border-2 border-transparent';
     img.onclick = () => showDetails(item);
-    container.appendChild(img);
+    
+    // Add red overlay on hover
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative inline-block';
+    wrapper.appendChild(img);
+    
+    // Add a red tint overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'absolute inset-0 bg-netflix-red bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 rounded-md';
+    wrapper.appendChild(overlay);
+    container.appendChild(wrapper);
   });
   
   animatePosters();
