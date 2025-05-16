@@ -501,6 +501,42 @@ app.get('/api/anime/collection', async (req, res) => {
   }
 });
 
+// Video sources endpoint to handle ad configuration
+app.get('/api/video-sources/:type/:id', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { server = 'player.videasy.net' } = req.query;
+    
+    console.log(`[API] Fetching video source for ${type}/${id} using server: ${server}`);
+    
+    // Validate parameters
+    if (!type || !id || !['movie', 'tv'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid parameters' });
+    }
+    
+    // Construct embed URL based on server
+    let embedURL = '';
+    
+    if (server === 'player.videasy.net') {
+      // Format for player.videasy.net
+      const mediaType = type === 'tv' ? 'show' : 'movie';
+      embedURL = `https://player.videasy.net/embed/${mediaType}/${id}`;
+    } else {
+      // Default fallback
+      embedURL = `https://player.videasy.net/embed/${type === 'tv' ? 'show' : 'movie'}/${id}`;
+    }
+    
+    // Add ad configuration parameters
+    embedURL += '?ads_behavior=background&popup_mode=quiet';
+    
+    console.log(`[API] Generated embed URL: ${embedURL}`);
+    res.json({ embedURL });
+  } catch (error) {
+    console.error('Error generating video source:', error);
+    res.status(500).json({ error: 'Failed to generate video source' });
+  }
+});
+
 // Serve the main app for any other route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

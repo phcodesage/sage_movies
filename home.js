@@ -66,6 +66,10 @@ function createCustomVideoPlayer(url, containerId) {
   // Clear any existing content
   container.innerHTML = '';
   
+  // Create a wrapper div to handle ad interactions
+  const playerWrapper = document.createElement('div');
+  playerWrapper.className = 'video-player-wrapper relative w-full h-full';
+  
   // Create a new iframe with proper settings
   const iframe = document.createElement('iframe');
   iframe.src = url;
@@ -76,10 +80,124 @@ function createCustomVideoPlayer(url, containerId) {
   iframe.setAttribute('loading', 'lazy');
   iframe.setAttribute('referrerpolicy', 'no-referrer');
   
-  // Add the iframe to the container
-  container.appendChild(iframe);
+  // Add the iframe to the wrapper
+  playerWrapper.appendChild(iframe);
+  
+  // Add the wrapper to the container
+  container.appendChild(playerWrapper);
+  
+  // Handle pop-up ads by capturing clicks and opening them in background tabs
+  handlePopupAds(playerWrapper, iframe);
   
   return iframe;
+}
+
+// Handle popup ads to open in background
+function handlePopupAds(wrapper, iframe) {
+  // Create an invisible overlay to capture initial clicks
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-blocker-overlay';
+  overlay.style.pointerEvents = 'none'; // Allow clicks to pass through initially
+  
+  // Create ad notification element
+  const adNotification = document.createElement('div');
+  adNotification.className = 'ad-notification';
+  adNotification.textContent = 'Ad blocked & opened in background';
+  adNotification.style.opacity = '0';
+  
+  // Add the overlay and notification to the wrapper
+  wrapper.appendChild(overlay);
+  wrapper.appendChild(adNotification);
+  
+  // Function to show notification
+  function showAdNotification() {
+    adNotification.style.opacity = '1';
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+      adNotification.style.opacity = '0';
+    }, 3000);
+  }
+  
+  // Listen for any new window attempts
+  document.addEventListener('click', function(e) {
+    // Check if click is within the video player area
+    if (wrapper.contains(e.target)) {
+      // Set a short timeout to handle potential popups
+      setTimeout(() => {
+        // Re-enable overlay briefly to catch popup attempts
+        overlay.style.pointerEvents = 'auto';
+        
+        // Disable after a short delay to allow normal interaction
+        setTimeout(() => {
+          overlay.style.pointerEvents = 'none';
+        }, 500);
+      }, 100);
+    }
+  });
+  
+  // Track popup count for revenue tracking
+  let popupCount = 0;
+  
+  // Override window.open to force background tabs for ads
+  const originalWindowOpen = window.open;
+  window.open = function(url, name, features) {
+    // Check if this is likely an ad (no specific user action)
+    if (!window.lastUserInteraction || (Date.now() - window.lastUserInteraction > 1000)) {
+      console.log('Popup ad detected, opening in background tab:', url);
+      
+      // Show notification
+      showAdNotification();
+      
+      // Track popup count
+      popupCount++;
+      console.log(`Ad popup count: ${popupCount}`);
+      
+      // Force background tab for ads
+      return originalWindowOpen(url, '_blank', 'noopener,noreferrer');
+    }
+    // Normal window.open behavior for user-initiated actions
+    return originalWindowOpen(url, name, features);
+  };
+  
+  // Track user interactions
+  document.addEventListener('mousedown', function() {
+    window.lastUserInteraction = Date.now();
+  });
+  
+  // Additional handler for iframe load events
+  iframe.addEventListener('load', function() {
+    try {
+      // Try to access iframe content (may fail due to same-origin policy)
+      const iframeWindow = iframe.contentWindow;
+      
+      // Override popup behavior if possible
+      if (iframeWindow && iframeWindow.open) {
+        const originalIframeOpen = iframeWindow.open;
+        iframeWindow.open = function(url, name, features) {
+          console.log('Iframe popup detected, opening in background tab:', url);
+          
+          // Show notification
+          showAdNotification();
+          
+          // Track popup count
+          popupCount++;
+          console.log(`Ad popup count: ${popupCount}`);
+          
+          return window.open(url, '_blank', 'noopener,noreferrer');
+        };
+      }
+    } catch (e) {
+      // Cannot access iframe content due to same-origin policy
+      console.log('Cannot access iframe content due to same-origin policy');
+    }
+  });
+  
+  // Return API for external usage
+  return {
+    getPopupCount: () => popupCount,
+    resetPopupCount: () => { popupCount = 0; }
+  };
 }
 
 // Change video server
