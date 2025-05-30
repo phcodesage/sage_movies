@@ -719,7 +719,7 @@ function filterByGenre() {
 async function fetchTrending(type, containerId) {
   try {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) return [];
     
     // Show Netflix-themed loading animation
     showLoading(containerId, `Loading ${type}`);
@@ -753,9 +753,12 @@ async function fetchTrending(type, containerId) {
         const countSpan = document.getElementById('anime-count');
         if (countSpan) countSpan.textContent = `(${data.results.length})`;
       }
+      
+      return data.results;
     } else {
       // If no results, show empty state
       container.innerHTML = `<p class="text-center py-8 text-gray-400">No ${type} available.</p>`;
+      return [];
     }
   } catch (error) {
     console.error(`Error fetching trending ${type}:`, error);
@@ -763,13 +766,39 @@ async function fetchTrending(type, containerId) {
     if (container) {
       container.innerHTML = `<p class="text-center py-8 text-gray-400">Error loading ${type}. Please try again.</p>`;
     }
+    return [];
   }
 }
 
 // Initialize the app
 async function init() {
+  // Show the page loader
+  const pageLoader = document.getElementById('page-loader');
+  
+  // Track loading status
+  let loadingTasks = 0;
+  let completedTasks = 0;
+  
+  function trackTask() {
+    loadingTasks++;
+    return () => {
+      completedTasks++;
+      // Check if all tasks are complete
+      if (completedTasks >= loadingTasks) {
+        // Hide the loader with a fade effect
+        if (pageLoader) {
+          pageLoader.style.transition = 'opacity 0.5s ease';
+          pageLoader.style.opacity = '0';
+          setTimeout(() => {
+            pageLoader.style.display = 'none';
+          }, 500);
+        }
+      }
+    };
+  }
+  
   try {
-    // Show initial loading animations
+    // Show initial loading animations for content sections
     showLoading('movies-list', 'Loading movies');
     showLoading('tvshows-list', 'Loading TV shows');
     showLoading('anime-list', 'Loading anime');
@@ -785,25 +814,28 @@ async function init() {
     }
     
     // Fetch genres first
-    await fetchGenres();
-    
-    // Fetch content for each section
-    await fetchTrending('movie', 'movies-list');
-    await fetchTrending('tv', 'tvshows-list');
-    await fetchTrending('anime', 'anime-list');
-    
-    // Start banner rotation if we have movies
-    if (allMovies.length > 0) {
-      startBannerRotation(allMovies);
-    }
+    const genresTask = trackTask();
+    await fetchGenres().then(() => {
+      // Then fetch all content
+      const trendingMoviesTask = trackTask();
+      fetchTrending('movie', 'movies-list').finally(trendingMoviesTask);
+      
+      const trendingShowsTask = trackTask();
+      fetchTrending('tv', 'tvshows-list').finally(trendingShowsTask);
+      
+      const animeTask = trackTask();
+      fetchTrending('anime', 'anime-list').finally(animeTask);
+      
+      genresTask();
+    });
   } catch (error) {
     console.error('Error initializing app:', error);
-    // Show error message
-    document.querySelectorAll('.list').forEach(list => {
-      list.innerHTML = '<p class="text-center py-8 text-gray-400">Error loading content. Please refresh the page.</p>';
-    });
+    // Hide loader even if there's an error
+    if (pageLoader) {
+      pageLoader.style.display = 'none';
+    }
   }
-}
+} 
 
 // Start the app
 init();

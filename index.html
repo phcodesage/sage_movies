@@ -101,6 +101,15 @@
 </head>
 
 <body class="bg-netflix-black text-white min-h-screen">
+  <!-- Full Page Loader -->
+  <div id="page-loader" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-netflix-black">
+    <div class="netflix-loader">
+      <div class="netflix-logo">
+        <div class="middle-bar"></div>
+      </div>
+    </div>
+    <div class="loading-text text-xl mt-6">Loading Sage Movies</div>
+  </div>
   <!-- Movie Detail Fullscreen Section -->
   <section id="movie-detail" class="fixed inset-0 z-50 bg-black/95 flex flex-col items-center overflow-y-auto py-16 hidden transition-all duration-300">
     <button onclick="closeMovieDetail()" class="fixed top-5 left-5 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-netflix-red transition"><i class="fas fa-arrow-left"></i></button>

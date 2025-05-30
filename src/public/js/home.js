@@ -637,18 +637,68 @@ async function fetchTrending(type, containerId) {
 
 // Initialize the app
 async function init() {
+  // Show the page loader
+  const pageLoader = document.getElementById('page-loader');
+  
+  // Track loading status
+  let loadingTasks = 0;
+  let completedTasks = 0;
+  
+  function trackTask() {
+    loadingTasks++;
+    return () => {
+      completedTasks++;
+      // Check if all tasks are complete
+      if (completedTasks >= loadingTasks) {
+        // Hide the loader with a fade effect
+        if (pageLoader) {
+          pageLoader.style.transition = 'opacity 0.5s ease';
+          pageLoader.style.opacity = '0';
+          setTimeout(() => {
+            pageLoader.style.display = 'none';
+          }, 500);
+        }
+      }
+    };
+  }
+  
   try {
-    await fetchGenres();
+    // Fetch genres first
+    const genresTask = trackTask();
+    await fetchGenres().then(() => {
+      genresTask();
+    }).catch(() => {
+      genresTask(); // Still mark task as complete even if it fails
+    });
     
-    await fetchTrending('movie', 'movies-list');
-    await fetchTrending('tv', 'tvshows-list');
-    await fetchTrending('anime', 'anime-list');
+    // Fetch all content in parallel but track each one
+    const moviesTask = trackTask();
+    fetchTrending('movie', 'movies-list')
+      .then(() => {
+        if (allMovies.length > 0) {
+          startBannerRotation(allMovies);
+        }
+        moviesTask();
+      })
+      .catch(() => moviesTask());
     
-    if (allMovies.length > 0) {
-      startBannerRotation(allMovies);
-    }
+    const showsTask = trackTask();
+    fetchTrending('tv', 'tvshows-list')
+      .then(() => showsTask())
+      .catch(() => showsTask());
+    
+    const animeTask = trackTask();
+    fetchTrending('anime', 'anime-list')
+      .then(() => animeTask())
+      .catch(() => animeTask());
+    
   } catch (error) {
     console.error('Error initializing app:', error);
+    
+    // Hide loader even if there's an error
+    if (pageLoader) {
+      pageLoader.style.display = 'none';
+    }
   }
 }
 
