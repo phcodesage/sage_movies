@@ -264,3 +264,62 @@
   background-color: #e50914;
   color: white;
 }
+
+/* Mobile-friendly video player styles */
+@media (max-width: 768px) {
+  /* Ensure video takes priority on mobile */
+  .aspect-video {
+    aspect-ratio: 16/9;
+    min-height: 200px;
+    max-height: 250px;
+  }
+  
+  /* Compact poster on mobile */
+  #detail-poster {
+    max-height: 180px !important;
+    object-fit: cover;
+  }
+  
+  /* Better spacing for mobile */
+  .movie-detail-content {
+    padding: 1rem;
+  }
+  
+  /* Optimize server selector for mobile */
+  #server-select {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  /* Make video container more prominent */
+  #video-container {
+    border: 2px solid #e50914;
+    border-radius: 8px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .aspect-video {
+    min-height: 300px;
+  }
+  
+  #detail-poster {
+    max-height: 400px;
+  }
+}
+
+/* Ensure video is always visible and clickable */
+#video-container {
+  position: relative;
+  z-index: 1;
+}
+
+#detail-video {
+  border-radius: 8px;
+}
+
+/* Loading state improvements */
+#video-loader {
+  backdrop-filter: blur(4px);
+}

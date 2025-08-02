@@ -202,8 +202,13 @@ function handlePopupAds(wrapper, iframe) {
 
 // Change video server
 async function changeServer() {
-  const server = document.getElementById('server-select').value;
+  const serverSelect = document.getElementById('server-select');
+  const server = serverSelect.value;
   const type = currentItem.media_type === "tv" ? "tv" : "movie";
+  
+  // List of fallback servers in order of preference
+  const fallbackServers = ['vidsrc.cc', 'vidsrc.me', 'vidsrc.pro', 'embedsu', '2embed', 'player.videasy.net'];
+  const serversToTry = [server, ...fallbackServers.filter(s => s !== server)];
   
   try {
     // Show loading animation
@@ -214,34 +219,64 @@ async function changeServer() {
     const videoContainer = document.getElementById('video-container');
     videoContainer.innerHTML = '';
     
-    // Get embed URL from our server
-    const response = await fetch(`/api/video-sources/${type}/${currentItem.id}?server=${server}`);
-    const data = await response.json();
+    let success = false;
+    let lastError = null;
     
-    // Create a custom iframe for the video
-    const iframe = createCustomVideoPlayer(data.embedURL, 'video-container');
+    // Try servers in order until one works
+    for (const currentServer of serversToTry) {
+      try {
+        console.log(`Trying server: ${currentServer}`);
+        
+        // Get embed URL from our server
+        const response = await fetch(`/api/video-sources/${type}/${currentItem.id}?server=${currentServer}`);
+        const data = await response.json();
+        
+        if (data.embedURL) {
+          // Create a custom iframe for the video
+          const iframe = createCustomVideoPlayer(data.embedURL, 'video-container');
+          
+          // Update the dropdown to show the working server
+          if (currentServer !== server) {
+            serverSelect.value = currentServer;
+            console.log(`Switched to working server: ${currentServer}`);
+          }
+          
+          success = true;
+          break;
+        }
+      } catch (serverError) {
+        console.warn(`Server ${currentServer} failed:`, serverError);
+        lastError = serverError;
+        continue;
+      }
+    }
     
-    // Hide loader after a short delay to allow the iframe to initialize
+    // Hide loader after a short delay
     setTimeout(() => {
       videoLoader.style.display = 'none';
-    }, 3000);
+    }, success ? 3000 : 1000);
     
-    // Set a longer timeout as a fallback
-    setTimeout(() => {
-      videoLoader.style.display = 'none';
-    }, 10000);
+    if (!success) {
+      throw lastError || new Error('All servers failed');
+    }
     
   } catch (error) {
     console.error('Error changing server:', error);
     // Hide loader
     document.getElementById('video-loader').style.display = 'none';
     
-    // Show error message
+    // Show error message with retry option
     const videoContainer = document.getElementById('video-container');
     videoContainer.innerHTML = '';
     const errorMsg = document.createElement('div');
-    errorMsg.className = 'w-full h-full flex items-center justify-center bg-black/80 text-white text-center p-4';
-    errorMsg.innerHTML = '<p>Error loading video player. Please try another server.</p>';
+    errorMsg.className = 'w-full h-full flex flex-col items-center justify-center bg-black/80 text-white text-center p-4';
+    errorMsg.innerHTML = `
+      <p class="mb-4">⚠️ All servers are currently unavailable</p>
+      <p class="text-sm text-gray-400 mb-4">This might be due to high traffic or temporary server issues</p>
+      <button onclick="changeServer()" class="bg-netflix-red hover:bg-red-700 px-4 py-2 rounded transition-colors">
+        🔄 Retry
+      </button>
+    `;
     videoContainer.appendChild(errorMsg);
   }
 }

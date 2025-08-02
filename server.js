@@ -276,23 +276,53 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/video-sources/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
-    const { server } = req.query;
+    const { server = 'vidsrc.cc' } = req.query;
     
-    console.log(`[API] Fetching video sources for ${type} ID: ${id}`);
+    console.log(`[API] Fetching video sources for ${type} ID: ${id} using server: ${server}`);
     
-    // Return the video source information
-    // This is just the URL structure, not the actual video content
-    let embedURL = "";
-    
-    if (server === "vidsrc.cc") {
-      embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
-    } else if (server === "vidsrc.me") {
-      embedURL = `https://vidsrc.net/embed/${type}/?tmdb=${id}`;
-    } else if (server === "player.videasy.net") {
-      embedURL = `https://player.videasy.net/${type}/${id}`;
+    // Validate parameters
+    if (!type || !id || !['movie', 'tv'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid parameters' });
     }
     
-    console.log(`[API] Found video source for ${type} ID: ${id}`);
+    let embedURL = "";
+    
+    // Multiple reliable server options
+    switch(server) {
+      case "vidsrc.cc":
+        embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
+        break;
+      case "vidsrc.me":
+        embedURL = `https://vidsrc.net/embed/${type}/?tmdb=${id}`;
+        break;
+      case "vidsrc.pro":
+        embedURL = `https://vidsrc.pro/embed/${type}/${id}`;
+        break;
+      case "embedsu":
+        embedURL = `https://embed.su/embed/${type}/${id}`;
+        break;
+      case "2embed":
+        embedURL = `https://www.2embed.cc/embed/${type}/${id}`;
+        break;
+      case "moviesapi":
+        embedURL = `https://moviesapi.club/movie/${id}`;
+        break;
+      case "superembed":
+        embedURL = `https://multiembed.mov/?video_id=${id}&tmdb=1`;
+        break;
+      case "player.videasy.net":
+      default:
+        const mediaType = type === 'tv' ? 'show' : 'movie';
+        embedURL = `https://player.videasy.net/embed/${mediaType}/${id}`;
+        break;
+    }
+    
+    // Add anti-popup parameters where applicable
+    if (server === 'player.videasy.net') {
+      embedURL += '?ads_behavior=background&popup_mode=quiet';
+    }
+    
+    console.log(`[API] Generated embed URL: ${embedURL}`);
     res.json({ embedURL });
   } catch (error) {
     console.error('Error getting video sources:', error);
@@ -547,4 +577,41 @@ app.listen(PORT, () => {
   console.log(`[SERVER] Server started on http://localhost:${PORT}`);
   console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[SERVER] Press Ctrl+C to stop the server`);
+});
+
+// Add this new endpoint for server health checking
+app.get('/api/server-status', async (req, res) => {
+  const servers = [
+    { name: 'vidsrc.cc', url: 'https://vidsrc.cc' },
+    { name: 'vidsrc.me', url: 'https://vidsrc.net' },
+    { name: 'vidsrc.pro', url: 'https://vidsrc.pro' },
+    { name: 'embedsu', url: 'https://embed.su' },
+    { name: '2embed', url: 'https://www.2embed.cc' },
+    { name: 'player.videasy.net', url: 'https://player.videasy.net' }
+  ];
+  
+  const serverStatus = await Promise.allSettled(
+    servers.map(async (server) => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(server.url, {
+          method: 'HEAD',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        return { name: server.name, status: response.ok ? 'online' : 'offline' };
+      } catch (error) {
+        return { name: server.name, status: 'offline' };
+      }
+    })
+  );
+  
+  const results = serverStatus.map(result => 
+    result.status === 'fulfilled' ? result.value : { name: 'unknown', status: 'error' }
+  );
+  
+  res.json({ servers: results });
 });

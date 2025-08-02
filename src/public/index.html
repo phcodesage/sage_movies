@@ -95,23 +95,52 @@
       
       <!-- Video and Poster Section -->
       <div class="flex flex-col md:flex-row gap-6 mb-8">
-        <!-- Video Section - 70% Width -->
-        <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl">
-          <iframe id="detail-video" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+        <!-- Video Section - Full width on mobile, 70% on desktop -->
+        <div class="w-full md:w-[70%] order-1 md:order-1">
+          <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+            <div id="video-container" class="w-full h-full relative">
+              <iframe id="detail-video" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+              <!-- Video Loader -->
+              <div id="video-loader" class="absolute inset-0 flex items-center justify-center bg-black/80" style="display: none;">
+                <div class="text-center">
+                  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
+                  <p class="text-white">Loading video...</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <!-- Poster and Server Selector - 30% Width -->
-        <div class="w-full md:w-[30%] flex flex-col gap-4">
-          <img id="detail-poster" src="" alt="Poster" class="w-full rounded-xl shadow-2xl" />
-          
-          <!-- Server Selector -->
-          <div class="bg-netflix-dark p-4 rounded-lg">
-            <label for="server-select" class="block text-neutral-300 mb-2 font-medium">Change Server:</label>
-            <select id="server-select" onchange="changeServer()" class="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-netflix-red">
-              <!--<option value="vidsrc.cc">Vidsrc.cc</option>-->
-              <!--<option value="vidsrc.me">Vidsrc.me</option>-->
-              <option value="player.videasy.net">Player.Videasy.net</option>
-            </select>
+        <!-- Poster and Server Selector - Compact on mobile -->
+        <div class="w-full md:w-[30%] order-2 md:order-2 flex flex-col gap-4">
+          <!-- Mobile: Horizontal layout for poster and server selector -->
+          <div class="flex md:flex-col gap-4">
+            <!-- Poster - Smaller on mobile -->
+            <div class="w-1/3 md:w-full flex-shrink-0">
+              <img id="detail-poster" src="" alt="Poster" class="w-full h-auto max-h-48 md:max-h-none object-cover rounded-xl shadow-2xl" />
+            </div>
+            
+            <!-- Server Selector - Takes remaining space on mobile -->
+            <div class="flex-1 md:flex-none">
+              <div class="bg-netflix-dark p-4 rounded-lg h-full md:h-auto">
+                <label for="server-select" class="block text-neutral-300 mb-2 font-medium text-sm md:text-base">Change Server:</label>
+                <select id="server-select" onchange="changeServer()" class="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-netflix-red mx-auto mb-4">
+                  <option value="vidsrc.cc">Vidsrc.cc (Primary)</option>
+                  <option value="vidsrc.me">Vidsrc.me (Backup)</option>
+                  <option value="vidsrc.pro">Vidsrc.pro</option>
+                  <option value="embedsu">Embedsu</option>
+                  <option value="2embed">2embed</option>
+                  <option value="player.videasy.net">Player.Videasy.net</option>
+                  <option value="superembed">SuperEmbed</option>
+                  <option value="moviesapi">MoviesAPI</option>
+                </select>
+                
+                <!-- Additional mobile-friendly info -->
+                <div class="mt-3 text-xs text-neutral-400 hidden md:block">
+                  <p>💡 Try different servers if one doesn't work</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
