@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sage Movies</title>
   <link rel="stylesheet" href="css/home.css">
   <link rel="preload" href="css/home.css" as="style">
@@ -33,38 +34,110 @@
       color: white;
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
+
     .animated-poster {
       transition: transform 0.3s, box-shadow 0.3s;
     }
+
     .animated-poster:hover {
       transform: scale(1.08);
       z-index: 10;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
+
     .list {
       scrollbar-width: none;
     }
+
     .list::-webkit-scrollbar {
       display: none;
     }
+
     .navbar-scrolled {
       background-color: #141414;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
+
     .banner-gradient {
-      background: linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0) 100%);
+      background: linear-gradient(to top, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0) 100%);
+    }
+
+    /* Ad Container Styling */
+    .ad-container {
+      background: linear-gradient(135deg, rgba(24, 24, 24, 0.95) 0%, rgba(20, 20, 20, 0.9) 100%);
+      border: 1px solid rgba(229, 9, 20, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ad-container::before {
+      content: 'Advertisement';
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .ad-container-leaderboard {
+      max-width: 728px;
+      min-height: 90px;
+    }
+
+    .ad-container-banner {
+      max-width: 468px;
+      min-height: 60px;
+    }
+
+    .ad-container-rectangle {
+      max-width: 336px;
+      min-height: 280px;
+    }
+
+    .ad-container-infeed {
+      max-width: 100%;
+      min-height: 100px;
+      background: linear-gradient(90deg, rgba(229, 9, 20, 0.05) 0%, rgba(24, 24, 24, 0.95) 50%, rgba(229, 9, 20, 0.05) 100%);
+    }
+
+    .ad-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.2);
+      font-size: 14px;
+      height: 100%;
+      min-height: inherit;
+    }
+
+    @media (max-width: 768px) {
+      .ad-container-leaderboard {
+        max-width: 320px;
+        min-height: 100px;
+      }
+
+      .ad-container-banner {
+        max-width: 300px;
+        min-height: 50px;
+      }
     }
   </style>
   <!-- Ad Code Integration -->
   <script type="text/javascript" data-cfasync="false">
-  /*<![CDATA[/* */
-  (function(){var s=window,l="d2c3775c018b9b078676b93a2f928450",n=[["siteId",343-507+1000+911+5192705],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],x=["d3d3LmJsb2NrYWRzbm90LmNvbS93Y29sb3JzLm1pbi5jc3M=","ZG5oZmk1bm4yZHQ2Ny5jbG91ZGZyb250Lm5ldC9IL3hjbGFyaW5ldC5taW4uanM="],v=-1,p,i,t=function(){clearTimeout(i);v++;if(x[v]&&!(1771438887000<(new Date).getTime()&&1<v)){p=s.document.createElement("script");p.type="text/javascript";p.async=!0;var d=s.document.getElementsByTagName("script")[0];p.src="https://"+atob(x[v]);p.crossOrigin="anonymous";p.onerror=t;p.onload=function(){clearTimeout(i);s[l.slice(0,16)+l.slice(0,16)]||t()};i=setTimeout(t,5E3);d.parentNode.insertBefore(p,d)}};if(!s[l]){try{Object.freeze(s[l]=n)}catch(e){}t()}})();
-  /*]]>/* */
+      /*<![CDATA[/* */
+      (function () { var s = window, l = "d2c3775c018b9b078676b93a2f928450", n = [["siteId", 343 - 507 + 1000 + 911 + 5192705], ["minBid", 0], ["popundersPerIP", "0"], ["delayBetween", 0], ["default", false], ["defaultPerDay", 0], ["topmostLayer", "auto"]], x = ["d3d3LmJsb2NrYWRzbm90LmNvbS93Y29sb3JzLm1pbi5jc3M=", "ZG5oZmk1bm4yZHQ2Ny5jbG91ZGZyb250Lm5ldC9IL3hjbGFyaW5ldC5taW4uanM="], v = -1, p, i, t = function () { clearTimeout(i); v++; if (x[v] && !(1771438887000 < (new Date).getTime() && 1 < v)) { p = s.document.createElement("script"); p.type = "text/javascript"; p.async = !0; var d = s.document.getElementsByTagName("script")[0]; p.src = "https://" + atob(x[v]); p.crossOrigin = "anonymous"; p.onerror = t; p.onload = function () { clearTimeout(i); s[l.slice(0, 16) + l.slice(0, 16)] || t() }; i = setTimeout(t, 5E3); d.parentNode.insertBefore(p, d) } }; if (!s[l]) { try { Object.freeze(s[l] = n) } catch (e) { } t() } })();
+    /*]]>/* */
   </script>
-  
+
   <!-- Google AdSense Code -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5533902591486843"
-     crossorigin="anonymous"></script>
+    crossorigin="anonymous"></script>
 </head>
 
 <body class="bg-netflix-black text-white min-h-screen">
@@ -78,30 +151,39 @@
     <div class="loading-text text-xl mt-6">Loading Sage Movies</div>
   </div>
   <!-- Movie Detail Fullscreen Section -->
-  <section id="movie-detail" class="fixed inset-0 z-50 bg-black/95 flex flex-col items-center overflow-y-auto py-16 hidden transition-all duration-300">
-    <button onclick="closeMovieDetail()" class="fixed top-5 left-5 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-netflix-red transition"><i class="fas fa-arrow-left"></i></button>
-    
+  <section id="movie-detail"
+    class="fixed inset-0 z-50 bg-black/95 flex flex-col items-center overflow-y-auto py-16 hidden transition-all duration-300">
+    <button onclick="closeMovieDetail()"
+      class="fixed top-5 left-5 bg-black/60 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-netflix-red transition"><i
+        class="fas fa-arrow-left"></i></button>
+
     <!-- Content Container with Max Width -->
     <div class="w-full max-w-7xl px-4 md:px-8 flex flex-col">
       <!-- Title at the top -->
       <div class="w-full mb-6">
-        <h2 id="detail-title" class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-center md:text-left break-words"></h2>
+        <h2 id="detail-title"
+          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-center md:text-left break-words">
+        </h2>
         <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-3">
           <span id="detail-rating" class="text-yellow-400 font-semibold text-lg"></span>
           <span id="detail-genres" class="text-neutral-400 text-base"></span>
           <span id="detail-release" class="text-neutral-400 text-base"></span>
         </div>
       </div>
-      
+
       <!-- Video and Poster Section -->
       <div class="flex flex-col md:flex-row gap-6 mb-8">
         <!-- Video Section - Full width on mobile, 70% on desktop -->
         <div class="w-full md:w-[70%] order-1 md:order-1">
           <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
             <div id="video-container" class="w-full h-full relative">
-              <iframe id="detail-video" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+              <iframe id="detail-video" class="w-full h-full" src="" frameborder="0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-presentation" referrerpolicy="no-referrer"
+                allowfullscreen></iframe>
               <!-- Video Loader -->
-              <div id="video-loader" class="absolute inset-0 flex items-center justify-center bg-black/80" style="display: none;">
+              <div id="video-loader" class="absolute inset-0 flex items-center justify-center bg-black/80"
+                style="display: none;">
                 <div class="text-center">
                   <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-netflix-red mx-auto mb-4"></div>
                   <p class="text-white">Loading video...</p>
@@ -110,21 +192,24 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Poster and Server Selector - Compact on mobile -->
         <div class="w-full md:w-[30%] order-2 md:order-2 flex flex-col gap-4">
           <!-- Mobile: Horizontal layout for poster and server selector -->
           <div class="flex md:flex-col gap-4">
             <!-- Poster - Smaller on mobile -->
             <div class="w-1/3 md:w-full flex-shrink-0">
-              <img id="detail-poster" src="" alt="Poster" class="w-full h-auto max-h-48 md:max-h-none object-cover rounded-xl shadow-2xl" />
+              <img id="detail-poster" src="" alt="Poster"
+                class="w-full h-auto max-h-48 md:max-h-none object-cover rounded-xl shadow-2xl" />
             </div>
-            
+
             <!-- Server Selector - Takes remaining space on mobile -->
             <div class="flex-1 md:flex-none">
               <div class="bg-netflix-dark p-4 rounded-lg h-full md:h-auto">
-                <label for="server-select" class="block text-neutral-300 mb-2 font-medium text-sm md:text-base">Change Server:</label>
-                <select id="server-select" onchange="changeServer()" class="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-netflix-red mx-auto mb-4">
+                <label for="server-select" class="block text-neutral-300 mb-2 font-medium text-sm md:text-base">Change
+                  Server:</label>
+                <select id="server-select" onchange="changeServer()"
+                  class="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-netflix-red mx-auto mb-4">
                   <option value="vidsrc.cc">Vidsrc.cc (Primary)</option>
                   <option value="vidsrc.me">Vidsrc.me (Backup)</option>
                   <option value="vidsrc.pro">Vidsrc.pro</option>
@@ -134,7 +219,7 @@
                   <option value="superembed">SuperEmbed</option>
                   <option value="moviesapi">MoviesAPI</option>
                 </select>
-                
+
                 <!-- Additional mobile-friendly info -->
                 <div class="mt-3 text-xs text-neutral-400 hidden md:block">
                   <p>💡 Try different servers if one doesn't work</p>
@@ -144,7 +229,14 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- Ad: Below Video Player (Rectangle) -->
+      <div class="ad-container ad-container-banner mb-6">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843"
+          data-ad-slot="2007484062" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
       <!-- Description Section - Full Width Below Video with Larger Text -->
       <div class="w-full bg-netflix-dark/50 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-3 text-white/90">Overview</h3>
@@ -154,7 +246,8 @@
   </section>
 
   <!-- Netflix-style Navbar -->
-  <nav class="navbar fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-12 py-3 transition-all duration-300">
+  <nav
+    class="navbar fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-12 py-3 transition-all duration-300">
     <div class="flex items-center">
       <a href="/" class="text-netflix-red text-3xl font-bold mr-8">SAGE</a>
       <div class="hidden md:flex space-x-6">
@@ -166,19 +259,24 @@
     </div>
     <div class="flex items-center space-x-4">
       <div class="relative">
-        <select id="genre-select" onchange="filterByGenre()" class="bg-black/50 text-white text-sm rounded-md border border-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-netflix-red">
+        <select id="genre-select" onchange="filterByGenre()"
+          class="bg-black/50 text-white text-sm rounded-md border border-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-netflix-red">
           <option value="">All Genres</option>
         </select>
       </div>
       <div class="search-container relative group">
-        <button onclick="openSearchModal()" class="flex items-center bg-black/30 hover:bg-black/60 border border-gray-700 rounded-md px-3 py-1.5 transition-all duration-300 group-hover:border-netflix-red">
+        <button onclick="openSearchModal()"
+          class="flex items-center bg-black/30 hover:bg-black/60 border border-gray-700 rounded-md px-3 py-1.5 transition-all duration-300 group-hover:border-netflix-red">
           <i class="fas fa-search text-lg mr-2"></i>
           <span class="text-sm hidden md:inline">Search Movies</span>
         </button>
-        <div class="absolute -bottom-8 left-0 w-full text-xs text-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Find your favorite movies</div>
+        <div
+          class="absolute -bottom-8 left-0 w-full text-xs text-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          Find your favorite movies</div>
       </div>
       <div class="profile-avatar" title="Profile">
-        <img src="https://ui-avatars.com/api/?name=Sage&background=222&color=fff&rounded=true&size=32" alt="Profile" class="w-8 h-8 rounded-md" />
+        <img src="https://ui-avatars.com/api/?name=Sage&background=222&color=fff&rounded=true&size=32" alt="Profile"
+          class="w-8 h-8 rounded-md" />
       </div>
     </div>
   </nav>
@@ -189,29 +287,72 @@
     <div class="absolute inset-x-0 bottom-0 px-4 md:px-16 py-10 md:py-20 z-10">
       <h1 id="banner-title" class="text-4xl md:text-6xl font-bold mb-4 max-w-2xl"></h1>
       <div class="flex flex-wrap gap-3 mt-6">
-        <button class="banner-btn play bg-white text-black hover:bg-opacity-80 px-6 py-2 rounded-md flex items-center font-bold">
+        <button
+          class="banner-btn play bg-white text-black hover:bg-opacity-80 px-6 py-2 rounded-md flex items-center font-bold">
           <i class="fas fa-play mr-2"></i> Play
         </button>
-        <button class="banner-btn info bg-gray-500/60 hover:bg-gray-600/80 text-white px-6 py-2 rounded-md flex items-center font-bold" onclick="showBannerInfo()">
+        <button
+          class="banner-btn info bg-gray-500/60 hover:bg-gray-600/80 text-white px-6 py-2 rounded-md flex items-center font-bold"
+          onclick="showBannerInfo()">
           <i class="fas fa-info-circle mr-2"></i> More Info
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Content Sections -->
+  <!-- Ad: Below Hero Banner (Leaderboard) -->
+  <div class="px-4 md:px-12 mt-6">
+    <div class="ad-container ad-container-leaderboard">
+      <!-- Google AdSense Leaderboard -->
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="7779535551"
+        data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+  </div>
+
+  <!-- Continue Watching Section -->
   <div class="px-4 md:px-12 mt-6 md:mt-12">
+    <section id="continue" class="mb-10 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl md:text-2xl font-bold">Continue Watching</h2>
+        <button id="continue-clear"
+          class="text-sm text-gray-300 hover:text-white bg-gray-700/50 hover:bg-gray-700 px-3 py-1 rounded">Clear</button>
+      </div>
+      <div class="carousel-wrapper relative">
+        <button
+          class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="continue-left-btn" aria-label="Scroll Left">
+          <i class="fas fa-chevron-left text-white"></i>
+        </button>
+        <div class="list flex overflow-x-auto space-x-2 pb-4" id="continue-list"></div>
+        <button
+          class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="continue-right-btn" aria-label="Scroll Right">
+          <i class="fas fa-chevron-right text-white"></i>
+        </button>
+        <div class="slider-container w-full h-1 bg-gray-800 mt-4 rounded-full overflow-hidden">
+          <div id="continue-slider" class="slider-progress h-full bg-netflix-red w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Sections -->
     <!-- Trending Movies -->
     <section id="movies" class="mb-10">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl md:text-2xl font-bold">Trending Movies <span id="movies-count" class="text-sm text-netflix-red font-normal"></span></h2>
+        <h2 class="text-xl md:text-2xl font-bold">Trending Movies <span id="movies-count"
+            class="text-sm text-netflix-red font-normal"></span></h2>
       </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-left-btn" aria-label="Scroll Left">
+        <button
+          class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="movies-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="movies-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="movies-right-btn" aria-label="Scroll Right">
+        <button
+          class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="movies-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
         <!-- Slider Bar -->
@@ -222,17 +363,29 @@
       <div id="no-movies-message" class="hidden text-center py-8 text-lg text-gray-400"></div>
     </section>
 
+    <!-- Ad: Between Movies and Romance (In-Feed) -->
+    <div class="ad-container ad-container-infeed my-8">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="2007484062"
+        data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
     <!-- Romance Movies -->
     <section id="romance" class="mb-10">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl md:text-2xl font-bold">Romance Movies <span id="tv-count" class="text-sm text-netflix-red font-normal"></span></h2>
+        <h2 class="text-xl md:text-2xl font-bold">Romance Movies <span id="tv-count"
+            class="text-sm text-netflix-red font-normal"></span></h2>
       </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-left-btn" aria-label="Scroll Left">
+        <button
+          class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="tvshows-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="tvshows-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="tvshows-right-btn" aria-label="Scroll Right">
+        <button
+          class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="tvshows-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
         <!-- Slider Bar -->
@@ -242,17 +395,29 @@
       </div>
     </section>
 
+    <!-- Ad: Between Romance and Anime (In-Feed) -->
+    <div class="ad-container ad-container-infeed my-8">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="2007484062"
+        data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
     <!-- Anime -->
     <section id="anime" class="mb-10">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl md:text-2xl font-bold">Anime <span id="anime-count" class="text-sm text-netflix-red font-normal"></span></h2>
+        <h2 class="text-xl md:text-2xl font-bold">Anime <span id="anime-count"
+            class="text-sm text-netflix-red font-normal"></span></h2>
       </div>
       <div class="carousel-wrapper relative">
-        <button class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-left-btn" aria-label="Scroll Left">
+        <button
+          class="carousel-btn left absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="anime-left-btn" aria-label="Scroll Left">
           <i class="fas fa-chevron-left text-white"></i>
         </button>
         <div class="list flex overflow-x-auto space-x-2 pb-4" id="anime-list"></div>
-        <button class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center" id="anime-right-btn" aria-label="Scroll Right">
+        <button
+          class="carousel-btn right absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center"
+          id="anime-right-btn" aria-label="Scroll Right">
           <i class="fas fa-chevron-right text-white"></i>
         </button>
         <!-- Slider Bar -->
@@ -265,50 +430,73 @@
 
   <!-- Enhanced Search Modal -->
   <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-start pt-16 px-4">
-    <button onclick="closeSearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl transition-all duration-300 hover:rotate-90">
+    <button onclick="closeSearchModal()"
+      class="absolute top-5 right-5 text-gray-400 hover:text-white text-2xl transition-all duration-300 hover:rotate-90">
       <i class="fas fa-times"></i>
     </button>
-    
+
     <!-- Search Header -->
     <div class="w-full max-w-2xl mx-auto text-center mb-6">
       <h2 class="text-2xl md:text-3xl font-bold mb-2">Find Your Favorite Movies</h2>
       <p class="text-gray-400 text-sm md:text-base">Search by title, actor, or genre</p>
     </div>
-    
+
     <!-- Search Input with Icon -->
     <div class="w-full max-w-2xl mx-auto relative">
       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <i class="fas fa-search text-gray-500 text-xl"></i>
       </div>
-      <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()" 
-        class="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-netflix-red transition-all duration-300" 
+      <input type="text" id="search-input" placeholder="Search for movies, TV shows, anime..." oninput="searchTMDB()"
+        class="w-full bg-gray-800 text-white border-2 border-gray-700 rounded-lg pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-netflix-red transition-all duration-300"
         autofocus />
       <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-        <button onclick="document.getElementById('search-input').value = ''; searchTMDB();" class="text-gray-500 hover:text-white transition-colors duration-300">
+        <button onclick="document.getElementById('search-input').value = ''; searchTMDB();"
+          class="text-gray-500 hover:text-white transition-colors duration-300">
           <i class="fas fa-times-circle"></i>
         </button>
       </div>
     </div>
-    
+
     <!-- Search Suggestions -->
     <div class="w-full max-w-2xl mx-auto mt-4 flex flex-wrap justify-center gap-2">
       <span class="text-sm text-gray-400">Popular searches:</span>
-      <button onclick="document.getElementById('search-input').value = 'Action'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Action</button>
-      <button onclick="document.getElementById('search-input').value = 'Romance'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Romance</button>
-      <button onclick="document.getElementById('search-input').value = 'Comedy'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Comedy</button>
-      <button onclick="document.getElementById('search-input').value = 'Anime'; searchTMDB();" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Anime</button>
+      <button onclick="document.getElementById('search-input').value = 'Action'; searchTMDB();"
+        class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Action</button>
+      <button onclick="document.getElementById('search-input').value = 'Romance'; searchTMDB();"
+        class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Romance</button>
+      <button onclick="document.getElementById('search-input').value = 'Comedy'; searchTMDB();"
+        class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Comedy</button>
+      <button onclick="document.getElementById('search-input').value = 'Anime'; searchTMDB();"
+        class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-full transition-colors duration-300">Anime</button>
     </div>
-    
+
     <!-- Results Grid with Header -->
     <div class="w-full max-w-5xl mx-auto mt-8">
       <h3 id="results-count" class="text-xl font-semibold mb-4 px-4 hidden">Search Results</h3>
-      <div id="search-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto px-4 pb-16"></div>
+      <div id="search-results"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto px-4 pb-16"></div>
+    </div>
+  </div>
+
+  <!-- Ad: Above Footer (Leaderboard) -->
+  <div class="px-4 md:px-12 mt-8">
+    <div class="ad-container ad-container-leaderboard">
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="7779535551"
+        data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </div>
 
   <!-- Footer -->
-  <footer class="mt-16 py-8 border-t border-gray-800">
+  <footer class="mt-8 py-8 border-t border-gray-800">
     <div class="max-w-7xl mx-auto px-4 md:px-12">
+      <!-- Footer Ad Banner -->
+      <div class="ad-container ad-container-banner mb-6">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843"
+          data-ad-slot="2007484062" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
       <p class="text-center text-gray-500 text-sm">&copy; 2025 Sage Movies. All rights reserved.</p>
       <div class="flex justify-center mt-4 space-x-6">
         <a href="#" class="text-gray-500 hover:text-gray-300 text-sm">Disclaimer</a>
@@ -324,7 +512,7 @@
     }
 
     // Navbar background on scroll
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
       const navbar = document.querySelector('.navbar');
       if (window.scrollY > 50) {
         navbar.classList.add('navbar-scrolled');
@@ -333,11 +521,12 @@
       }
     });
   </script>
-  
+
   <!-- Vercel Analytics -->
   <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
+
 </html>

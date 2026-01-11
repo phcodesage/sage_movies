@@ -9,16 +9,126 @@ window.addEventListener('scroll', function() {
   }
 });
 
+// --- Continue Watching (localStorage) ---
+function getContinueWatching() {
+  try {
+    const raw = localStorage.getItem(CW_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveToContinueWatching(item) {
+  if (!item || !item.id) return;
+  const list = getContinueWatching();
+  const now = Date.now();
+  // Normalize minimal fields required for rendering
+  const record = {
+    id: item.id,
+    title: item.title || item.name || 'Unknown Title',
+    poster_path: item.poster_path || null,
+    backdrop_path: item.backdrop_path || null,
+    media_type: item.media_type || (item.first_air_date ? 'tv' : 'movie'),
+    lastWatched: now
+  };
+  const idx = list.findIndex(x => x.id === record.id);
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...record, lastWatched: now };
+  } else {
+    list.unshift(record);
+  }
+  // Keep at most 20
+  const trimmed = list
+    .sort((a, b) => (b.lastWatched || 0) - (a.lastWatched || 0))
+    .slice(0, 20);
+  try {
+    localStorage.setItem(CW_KEY, JSON.stringify(trimmed));
+  } catch (e) {
+    // ignore quota errors
+  }
+}
+
+function renderContinueWatching() {
+  const section = document.getElementById('continue');
+  const container = document.getElementById('continue-list');
+  if (!section || !container) return;
+  const items = getContinueWatching();
+  if (!items || items.length === 0) {
+    section.classList.add('hidden');
+    container.innerHTML = '';
+    return;
+  }
+  section.classList.remove('hidden');
+  container.innerHTML = '';
+  items.forEach(item => {
+    if (!item.poster_path) return;
+    const img = document.createElement('img');
+    img.src = `${IMG_URL}${item.poster_path}`;
+    img.alt = item.title || 'Unknown Title';
+    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110';
+    img.onclick = () => {
+      // Reopen details using saved minimal record
+      showDetails({
+        id: item.id,
+        title: item.title,
+        name: item.title,
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        media_type: item.media_type
+      });
+    };
+    container.appendChild(img);
+  });
+  animatePosters();
+}
+
 // Global variables
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 let currentItem;
 let allMovies = [];
 let bannerMovie = null;
+const DEFAULT_TITLE = document.title || 'Sage Movies';
+const CW_KEY = 'sage_movies_continue';
+let isNavigatingFromURL = false;
+
+function slugify(text) {
+  return (text || '')
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+}
 
 // Show movie details in fullscreen view
 function showDetails(item) {
   // Store current item for server switching
   currentItem = item;
+  // Save to Continue Watching
+  try {
+    saveToContinueWatching(item);
+    // Re-render Continue Watching section
+    renderContinueWatching();
+  } catch (e) {
+    console.error('Error saving continue watching:', e);
+  }
+  // Update page title for better history discoverability
+  try {
+    const title = currentItem.title || currentItem.name;
+    if (title) document.title = `${title} - Sage Movies`;
+  } catch (_) {}
+  // Push URL for deep-linking (unless we are already handling a URL navigation)
+  try {
+    if (!isNavigatingFromURL) {
+      const type = currentItem.media_type === 'tv' ? 'tv' : 'movie';
+      const title = currentItem.title || currentItem.name || 'watch';
+      const path = `/watch/${type}/${currentItem.id}-${slugify(title)}`;
+      history.pushState({ type, id: currentItem.id, title }, '', path);
+    }
+  } catch (_) {}
   
   // Hide main UI
   document.body.classList.add('overflow-hidden');
@@ -80,6 +190,14 @@ function closeMovieDetail() {
   document.getElementById('movie-detail').classList.add('hidden');
   document.getElementById('movie-detail').classList.remove('flex');
   document.getElementById('detail-video').src = '';
+  // Return to home URL if we were on a /watch route (replace to avoid extra entries)
+  try {
+    if (location.pathname.startsWith('/watch/')) {
+      history.replaceState({}, '', '/');
+    }
+  } catch (_) {}
+  // Restore default title
+  try { document.title = DEFAULT_TITLE; } catch (_) {}
 }
 
 // Open search modal
@@ -350,6 +468,7 @@ function setupAllCarousels() {
   setupCarousel('movies-list', 'movies-left-btn', 'movies-right-btn', 'movies-slider');
   setupCarousel('tvshows-list', 'tvshows-left-btn', 'tvshows-right-btn', 'tvshows-slider');
   setupCarousel('anime-list', 'anime-left-btn', 'anime-right-btn', 'anime-slider');
+  setupCarousel('continue-list', 'continue-left-btn', 'continue-right-btn', 'continue-slider');
 }
 
 document.addEventListener('DOMContentLoaded', setupAllCarousels);
@@ -421,6 +540,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (banner) {
     banner.classList.add('transition-opacity', 'duration-300');
   }
+
+  // Clear history button handler
+  const clearBtn = document.getElementById('continue-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      try {
+        localStorage.removeItem(CW_KEY);
+      } catch (_) {}
+      renderContinueWatching();
+    });
+  }
+
+  // Handle initial deep link
+  handleInitialURL();
+
+  // Handle back/forward
+  window.addEventListener('popstate', () => {
+    handlePopState();
+  });
 });
 
 // Display movies/shows in a container
@@ -672,6 +810,10 @@ async function init() {
     });
     
     // Fetch all content in parallel but track each one
+    // Render Continue Watching immediately from localStorage
+    const cwTask = trackTask();
+    try { renderContinueWatching(); } finally { cwTask(); }
+
     const moviesTask = trackTask();
     fetchTrending('movie', 'movies-list')
       .then(() => {
@@ -704,3 +846,64 @@ async function init() {
 
 // Start the app
 init();
+
+// --- Deep linking helpers ---
+function parseWatchPath(pathname) {
+  // Expecting /watch/:type/:id-slug
+  const m = pathname.match(/^\/watch\/(movie|tv)\/(\d+)(?:-[a-z0-9-]+)?$/);
+  if (!m) return null;
+  return { type: m[1], id: m[2] };
+}
+
+async function handleInitialURL() {
+  const parsed = parseWatchPath(location.pathname);
+  if (!parsed) return;
+  try {
+    isNavigatingFromURL = true;
+    const res = await fetch(`/api/details/${parsed.type}/${parsed.id}`);
+    const item = await res.json();
+    if (item && item.id) {
+      showDetails(item);
+      // Set title explicitly on initial navigation
+      try {
+        const t = item.title || item.name;
+        if (t) document.title = `${t} - Sage Movies`;
+      } catch (_) {}
+    }
+  } catch (e) {
+    console.error('Failed to load item from URL:', e);
+  } finally {
+    isNavigatingFromURL = false;
+  }
+}
+
+async function handlePopState() {
+  const parsed = parseWatchPath(location.pathname);
+  if (parsed) {
+    try {
+      isNavigatingFromURL = true;
+      const res = await fetch(`/api/details/${parsed.type}/${parsed.id}`);
+      const item = await res.json();
+      if (item && item.id) {
+        showDetails(item);
+        // Update title for history entry
+        try {
+          const t = item.title || item.name;
+          if (t) document.title = `${t} - Sage Movies`;
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.error('Failed to load item from URL (popstate):', e);
+    } finally {
+      isNavigatingFromURL = false;
+    }
+  } else {
+    // Not a watch route; ensure detail is closed
+    const detail = document.getElementById('movie-detail');
+    if (detail && !detail.classList.contains('hidden')) {
+      closeMovieDetail();
+    }
+    // Restore default title when navigating home
+    try { document.title = DEFAULT_TITLE; } catch (_) {}
+  }
+}

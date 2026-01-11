@@ -547,6 +547,66 @@ app.get('/api/anime/collection', async (req, res) => {
   }
 });
 
+// Server health checking endpoint
+app.get('/api/server-status', async (req, res) => {
+  const servers = [
+    { name: 'vidsrc.cc', url: 'https://vidsrc.cc' },
+    { name: 'vidsrc.me', url: 'https://vidsrc.net' },
+    { name: 'vidsrc.pro', url: 'https://vidsrc.pro' },
+    { name: 'embedsu', url: 'https://embed.su' },
+    { name: '2embed', url: 'https://www.2embed.cc' },
+    { name: 'player.videasy.net', url: 'https://player.videasy.net' }
+  ];
+  const serverStatus = await Promise.allSettled(
+    servers.map(async (server) => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(server.url, { method: 'HEAD', signal: controller.signal });
+        clearTimeout(timeoutId);
+        return { name: server.name, status: response.ok ? 'online' : 'offline' };
+      } catch (error) {
+        return { name: server.name, status: 'offline' };
+      }
+    })
+  );
+  const results = serverStatus.map(result => result.status === 'fulfilled' ? result.value : { name: 'unknown', status: 'error' });
+  res.json({ servers: results });
+});
+
+// Fetch details by type and ID (for deep links)
+app.get('/api/details/:type/:id', async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    if (!['movie', 'tv'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
+    const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${process.env.TMDB_API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Failed to fetch details' });
+    }
+    const data = await response.json();
+    // Normalize fields to align with frontend expectations
+    const normalized = {
+      id: data.id,
+      title: data.title || data.name,
+      name: data.name || data.title,
+      overview: data.overview || '',
+      vote_average: data.vote_average,
+      release_date: data.release_date || data.first_air_date,
+      poster_path: data.poster_path,
+      backdrop_path: data.backdrop_path,
+      genres: data.genres || [],
+      media_type: type
+    };
+    res.json(normalized);
+  } catch (error) {
+    console.error('Error fetching details:', error);
+    res.status(500).json({ error: 'Failed to fetch details' });
+  }
+});
+
 // Serve the main app for any other route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
