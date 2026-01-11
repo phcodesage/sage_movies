@@ -72,6 +72,8 @@
       text-align: center;
       position: relative;
       overflow: hidden;
+      width: 100%;
+      min-width: 300px;
     }
 
     .ad-container::before {
@@ -88,22 +90,32 @@
     .ad-container-leaderboard {
       max-width: 728px;
       min-height: 90px;
+      min-width: 320px;
     }
 
     .ad-container-banner {
       max-width: 468px;
       min-height: 60px;
+      min-width: 300px;
     }
 
     .ad-container-rectangle {
       max-width: 336px;
       min-height: 280px;
+      min-width: 300px;
     }
 
     .ad-container-infeed {
       max-width: 100%;
       min-height: 100px;
+      min-width: 300px;
       background: linear-gradient(90deg, rgba(229, 9, 20, 0.05) 0%, rgba(24, 24, 24, 0.95) 50%, rgba(229, 9, 20, 0.05) 100%);
+    }
+
+    .ad-container .adsbygoogle {
+      display: block;
+      width: 100%;
+      min-height: 90px;
     }
 
     .ad-placeholder {
@@ -230,13 +242,6 @@
         </div>
       </div>
 
-      <!-- Ad: Below Video Player (Rectangle) -->
-      <div class="ad-container ad-container-banner mb-6">
-        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843"
-          data-ad-slot="2007484062" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
-
       <!-- Description Section - Full Width Below Video with Larger Text -->
       <div class="w-full bg-netflix-dark/50 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-3 text-white/90">Overview</h3>
@@ -302,11 +307,10 @@
 
   <!-- Ad: Below Hero Banner (Leaderboard) -->
   <div class="px-4 md:px-12 mt-6">
-    <div class="ad-container ad-container-leaderboard">
+    <div class="ad-container ad-container-leaderboard" id="ad-hero">
       <!-- Google AdSense Leaderboard -->
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="7779535551"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </div>
 
@@ -364,10 +368,9 @@
     </section>
 
     <!-- Ad: Between Movies and Romance (In-Feed) -->
-    <div class="ad-container ad-container-infeed my-8">
+    <div class="ad-container ad-container-infeed my-8" id="ad-movies-romance">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="2007484062"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
     <!-- Romance Movies -->
@@ -396,10 +399,9 @@
     </section>
 
     <!-- Ad: Between Romance and Anime (In-Feed) -->
-    <div class="ad-container ad-container-infeed my-8">
+    <div class="ad-container ad-container-infeed my-8" id="ad-romance-anime">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="2007484062"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
     <!-- Anime -->
@@ -480,10 +482,9 @@
 
   <!-- Ad: Above Footer (Leaderboard) -->
   <div class="px-4 md:px-12 mt-8">
-    <div class="ad-container ad-container-leaderboard">
+    <div class="ad-container ad-container-leaderboard" id="ad-footer-top">
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843" data-ad-slot="7779535551"
         data-ad-format="auto" data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </div>
 
@@ -491,10 +492,9 @@
   <footer class="mt-8 py-8 border-t border-gray-800">
     <div class="max-w-7xl mx-auto px-4 md:px-12">
       <!-- Footer Ad Banner -->
-      <div class="ad-container ad-container-banner mb-6">
+      <div class="ad-container ad-container-banner mb-6" id="ad-footer-banner">
         <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5533902591486843"
           data-ad-slot="2007484062" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
 
       <p class="text-center text-gray-500 text-sm">&copy; 2025 Sage Movies. All rights reserved.</p>
@@ -519,6 +519,36 @@
       } else {
         navbar.classList.remove('navbar-scrolled');
       }
+    });
+
+    // Lazy load AdSense ads when they become visible
+    document.addEventListener('DOMContentLoaded', function () {
+      // Initialize ads with IntersectionObserver for lazy loading
+      const adContainers = document.querySelectorAll('.ad-container');
+
+      const adObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const adElement = entry.target.querySelector('.adsbygoogle');
+            if (adElement && !adElement.dataset.adLoaded) {
+              try {
+                (adsbygoogle = window.adsbygoogle || []).push({});
+                adElement.dataset.adLoaded = 'true';
+              } catch (e) {
+                console.log('AdSense error:', e);
+              }
+            }
+            adObserver.unobserve(entry.target);
+          }
+        });
+      }, {
+        rootMargin: '200px 0px', // Load ads 200px before they come into view
+        threshold: 0
+      });
+
+      adContainers.forEach(container => {
+        adObserver.observe(container);
+      });
     });
   </script>
 
