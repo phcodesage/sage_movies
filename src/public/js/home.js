@@ -606,6 +606,12 @@ async function fetchGenres() {
     const res = await fetch('/api/genres');
     const data = await res.json();
     
+    // Safety check for genres data
+    if (!data || !data.genres || !Array.isArray(data.genres)) {
+      console.warn('Invalid genres data received:', data);
+      return;
+    }
+    
     // Store genres globally
     window.SAGE_MOVIES_CONFIG = window.SAGE_MOVIES_CONFIG || {};
     window.SAGE_MOVIES_CONFIG.GENRES = {};
@@ -613,12 +619,14 @@ async function fetchGenres() {
     
     // Populate genre dropdown
     const genreSelect = document.getElementById('genre-select');
-    data.genres.forEach(genre => {
-      const option = document.createElement('option');
-      option.value = genre.id;
-      option.textContent = genre.name;
-      genreSelect.appendChild(option);
-    });
+    if (genreSelect) {
+      data.genres.forEach(genre => {
+        const option = document.createElement('option');
+        option.value = genre.id;
+        option.textContent = genre.name;
+        genreSelect.appendChild(option);
+      });
+    }
   } catch (error) {
     console.error('Error fetching genres:', error);
   }
