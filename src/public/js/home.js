@@ -189,6 +189,12 @@ function slugify(text) {
 function showDetails(item) {
   // Store current item for server switching
   currentItem = item;
+  
+  // Track movie view
+  if (typeof trackMovieView === 'function') {
+    trackMovieView(item.id, item.title || item.name);
+  }
+  
   // Save to Continue Watching
   try {
     saveToContinueWatching(item);
@@ -261,6 +267,11 @@ async function changeServer() {
     
     // Set the iframe source
     document.getElementById('detail-video').src = data.embedURL;
+    
+    // Track video play when source is set
+    if (typeof trackMoviePlay === 'function') {
+      trackMoviePlay(currentItem.id, currentItem.title || currentItem.name);
+    }
   } catch (error) {
     console.error('Error changing server:', error);
   }
@@ -1267,7 +1278,24 @@ document.addEventListener('DOMContentLoaded', function() {
   settingsControls.forEach(id => {
     const element = document.getElementById(id);
     if (element) {
-      element.addEventListener('change', saveSettings);
+      // For checkboxes (toggle switches), listen to change event
+      if (element.type === 'checkbox') {
+        element.addEventListener('change', function() {
+          saveSettings();
+          // Provide visual feedback for toggle switches
+          const slider = this.nextElementSibling;
+          if (slider && slider.classList.contains('toggle-slider')) {
+            if (this.checked) {
+              slider.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(229, 9, 20, 0.3)';
+            } else {
+              slider.style.boxShadow = 'inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(255, 255, 255, 0.05)';
+            }
+          }
+        });
+      } else {
+        // For selects and other inputs
+        element.addEventListener('change', saveSettings);
+      }
     }
   });
   

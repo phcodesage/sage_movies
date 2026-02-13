@@ -27,6 +27,7 @@
       }
     }
   </script>
+  <script defer src="js/tracker.js"></script>
   <script defer src="js/home.js"></script>
   <style>
     body {
@@ -182,21 +183,23 @@
         <a href="#movies" class="text-sm font-medium hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-netflix-red rounded px-2 py-1" tabindex="0">Movies</a>
         <a href="#romance" class="text-sm font-medium hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-netflix-red rounded px-2 py-1" tabindex="0">Romance</a>
         <a href="#anime" class="text-sm font-medium hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-netflix-red rounded px-2 py-1" tabindex="0">Anime</a>
+        <a href="/analytics.html" class="text-sm font-medium hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-netflix-red rounded px-2 py-1" tabindex="0">Analytics</a>
       </div>
     </div>
     <div class="flex items-center space-x-4">
-      <div class="relative">
+      <div class="genre-select-container relative">
         <label for="genre-select" class="sr-only">Filter by genre</label>
         <select id="genre-select" onchange="filterByGenre()"
-          class="bg-black/50 text-white text-sm rounded-md border border-gray-700 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-netflix-red" aria-label="Filter movies by genre">
+          class="w-full focus:outline-none" aria-label="Filter movies by genre">
           <option value="">All Genres</option>
         </select>
       </div>
       <!-- Settings Button -->
       <button id="settings-btn" onclick="toggleSettingsPanel()" 
-        class="p-2 rounded-full hover:bg-gray-800 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-netflix-red" 
+        class="settings-btn" 
         aria-label="Open settings">
-        <i class="fas fa-cog text-xl"></i>
+        <i class="fas fa-cog"></i>
+        <span class="hidden md:inline">Settings</span>
       </button>
       <div class="search-container relative group">
         <button onclick="openSearchModal()" id="search-button"
@@ -431,7 +434,7 @@
     <div class="p-6 flex-1 overflow-y-auto">
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-2xl font-bold">Settings</h2>
-        <button onclick="toggleSettingsPanel()" class="text-gray-400 hover:text-white text-2xl focus:outline-none">
+        <button onclick="toggleSettingsPanel()" class="close-btn text-2xl focus:outline-none">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -442,17 +445,17 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <span>Dark Mode</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="dark-mode-toggle" class="sr-only" checked>
-              <div class="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-netflix-red"></div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="dark-mode-toggle" checked>
+              <span class="toggle-slider"></span>
             </label>
           </div>
           
           <div class="flex items-center justify-between">
             <span>Reduce Motion</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="reduce-motion-toggle" class="sr-only">
-              <div class="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-netflix-red"></div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="reduce-motion-toggle">
+              <span class="toggle-slider"></span>
             </label>
           </div>
         </div>
@@ -488,9 +491,9 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <span>Auto Play Trailers</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="autoplay-toggle" class="sr-only">
-              <div class="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-netflix-red"></div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autoplay-toggle">
+              <span class="toggle-slider"></span>
             </label>
           </div>
           

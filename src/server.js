@@ -22,6 +22,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware for parsing JSON bodies
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Middleware to log all requests
 app.use((req, res, next) => {
   const start = Date.now();
@@ -546,6 +550,190 @@ app.get('/api/anime/collection', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch anime collection' });
   }
 });
+
+// Analytics tracking endpoint
+app.post('/api/analytics/track', (req, res) => {
+  try {
+    const { eventType, eventData, userAgent, ipAddress, timestamp } = req.body;
+    
+    // In a production environment, you'd store this in a database
+    // For now, we'll log it and store in memory
+    const analyticsEvent = {
+      id: Date.now() + Math.random(),
+      eventType,
+      eventData,
+      userAgent: userAgent || req.get('User-Agent'),
+      ipAddress: ipAddress || req.ip,
+      timestamp: timestamp || new Date().toISOString(),
+      sessionId: req.sessionId || 'anonymous'
+    };
+    
+    // Store in memory (in production, use Redis or database)
+    if (!global.analyticsData) {
+      global.analyticsData = [];
+    }
+    
+    global.analyticsData.push(analyticsEvent);
+    
+    // Keep only last 10000 events to prevent memory issues
+    if (global.analyticsData.length > 10000) {
+      global.analyticsData = global.analyticsData.slice(-10000);
+    }
+    
+    console.log(`[ANALYTICS] ${eventType} tracked:`, eventData);
+    
+    res.json({ success: true, eventId: analyticsEvent.id });
+  } catch (error) {
+    console.error('Analytics tracking error:', error);
+    res.status(500).json({ error: 'Failed to track event' });
+  }
+});
+
+// Analytics data retrieval endpoint
+app.get('/api/analytics/data', (req, res) => {
+  try {
+    const { startTime, endTime, eventType } = req.query;
+    
+    let filteredData = global.analyticsData || [];
+    
+    // Filter by time range
+    if (startTime) {
+      filteredData = filteredData.filter(event => 
+        new Date(event.timestamp) >= new Date(startTime)
+      );
+    }
+    
+    if (endTime) {
+      filteredData = filteredData.filter(event => 
+        new Date(event.timestamp) <= new Date(endTime)
+      );
+    }
+    
+    // Filter by event type
+    if (eventType) {
+      filteredData = filteredData.filter(event => event.eventType === eventType);
+    }
+    
+    // Process analytics data
+    const analyticsSummary = processAnalyticsData(filteredData);
+    
+    res.json({
+      success: true,
+      data: analyticsSummary,
+      totalEvents: filteredData.length,
+      timeRange: { startTime, endTime }
+    });
+  } catch (error) {
+    console.error('Analytics data retrieval error:', error);
+    res.status(500).json({ error: 'Failed to retrieve analytics data' });
+  }
+});
+
+// Helper function to process analytics data
+function processAnalyticsData(events) {
+  const summary = {
+    totalVisits: 0,
+    uniqueVisitors: new Set(),
+    pageViews: {},
+    clicks: {},
+    countries: {},
+    devices: {},
+    browsers: {},
+    operatingSystems: {},
+    hourlyActivity: {},
+    dailyActivity: {},
+    popularContent: {},
+    conversionRate: 0
+  };
+  
+  events.forEach(event => {
+    // Count visits and unique visitors
+    summary.totalVisits++;
+    summary.uniqueVisitors.add(event.sessionId);
+    
+    // Parse user agent for device/browser info
+    const userAgentInfo = parseUserAgent(event.userAgent);
+    
+    // Track device types
+    const deviceType = userAgentInfo.device || 'Unknown';
+    summary.devices[deviceType] = (summary.devices[deviceType] || 0) + 1;
+    
+    // Track browsers
+    const browser = userAgentInfo.browser || 'Unknown';
+    summary.browsers[browser] = (summary.browsers[browser] || 0) + 1;
+    
+    // Track operating systems
+    const os = userAgentInfo.os || 'Unknown';
+    summary.operatingSystems[os] = (summary.operatingSystems[os] || 0) + 1;
+    
+    // Track page views
+    if (event.eventType === 'page_view') {
+      const page = event.eventData?.page || 'Unknown';
+      summary.pageViews[page] = (summary.pageViews[page] || 0) + 1;
+    }
+    
+    // Track clicks
+    if (event.eventType === 'click') {
+      const element = event.eventData?.element || 'Unknown';
+      summary.clicks[element] = (summary.clicks[element] || 0) + 1;
+    }
+    
+    // Track popular content
+    if (event.eventData?.contentId) {
+      const contentId = event.eventData.contentId;
+      summary.popularContent[contentId] = (summary.popularContent[contentId] || 0) + 1;
+    }
+    
+    // Track hourly activity
+    const hour = new Date(event.timestamp).getHours();
+    summary.hourlyActivity[hour] = (summary.hourlyActivity[hour] || 0) + 1;
+    
+    // Track daily activity
+    const date = new Date(event.timestamp).toDateString();
+    summary.dailyActivity[date] = (summary.dailyActivity[date] || 0) + 1;
+  });
+  
+  // Convert Set to number for unique visitors
+  summary.uniqueVisitors = summary.uniqueVisitors.size;
+  
+  // Calculate conversion rate (clicks/page_views if both exist)
+  const totalPageViews = Object.values(summary.pageViews).reduce((sum, count) => sum + count, 0);
+  const totalClicks = Object.values(summary.clicks).reduce((sum, count) => sum + count, 0);
+  summary.conversionRate = totalPageViews > 0 ? (totalClicks / totalPageViews * 100) : 0;
+  
+  return summary;
+}
+
+// Simple user agent parsing (in production, use a proper library like ua-parser-js)
+function parseUserAgent(userAgent) {
+  if (!userAgent) return { device: 'Unknown', browser: 'Unknown', os: 'Unknown' };
+  
+  let device = 'Desktop';
+  let browser = 'Unknown';
+  let os = 'Unknown';
+  
+  // Device detection
+  if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+    device = 'Mobile';
+  } else if (/tablet|ipad/i.test(userAgent)) {
+    device = 'Tablet';
+  }
+  
+  // Browser detection
+  if (/chrome/i.test(userAgent)) browser = 'Chrome';
+  else if (/firefox/i.test(userAgent)) browser = 'Firefox';
+  else if (/safari/i.test(userAgent)) browser = 'Safari';
+  else if (/edge/i.test(userAgent)) browser = 'Edge';
+  
+  // OS detection
+  if (/windows/i.test(userAgent)) os = 'Windows';
+  else if (/macintosh|mac os/i.test(userAgent)) os = 'macOS';
+  else if (/linux/i.test(userAgent)) os = 'Linux';
+  else if (/android/i.test(userAgent)) os = 'Android';
+  else if (/iphone|ipad/i.test(userAgent)) os = 'iOS';
+  
+  return { device, browser, os };
+}
 
 // Server health checking endpoint
 app.get('/api/server-status', async (req, res) => {

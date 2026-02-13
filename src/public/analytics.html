@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard - Sage Movies</title>
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            netflix: {
+              red: '#e50914',
+              black: '#141414',
+              dark: '#181818',
+              gray: '#808080'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #141414;
+      color: white;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    
+    .dashboard-card {
+      background: rgba(31, 31, 31, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      border-color: rgba(229, 9, 20, 0.3);
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e50914;
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      color: #b3b3b3;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    
+    .metric-card {
+      background: rgba(229, 9, 20, 0.1);
+      border-left: 4px solid #e50914;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .metric-label {
+      font-size: 0.9rem;
+      color: #b3b3b3;
+    }
+    
+    .loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #e50914;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .time-filter {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: white;
+    }
+    
+    .time-filter:focus {
+      outline: none;
+      border-color: #e50914;
+      box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-netflix-black text-white min-h-screen">
+  <!-- Navigation -->
+  <nav class="navbar fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 py-4 bg-netflix-black/90 backdrop-blur-lg border-b border-gray-800">
+    <div class="flex items-center">
+      <a href="/" class="text-netflix-red text-2xl font-bold mr-8">SAGE</a>
+      <div class="flex space-x-6">
+        <a href="/" class="text-sm font-medium hover:text-gray-300">Home</a>
+        <a href="/analytics.html" class="text-sm font-medium text-netflix-red">Analytics</a>
+      </div>
+    </div>
+    <div class="flex items-center space-x-4">
+      <select id="time-range" class="time-filter" onchange="loadAnalytics()">
+        <option value="24h">Last 24 Hours</option>
+        <option value="7d" selected>Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+        <option value="90d">Last 90 Days</option>
+      </select>
+      <button onclick="loadAnalytics()" class="bg-netflix-red hover:bg-opacity-80 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+        <i class="fas fa-sync-alt mr-2"></i>Refresh
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="pt-24 px-6 pb-12">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Analytics Dashboard</h1>
+        <p class="text-gray-400">Track your site's performance and user engagement</p>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div id="loading-indicator" class="loading-spinner"></div>
+
+      <!-- Key Metrics -->
+      <div id="metrics-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
+        <div class="dashboard-card">
+          <div class="stat-number" id="total-visits">0</div>
+          <div class="stat-label">Total Visits</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="stat-number" id="unique-visitors">0</div>
+          <div class="stat-label">Unique Visitors</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="stat-number" id="conversion-rate">0%</div>
+          <div class="stat-label">Conversion Rate</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="stat-number" id="avg-session">0s</div>
+          <div class="stat-label">Avg. Session</div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div id="charts-section" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 hidden">
+        <!-- Traffic Overview Chart -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Traffic Overview</h3>
+          <div class="chart-container">
+            <canvas id="traffic-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Device Distribution Chart -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Device Distribution</h3>
+          <div class="chart-container">
+            <canvas id="device-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Browser Distribution Chart -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Browser Distribution</h3>
+          <div class="chart-container">
+            <canvas id="browser-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Operating System Chart -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Operating Systems</h3>
+          <div class="chart-container">
+            <canvas id="os-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Metrics -->
+      <div id="details-section" class="grid grid-cols-1 lg:grid-cols-3 gap-8 hidden">
+        <!-- Top Pages -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Top Pages</h3>
+          <div id="top-pages"></div>
+        </div>
+
+        <!-- Top Clicks -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Popular Elements</h3>
+          <div id="top-clicks"></div>
+        </div>
+
+        <!-- Popular Content -->
+        <div class="dashboard-card">
+          <h3 class="text-xl font-semibold mb-4">Popular Movies</h3>
+          <div id="popular-content"></div>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div id="error-message" class="hidden text-center py-12">
+        <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+        <h3 class="text-xl font-semibold mb-2">Unable to Load Analytics</h3>
+        <p class="text-gray-400 mb-4">There was an error loading the analytics data.</p>
+        <button onclick="loadAnalytics()" class="bg-netflix-red hover:bg-opacity-80 px-6 py-3 rounded-md font-medium">
+          Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/analytics.js"></script>
+</body>
+</html>
