@@ -9,6 +9,80 @@ window.addEventListener('scroll', function() {
   }
 });
 
+// Keyboard navigation support
+document.addEventListener('keydown', function(e) {
+  // ESC key to close modals
+  if (e.key === 'Escape') {
+    const searchModal = document.getElementById('search-modal');
+    const movieDetail = document.getElementById('movie-detail');
+    
+    if (searchModal && !searchModal.classList.contains('hidden')) {
+      closeSearchModal();
+    } else if (movieDetail && !movieDetail.classList.contains('hidden')) {
+      closeMovieDetail();
+    }
+  }
+  
+  // Enter key to trigger search button
+  if (e.key === 'Enter' && e.target.id === 'search-input') {
+    e.preventDefault();
+    searchTMDB();
+  }
+  
+  // Tab navigation enhancement
+  if (e.key === 'Tab') {
+    // Handle carousel navigation with arrow keys when focused
+    const activeElement = document.activeElement;
+    if (activeElement.classList.contains('carousel-btn')) {
+      if (e.shiftKey && e.key === 'Tab') {
+        // Shift+Tab behavior
+        e.preventDefault();
+      }
+    }
+  }
+  
+  // Arrow key navigation for carousels
+  if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    const activeElement = document.activeElement;
+    if (activeElement.classList.contains('carousel-btn')) {
+      e.preventDefault();
+      if (e.key === 'ArrowLeft') {
+        activeElement.previousElementSibling?.click();
+      } else {
+        activeElement.nextElementSibling?.click();
+      }
+    }
+  }
+});
+
+// Focus management for modals
+function trapFocus(element) {
+  const focusableElements = element.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  
+  element.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+  });
+  
+  // Focus the first element when modal opens
+  setTimeout(() => firstElement?.focus(), 100);
+}
+
 // --- Continue Watching (localStorage) ---
 function getContinueWatching() {
   try {
@@ -68,7 +142,7 @@ function renderContinueWatching() {
     const img = document.createElement('img');
     img.src = `${IMG_URL}${item.poster_path}`;
     img.alt = item.title || 'Unknown Title';
-    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110';
+    img.className = 'w-36 md:w-44 rounded-lg shadow-lg cursor-pointer transition-all duration-300 movie-card';
     img.onclick = () => {
       // Reopen details using saved minimal record
       showDetails({
@@ -93,6 +167,14 @@ let bannerMovie = null;
 const DEFAULT_TITLE = document.title || 'Sage Movies';
 const CW_KEY = 'sage_movies_continue';
 let isNavigatingFromURL = false;
+
+// Store movie collections globally for popup access
+window.movieCollections = {
+  movies: [],
+  tvShows: [],
+  anime: [],
+  continueWatching: []
+};
 
 function slugify(text) {
   return (text || '')
@@ -209,10 +291,11 @@ function openSearchModal() {
   searchModal.classList.remove('hidden');
   searchModal.classList.add('flex');
   
-  // Focus the search input
-  setTimeout(() => {
-    searchInput.focus();
-  }, 100);
+  // Trap focus within modal
+  trapFocus(searchModal);
+  
+  // Prevent background scrolling
+  document.body.classList.add('overflow-hidden');
   
   console.log('Search modal opened');
 }
@@ -230,6 +313,13 @@ function closeSearchModal() {
   // Hide the modal
   searchModal.classList.add('hidden');
   searchModal.classList.remove('flex');
+  
+  // Restore background scrolling
+  document.body.classList.remove('overflow-hidden');
+  
+  // Return focus to search button
+  const searchButton = document.getElementById('search-button');
+  searchButton?.focus();
   
   console.log('Search modal closed');
 }
@@ -570,7 +660,9 @@ function displayList(items, containerId, isFiltered = false) {
   // Limit to 20 items for faster loading
   const limitedItems = items.slice(0, 20);
   
+  // Store in global collections for popup access
   if (containerId === 'movies-list') {
+    window.movieCollections.movies = limitedItems;
     if (countSpan) countSpan.textContent = `(${limitedItems.length})`;
     if (noMoviesMsg) {
       if (limitedItems.length === 0 && isFiltered) {
@@ -581,6 +673,12 @@ function displayList(items, containerId, isFiltered = false) {
         noMoviesMsg.textContent = '';
       }
     }
+  } else if (containerId === 'tvshows-list') {
+    window.movieCollections.tvShows = limitedItems;
+  } else if (containerId === 'anime-list') {
+    window.movieCollections.anime = limitedItems;
+  } else if (containerId === 'continue-list') {
+    window.movieCollections.continueWatching = limitedItems;
   }
   
   container.innerHTML = '';
@@ -592,7 +690,7 @@ function displayList(items, containerId, isFiltered = false) {
     const img = document.createElement('img');
     img.src = `${IMG_URL}${item.poster_path}`;
     img.alt = item.title || item.name;
-    img.className = 'w-36 md:w-44 rounded-md shadow-lg cursor-pointer transition-all duration-300 hover:scale-110';
+    img.className = 'w-36 md:w-44 rounded-lg shadow-lg cursor-pointer transition-all duration-300 movie-card';
     img.onclick = () => showDetails(item);
     container.appendChild(img);
   });
@@ -854,6 +952,328 @@ async function init() {
 
 // Start the app
 init();
+
+// --- Console Popup Functions ---
+let popupTimeout;
+
+function showConsolePopup(movieData, element) {
+  console.log('showConsolePopup called with:', movieData, element);
+  
+  // Clear any existing timeout
+  if (popupTimeout) clearTimeout(popupTimeout);
+  
+  const popup = document.getElementById('console-popup');
+  console.log('Popup element found:', popup);
+  
+  if (!popup || !movieData) {
+    console.log('Popup or movieData missing');
+    return;
+  }
+  
+  // Populate popup with movie data
+  document.getElementById('console-title').textContent = movieData.title || movieData.name || 'Unknown Title';
+  
+  const rating = movieData.vote_average || 0;
+  document.getElementById('console-rating').innerHTML = `
+    <i class="fas fa-star"></i>
+    <span>${rating.toFixed(1)}</span>
+  `;
+  
+  const posterPath = movieData.poster_path ? `${IMG_URL}${movieData.poster_path}` : '';
+  document.getElementById('console-poster').src = posterPath;
+  document.getElementById('console-poster').alt = movieData.title || movieData.name;
+  
+  document.getElementById('console-description').textContent = movieData.overview || 'No description available.';
+  
+  // Set metadata
+  const year = movieData.release_date ? new Date(movieData.release_date).getFullYear() : 
+               movieData.first_air_date ? new Date(movieData.first_air_date).getFullYear() : 'N/A';
+  document.getElementById('console-year').textContent = year;
+  
+  // Get genres
+  let genres = [];
+  if (movieData.genre_ids && window.SAGE_MOVIES_CONFIG && window.SAGE_MOVIES_CONFIG.GENRES) {
+    genres = movieData.genre_ids.map(id => window.SAGE_MOVIES_CONFIG.GENRES[id]).filter(Boolean);
+  } else if (movieData.genres && Array.isArray(movieData.genres)) {
+    genres = movieData.genres.map(g => g.name);
+  }
+  document.getElementById('console-genres').textContent = genres.length ? genres.join(', ') : 'N/A';
+  
+  // Set runtime (if available)
+  const runtime = movieData.runtime ? `${movieData.runtime} min` : 'N/A';
+  document.getElementById('console-runtime').textContent = runtime;
+  
+  // Position popup near the hovered element
+  const rect = element.getBoundingClientRect();
+  const popupRect = popup.getBoundingClientRect();
+  
+  // Show popup with slight delay for better UX
+  popupTimeout = setTimeout(() => {
+    popup.classList.add('show');
+  }, 300);
+  
+  // Store movie data for watch button
+  popup.currentMovie = movieData;
+}
+
+function hideConsolePopup() {
+  if (popupTimeout) clearTimeout(popupTimeout);
+  const popup = document.getElementById('console-popup');
+  if (popup) {
+    popup.classList.remove('show');
+    popup.currentMovie = null;
+  }
+}
+
+// --- Settings Panel Functions ---
+function toggleSettingsPanel() {
+  const panel = document.getElementById('settings-panel');
+  const isOpen = !panel.classList.contains('translate-x-full');
+  
+  if (isOpen) {
+    panel.classList.add('translate-x-full');
+    document.body.classList.remove('overflow-hidden');
+  } else {
+    panel.classList.remove('translate-x-full');
+    document.body.classList.add('overflow-hidden');
+    // Load current settings
+    loadSettings();
+  }
+}
+
+function loadSettings() {
+  // Load saved settings or use defaults
+  const settings = JSON.parse(localStorage.getItem('sage_movies_settings') || '{}');
+  
+  // Dark mode
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  if (darkModeToggle) {
+    darkModeToggle.checked = settings.darkMode !== false; // Default to true
+  }
+  
+  // Reduce motion
+  const reduceMotionToggle = document.getElementById('reduce-motion-toggle');
+  if (reduceMotionToggle) {
+    reduceMotionToggle.checked = settings.reduceMotion || false;
+  }
+  
+  // Text size
+  const textSizeSelect = document.getElementById('text-size-select');
+  if (textSizeSelect) {
+    textSizeSelect.value = settings.textSize || 'medium';
+  }
+  
+  // Poster size
+  const posterSizeSelect = document.getElementById('poster-size-select');
+  if (posterSizeSelect) {
+    posterSizeSelect.value = settings.posterSize || 'normal';
+  }
+  
+  // Autoplay
+  const autoplayToggle = document.getElementById('autoplay-toggle');
+  if (autoplayToggle) {
+    autoplayToggle.checked = settings.autoplay || false;
+  }
+  
+  // Preferred server
+  const preferredServer = document.getElementById('preferred-server');
+  if (preferredServer) {
+    preferredServer.value = settings.preferredServer || 'vidsrc.cc';
+  }
+  
+  applySettings(settings);
+}
+
+function saveSettings() {
+  const settings = {
+    darkMode: document.getElementById('dark-mode-toggle')?.checked ?? true,
+    reduceMotion: document.getElementById('reduce-motion-toggle')?.checked ?? false,
+    textSize: document.getElementById('text-size-select')?.value ?? 'medium',
+    posterSize: document.getElementById('poster-size-select')?.value ?? 'normal',
+    autoplay: document.getElementById('autoplay-toggle')?.checked ?? false,
+    preferredServer: document.getElementById('preferred-server')?.value ?? 'vidsrc.cc'
+  };
+  
+  localStorage.setItem('sage_movies_settings', JSON.stringify(settings));
+  applySettings(settings);
+}
+
+function applySettings(settings) {
+  // Apply dark mode
+  if (settings.darkMode !== false) {
+    document.documentElement.classList.remove('light-theme');
+  } else {
+    document.documentElement.classList.add('light-theme');
+  }
+  
+  // Apply reduced motion
+  if (settings.reduceMotion) {
+    document.documentElement.classList.add('reduce-motion');
+  } else {
+    document.documentElement.classList.remove('reduce-motion');
+  }
+  
+  // Apply text size
+  document.documentElement.className = document.documentElement.className
+    .replace(/text-size-\w+/g, '');
+  if (settings.textSize && settings.textSize !== 'medium') {
+    document.documentElement.classList.add(`text-size-${settings.textSize}`);
+  }
+  
+  // Apply poster size
+  const posterClasses = ['poster-compact', 'poster-normal', 'poster-large'];
+  document.querySelectorAll('.list img, .movie-card').forEach(el => {
+    el.classList.remove(...posterClasses);
+    if (settings.posterSize && settings.posterSize !== 'normal') {
+      el.classList.add(`poster-${settings.posterSize}`);
+    }
+  });
+  
+  // Update server preference in detail view
+  if (settings.preferredServer && currentItem) {
+    const serverSelect = document.getElementById('server-select');
+    if (serverSelect) {
+      serverSelect.value = settings.preferredServer;
+      changeServer();
+    }
+  }
+}
+
+function clearCache() {
+  // Clear localStorage except settings
+  const settings = localStorage.getItem('sage_movies_settings');
+  const continueWatching = localStorage.getItem('sage_movies_continue');
+  
+  localStorage.clear();
+  
+  if (settings) localStorage.setItem('sage_movies_settings', settings);
+  if (continueWatching) localStorage.setItem('sage_movies_continue', continueWatching);
+  
+  alert('Cache cleared successfully!');
+}
+
+function resetSettings() {
+  if (confirm('Are you sure you want to reset all settings to default?')) {
+    localStorage.removeItem('sage_movies_settings');
+    loadSettings();
+    alert('Settings reset to default!');
+  }
+}
+
+// Event listeners for console popup
+document.addEventListener('DOMContentLoaded', function() {
+  // Add mouseenter/mouseleave events to all movie cards
+  document.addEventListener('mouseover', function(e) {
+    // Check if hovering over a movie card
+    const targetElement = e.target;
+    let card = null;
+    let img = null;
+    
+    // Handle both direct image hover and card hover
+    if (targetElement.classList && targetElement.classList.contains('movie-card')) {
+      // Direct hover on image with movie-card class
+      card = targetElement.closest('.list') ? targetElement : null;
+      img = targetElement;
+    } else if (targetElement.closest('.movie-card') && targetElement.closest('.list')) {
+      // Hover on card container
+      card = targetElement.closest('.movie-card');
+      img = card.querySelector('img');
+    }
+    
+    // Debug logging
+    console.log('Target element:', targetElement);
+    console.log('Card found:', card);
+    console.log('Image found:', img);
+    console.log('Image alt:', img ? img.alt : 'No image');
+    console.log('Global collections:', window.movieCollections);
+    console.log('All movies:', allMovies);
+    
+    if (card && img && img.alt) {
+      // Find the movie data from the global arrays
+      let movieData = null;
+      
+      // Search in all movie arrays
+      const allMovieArrays = [allMovies, ...Object.values(window.movieCollections || {})];
+      
+      outerLoop: for (const movieArray of allMovieArrays) {
+        if (Array.isArray(movieArray)) {
+          for (const movie of movieArray) {
+            if ((movie.title || movie.name) === img.alt) {
+              movieData = movie;
+              break outerLoop;
+            }
+          }
+        }
+      }
+      
+      console.log('Found movie data:', movieData);
+      
+      if (movieData) {
+        showConsolePopup(movieData, card);
+      } else {
+        console.log('No movie data found for:', img.alt);
+      }
+    }
+  });
+  
+  document.addEventListener('mouseout', function(e) {
+    // Hide popup when mouse leaves movie cards
+    if (!e.target.closest('.movie-card') && !e.target.closest('#console-popup')) {
+      hideConsolePopup();
+    }
+  });
+  
+  // Close popup when clicking close button
+  const closeBtn = document.getElementById('console-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideConsolePopup);
+  }
+  
+  // Watch button functionality
+  const watchBtn = document.getElementById('console-watch-btn');
+  if (watchBtn) {
+    watchBtn.addEventListener('click', function() {
+      const popup = document.getElementById('console-popup');
+      if (popup.currentMovie) {
+        showDetails(popup.currentMovie);
+        hideConsolePopup();
+      }
+    });
+  }
+  
+  // Close popup when clicking outside
+  document.addEventListener('click', function(e) {
+    const popup = document.getElementById('console-popup');
+    if (popup && popup.classList.contains('show') && 
+        !e.target.closest('#console-popup') && 
+        !e.target.closest('.movie-card')) {
+      hideConsolePopup();
+    }
+  });
+});
+
+// Event listeners for settings changes
+document.addEventListener('DOMContentLoaded', function() {
+  // Add event listeners to all settings controls
+  const settingsControls = [
+    'dark-mode-toggle',
+    'reduce-motion-toggle',
+    'text-size-select',
+    'poster-size-select',
+    'autoplay-toggle',
+    'preferred-server'
+  ];
+  
+  settingsControls.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener('change', saveSettings);
+    }
+  });
+  
+  // Load settings on page load
+  loadSettings();
+});
 
 // --- Deep linking helpers ---
 function parseWatchPath(pathname) {
