@@ -25,12 +25,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: rgba(229, 9, 20, 0.7);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: rgba(229, 9, 20, 1);
 }
 
 /* Hide scrollbar for carousels */
@@ -41,6 +41,26 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Custom scrollbar for search results */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(229, 9, 20, 0.7);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 9, 20, 1);
 }
 
 /* Netflix Loader */
