@@ -129,7 +129,7 @@
       <!-- Video and Poster Section -->
       <div class="flex flex-col md:flex-row gap-6 mb-8">
         <!-- Video Section - 70% Width -->
-        <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl relative">
+        <div class="w-full md:w-[70%] aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden shadow-2xl relative" id="player-section">
           <!-- Netflix-themed loading animation -->
           <div class="netflix-loader absolute inset-0 z-10 bg-black/80" id="video-loader">
             <div class="netflix-logo">
@@ -137,13 +137,36 @@
             </div>
             <div class="loading-text">Loading player</div>
           </div>
+          
+          <!-- Smart Overlay Strategy -->
+          <div id="video-overlay" class="absolute inset-0 z-20 bg-black/90 flex flex-col items-center justify-center text-center p-6 hidden">
+            <h3 class="text-2xl font-bold mb-4">Verification Required</h3>
+            <p class="text-gray-400 mb-6 max-w-md">To unlock high-speed streaming and remove ads, please complete a quick verification.</p>
+            <div class="flex flex-col gap-4 w-full max-w-xs">
+              <button onclick="handleOverlayVerification()" class="bg-netflix-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition duration-300 flex items-center justify-center">
+                <i class="fas fa-user-check mr-2"></i> Verify You're Human
+              </button>
+              <button onclick="closeOverlay()" class="text-sm text-gray-500 hover:text-white underline">Continue to Player (with ads)</button>
+            </div>
+          </div>
+
           <!-- Video container that will be populated by JavaScript -->
           <div id="video-container" class="w-full h-full"></div>
         </div>
         
         <!-- Poster and Server Selector - 30% Width -->
         <div class="w-full md:w-[30%] flex flex-col gap-4">
-          <img id="detail-poster" src="" alt="Poster" class="w-full rounded-xl shadow-2xl" />
+          <img id="detail-poster" src="" alt="Poster" class="w-full rounded-xl shadow-2xl mb-2" />
+          
+          <!-- CPA Buttons Section -->
+          <div class="flex flex-col gap-2 mb-4">
+            <a id="watch-hd-btn" href="#" target="_blank" class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 px-4 rounded flex items-center justify-center transition duration-300">
+              <i class="fas fa-play-circle mr-2"></i> WATCH IN FULL HD
+            </a>
+            <a id="download-btn" href="#" target="_blank" class="w-full bg-netflix-dark hover:bg-gray-800 text-white font-bold py-3 px-4 rounded flex items-center justify-center transition duration-300 border border-gray-700">
+              <i class="fas fa-download mr-2"></i> DOWNLOAD MOVIE
+            </a>
+          </div>
           
           <!-- Server Selector -->
           <div class="bg-netflix-dark p-4 rounded-lg">
