@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  const { type, id } = params;
+  const resolvedParams = await params;
+  const { type, id } = resolvedParams;
   const { searchParams } = new URL(request.url);
   const server = searchParams.get('server') || 'vidsrc.cc';
 

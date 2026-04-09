@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  const { type } = params;
+  const resolvedParams = await params;
+  const { type } = resolvedParams;
   const { searchParams } = new URL(request.url);
-  const page = searchParams.get('page') || 1;
+  const page = parseInt(searchParams.get('page')) || 1;
   const apiKey = process.env.TMDB_API_KEY;
 
   try {
