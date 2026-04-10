@@ -16,11 +16,18 @@ export default function MovieDetailModal({ movie, onClose, genres }) {
   useEffect(() => {
     const fetchSource = async () => {
       setIsLoading(true);
-      const type = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
-      const res = await fetch(`/api/video-sources/${type}/${movie.id}?server=${server}`);
-      const data = await res.json();
-      setEmbedUrl(data.embedURL);
-      setIsLoading(false);
+      try {
+        const type = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
+        const res = await fetch(`/api/video-sources/${type}/${movie.id}?server=${server}`);
+        if (!res.ok) throw new Error('Failed to fetch source');
+        const data = await res.json();
+        setEmbedUrl(data.embedURL || '');
+      } catch (err) {
+        console.error('Video source error:', err);
+        setEmbedUrl('');
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchSource();
   }, [movie, server]);
@@ -68,7 +75,7 @@ export default function MovieDetailModal({ movie, onClose, genres }) {
               </div>
             )}
             
-            {showOverlay && !isLoading && (
+            {showOverlay && !isLoading && embedUrl && (
               <div className="absolute inset-0 z-20 bg-black/90 flex flex-col items-center justify-center text-center p-6">
                 <h3 className="text-2xl font-bold mb-4">Verification Required</h3>
                 <p className="text-gray-400 mb-6 max-w-md">To unlock high-speed streaming and remove ads, please complete a quick verification.</p>
@@ -83,6 +90,13 @@ export default function MovieDetailModal({ movie, onClose, genres }) {
                     Continue to Player (with ads)
                   </button>
                 </div>
+              </div>
+            )}
+
+            {!isLoading && !embedUrl && (
+              <div className="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center text-center p-6">
+                <p className="text-xl font-bold text-gray-300">Video Source Not Available</p>
+                <p className="text-gray-500 mt-2">Please try selecting a different server from the dropdown menu.</p>
               </div>
             )}
 

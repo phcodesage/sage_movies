@@ -40,11 +40,11 @@ export default function Home() {
     const init = async () => {
       try {
         const [movieRes, tvRes, animeRes, genreRes, actionRes] = await Promise.all([
-          fetch('/api/movies/collection').then(res => res.json()),
-          fetch('/api/tv/collection').then(res => res.json()),
-          fetch('/api/anime/collection').then(res => res.json()),
-          fetch('/api/genres').then(res => res.json()),
-          fetch('/api/movies/genre/28').then(res => res.json()) // 28 is Action genre ID
+          fetch('/api/movies/collection').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+          fetch('/api/tv/collection').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+          fetch('/api/anime/collection').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+          fetch('/api/genres').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+          fetch('/api/movies/genre/28').then(res => res.ok ? res.json() : {}).catch(() => ({}))
         ]);
 
         const movies = movieRes.results || [];
