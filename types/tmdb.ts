@@ -9,7 +9,9 @@ export interface TMDBMovie {
   first_air_date?: string;
   vote_average: number;
   popularity: number;
-  genre_ids: number[];
+  genre_ids?: number[];
+  genres?: { id: number; name: string }[];
+  production_companies?: { id: number; name: string }[];
   media_type?: 'movie' | 'tv';
   relevance_score?: number;
 }

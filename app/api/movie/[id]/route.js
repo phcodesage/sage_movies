@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
 
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}`,
+      `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=production_companies`,
       { next: { revalidate: 3600 } }
     );
     const data = await response.json();

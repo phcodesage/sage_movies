@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Star, Play, X, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '../../../../lib/context/AppContext';
 import { useWatchHistory } from '../../../../lib/hooks/useWatchHistory';
+import { getSimilarMovies } from '../../../../lib/recommendations';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
 
@@ -28,6 +29,8 @@ export default function MovieDetailPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [similarMovies, setSimilarMovies] = useState<TMDBMovie[]>([]);
+  const [showUpNext, setShowUpNext] = useState(false);
 
   // Fetch movie details from our API
   useEffect(() => {
@@ -43,6 +46,52 @@ export default function MovieDetailPage() {
         } else {
           setMovie(data);
           setError(null);
+          
+          // Fetch similar movies pool
+          // IMPORTANT: Normalize genres from API format [{id, name}] to genre_ids [id, id]
+          const normalizedMovie = {
+            ...data,
+            genre_ids: data.genres ? data.genres.map((g: any) => g.id) : data.genre_ids || []
+          };
+          
+          const currentGenre = normalizedMovie.genre_ids?.[0];
+          // Get Vivamax or the first company found
+          const vivamax = data.production_companies?.find((c: any) => c.name?.toLowerCase().includes('vivamax'));
+          const studioId = vivamax ? vivamax.id : data.production_companies?.[0]?.id;
+          
+          let endpoint = slug?.includes('tv') ? '/api/tv/collection' : '/api/movies/collection';
+          
+          const fetchPool = async () => {
+            try {
+              // Parallel fetch: general + same genre + same studio
+              const [generalRes, genreRes, studioRes] = await Promise.all([
+                fetch(endpoint).then(res => res.json()),
+                currentGenre ? fetch(`/api/movies/genre/${currentGenre}`).then(res => res.json()) : Promise.resolve({ results: [] }),
+                studioId ? fetch(`/api/movies/studio/${studioId}`).then(res => res.json()) : Promise.resolve({ results: [] })
+              ]);
+              
+              // Normalize studio results
+              const normalizedStudioResults = (studioRes.results || []).map((m: any) => ({
+                ...m,
+                production_companies: [{ id: studioId, name: vivamax?.name || data.production_companies?.[0]?.name }] 
+              }));
+              
+              const combinedResults = [
+                ...normalizedStudioResults, // Put studio results FIRST in the combined array
+                ...(genreRes.results || []),
+                ...(generalRes.results || [])
+              ];
+              
+              const uniquePool = Array.from(new Map(combinedResults.map(item => [item.id, item])).values());
+              
+              const similar = getSimilarMovies(normalizedMovie, uniquePool, 12);
+              setSimilarMovies(similar);
+            } catch (err) {
+              console.error('Pool fetch error:', err);
+            }
+          };
+          
+          fetchPool();
         }
       } catch (err) {
         setError('Failed to load movie details');
@@ -175,12 +224,89 @@ export default function MovieDetailPage() {
               )}
 
               {embedUrl && (
-                <iframe
-                  src={embedUrl}
-                  className="w-full h-full border-none"
-                  allowFullScreen
-                  allow="autoplay; fullscreen"
-                />
+                <div 
+                  className="w-full h-full relative group/player"
+                  onMouseEnter={() => isPlaying && setShowUpNext(true)}
+                  onMouseLeave={() => setShowUpNext(false)}
+                >
+                  <iframe
+                    src={embedUrl}
+                    className="w-full h-full border-none"
+                    allowFullScreen
+                    allow="autoplay; fullscreen"
+                  />
+                  
+                  {/* Up Next / Pause Gallery Overlay */}
+                  <AnimatePresence>
+                    {showUpNext && similarMovies.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="absolute inset-0 z-40 bg-black/80 backdrop-blur-sm flex flex-col justify-end p-6 pointer-events-none group-hover/player:pointer-events-auto"
+                      >
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-white font-black uppercase tracking-tighter text-lg md:text-2xl flex items-center gap-2">
+                            <Play className="w-5 h-5 text-netflix-red fill-current" /> Up Next: More From {movie.production_companies?.[0]?.name || 'the Studio'}
+                          </h3>
+                          <button 
+                            onClick={() => setShowUpNext(false)}
+                            className="bg-white/10 hover:bg-white/20 p-2 rounded-full text-white transition-colors"
+                          >
+                            <X className="w-6 h-6" />
+                          </button>
+                        </div>
+                        
+                        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-2 px-2 scroll-smooth">
+                          {similarMovies.slice(0, 6).map(m => (
+                            <div 
+                              key={m.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const slug = (m.title || m.name || '')
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9]+/g, '-')
+                                  .replace(/(^-|-$)/g, '');
+                                const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
+                                router.push(`/movie/${m.id}/${mediaType}-${slug}`);
+                              }}
+                              className="relative min-w-[120px] md:min-w-[180px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-transparent hover:border-netflix-red transition-all cursor-pointer group/card shrink-0 shadow-2xl"
+                            >
+                              <Image 
+                                src={`${THUMB_URL}${m.poster_path}`} 
+                                alt={m.title || m.name || ''} 
+                                fill 
+                                className="object-cover group-hover/card:scale-110 transition-transform duration-500"
+                                sizes="180px"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-60" />
+                              <div className="absolute bottom-0 left-0 right-0 p-3">
+                                <p className="text-white text-xs font-black line-clamp-1 group-hover/card:text-netflix-red">{m.title || m.name}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-yellow-500 text-[10px] font-black flex items-center">
+                                    <Star className="w-2 h-2 fill-current mr-0.5" /> {m.vote_average?.toFixed(1)}
+                                  </span>
+                                  <span className="text-gray-400 text-[10px]">{m.release_date?.split('-')[0] || m.first_air_date?.split('-')[0]}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Toggle Button for Mobile/Manual trigger */}
+                  <button 
+                    onClick={() => setShowUpNext(!showUpNext)}
+                    className={cn(
+                      "absolute bottom-20 left-4 z-50 bg-black/60 hover:bg-netflix-red text-white text-[10px] font-black py-2 px-4 rounded-full transition-all border border-white/20 backdrop-blur-md flex items-center gap-2",
+                      showUpNext ? "opacity-0 translate-y-10" : "opacity-100 translate-y-0"
+                    )}
+                  >
+                    <Info className="w-3 h-3" /> BROWSE UP NEXT
+                  </button>
+                </div>
               )}
 
               <button
@@ -315,6 +441,65 @@ export default function MovieDetailPage() {
               )}>
                 {overview}
               </div>
+
+              {/* Similar Movies Section (Embedded below description) */}
+              <div className="mt-4 border-t border-gray-800 pt-6">
+                <h4 className="text-[10px] font-black uppercase text-netflix-red mb-4 tracking-widest flex items-center gap-2">
+                  <Play className="w-3 h-3 fill-current" /> More From {movie.production_companies?.[0]?.name || 'Similar Titles'}
+                </h4>
+                {similarMovies.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {similarMovies.map(m => {
+                      // Check if it's from the same studio for debugging/visual confirmation
+                      const isSameStudio = m.production_companies?.some(c => 
+                        movie.production_companies?.some((tc: any) => tc.id === c.id)
+                      );
+                      
+                      return (
+                        <div 
+                          key={m.id}
+                          onClick={() => {
+                            const slug = (m.title || m.name || '')
+                              .toLowerCase()
+                              .replace(/[^a-z0-9]+/g, '-')
+                              .replace(/(^-|-$)/g, '');
+                            const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
+                            router.push(`/movie/${m.id}/${mediaType}-${slug}`);
+                          }}
+                          className="group cursor-pointer"
+                        >
+                          <div className={cn(
+                            "relative aspect-[2/3] rounded-md overflow-hidden border transition-all",
+                            isSameStudio ? "border-netflix-red/50 shadow-[0_0_10px_rgba(229,9,20,0.2)]" : "border-gray-800 group-hover:border-netflix-red"
+                          )}>
+                            <Image 
+                              src={`${THUMB_URL}${m.poster_path}`} 
+                              alt={m.title || m.name || ''} 
+                              fill 
+                              className="object-cover group-hover:scale-110 transition-transform duration-500"
+                              sizes="120px"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Play className="w-6 h-6 text-white fill-current" />
+                            </div>
+                            {isSameStudio && (
+                              <div className="absolute top-1 right-1 bg-netflix-red text-[8px] font-black px-1 rounded shadow-lg">STUDIO</div>
+                            )}
+                          </div>
+                          <p className={cn(
+                            "text-[10px] font-bold mt-1.5 line-clamp-1 transition-colors",
+                            isSameStudio ? "text-netflix-red" : "text-gray-300 group-hover:text-netflix-red"
+                          )}>
+                            {m.title || m.name}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">Loading similar titles...</p>
+                )}
+              </div>
             </div>
 
             {/* Additional Info Section */}
@@ -323,7 +508,7 @@ export default function MovieDetailPage() {
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-gray-500 mb-2">Genres</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {movie.genres?.map((g: any) => (
+                    {movie.genres?.map((g: {id: number, name: string}) => (
                       <span key={g.id} className="text-[10px] font-bold text-gray-300 bg-gray-800/50 px-2 py-1 rounded border border-gray-700">
                         {g.name}
                       </span>
@@ -334,7 +519,7 @@ export default function MovieDetailPage() {
                 {movie.production_companies && movie.production_companies.length > 0 && (
                   <div>
                     <h4 className="text-[10px] font-black uppercase text-gray-500 mb-2">Studios</h4>
-                    <p className="text-xs text-gray-400 font-medium">{movie.production_companies.slice(0, 2).map((c: any) => c.name).join(', ')}</p>
+                    <p className="text-xs text-gray-400 font-medium">{movie.production_companies.slice(0, 2).map((c: {name: string}) => c.name).join(', ')}</p>
                   </div>
                 )}
               </div>

@@ -8,6 +8,7 @@ import { useScroll } from '../lib/hooks/useScroll';
 import { useSearch } from '../lib/hooks/useSearch';
 import { useWatchHistory } from '../lib/hooks/useWatchHistory';
 import { useAppContext } from '../lib/context/AppContext';
+import { getRecommendedMovies, getSimilarMovies } from '../lib/recommendations';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Navbar from '../components/Navbar';
@@ -44,6 +45,9 @@ export default function Home() {
   const [selectedGenre, setSelectedGenre] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [seeAllData, setSeeAllData] = useState<{ title: string; items: TMDBMovie[]; category: string } | null>(null);
+  const [recommended, setRecommended] = useState<TMDBMovie[]>([]);
+  const [lastWatchedSimilar, setLastWatchedSimilar] = useState<{ movie: TMDBMovie; similar: TMDBMovie[] } | null>(null);
+  const [allFetchedData, setAllFetchedData] = useState<TMDBMovie[]>([]);
   const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isScrolled = useScroll(50);
@@ -51,6 +55,21 @@ export default function Home() {
   const { history: watchHistory } = useWatchHistory();
   const { genres } = useAppContext();
   const router = useRouter();
+
+  // Compute recommendations
+  useEffect(() => {
+    if (watchHistory.length > 0 && allFetchedData.length > 0) {
+      const recommendations = getRecommendedMovies(watchHistory, allFetchedData, 20);
+      setRecommended(recommendations);
+
+      // Also compute "Because you watched [Last Movie]"
+      const lastMovie = watchHistory[0];
+      const similarToLast = getSimilarMovies(lastMovie, allFetchedData, 15);
+      if (similarToLast.length > 0) {
+        setLastWatchedSimilar({ movie: lastMovie, similar: similarToLast });
+      }
+    }
+  }, [watchHistory, allFetchedData]);
 
   const handlePlayClick = (movie: TMDBMovie) => {
     const slug = (movie.title || movie.name || '')
@@ -77,6 +96,16 @@ export default function Home() {
         setTrendingTV((tvRes as any).results || []);
         setAnime((animeRes as any).results || []);
         setActionMovies((actionRes as any).results || []);
+
+        // Flatten all for recommendation pool
+        const all = [
+          ...movies,
+          ...((tvRes as any).results || []),
+          ...((animeRes as any).results || []),
+          ...((actionRes as any).results || [])
+        ];
+        const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
+        setAllFetchedData(unique);
 
         if (movies.length > 0) {
           setBannerMovie(movies[0]);
@@ -218,6 +247,22 @@ export default function Home() {
           </>
         ) : (
           <>
+            {recommended.length > 0 && (
+              <MovieRow 
+                title="Special Recommendations for You" 
+                items={recommended} 
+                id="recommended" 
+                onSeeAll={() => setSeeAllData({ title: "Recommended for You", items: recommended, category: 'history' })}
+              />
+            )}
+            {lastWatchedSimilar && (
+              <MovieRow 
+                title={`Because you watched ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`} 
+                items={lastWatchedSimilar.similar} 
+                id="because-watched" 
+                onSeeAll={() => setSeeAllData({ title: `More Like ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`, items: lastWatchedSimilar.similar, category: 'history' })}
+              />
+            )}
             {watchHistory.length > 0 && (
               <MovieRow 
                 title="Resume Watching" 
