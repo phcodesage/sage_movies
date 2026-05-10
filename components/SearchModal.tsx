@@ -1,18 +1,35 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Search, Play, X, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
+import type { TMDBMovie } from '../types/tmdb';
 
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
 
-export default function SearchModal({ onClose, query, setQuery, results, isSearching, onSelectMovie }) {
+interface SearchModalProps {
+  onClose: () => void;
+  query: string;
+  setQuery: (query: string) => void;
+  results: TMDBMovie[];
+  isSearching: boolean;
+}
+
+export default function SearchModal({ onClose, query, setQuery, results, isSearching }: SearchModalProps) {
+  const router = useRouter();
+
+  const handleMovieClick = (movie: TMDBMovie) => {
+    const slug = (movie.title || movie.name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const mediaType = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
+    router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
+    onClose();
+  };
+
   // Common platforms for "Quick Explore"
   const platforms = [
     { name: 'Vivamax', icon: '🇵🇭' },
@@ -27,9 +44,9 @@ export default function SearchModal({ onClose, query, setQuery, results, isSearc
   const platformMatches = results.filter(m => m.relevance_score === 110);
   const exactMatches = results.filter(m => m.relevance_score === 100);
   const startsWithMatches = results.filter(m => m.relevance_score === 90);
-  const otherMatches = results.filter(m => m.relevance_score < 90);
+  const otherMatches = results.filter(m => (m.relevance_score ?? 0) < 90);
 
-  const renderSection = (title, items, isHighPriority = false) => {
+  const renderSection = (title: string, items: TMDBMovie[], isHighPriority = false) => {
     if (items.length === 0) return null;
     return (
       <div className="mb-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -38,17 +55,18 @@ export default function SearchModal({ onClose, query, setQuery, results, isSearc
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2">
           {items.map((item) => (
-            <div 
+            <div
               key={`${item.id}-${item.media_type || 'any'}`}
-              onClick={() => onSelectMovie(item)}
+              onClick={() => handleMovieClick(item)}
               className="flex flex-col gap-2 cursor-pointer transition-all duration-300 hover:scale-105 group"
             >
               <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-2xl">
-                <Image 
+                <Image
                   src={item.poster_path ? `${THUMB_URL}${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'}
-                  alt={item.title || item.name}
+                  alt={item.title || item.name || ''}
                   fill
                   className="object-cover group-hover:brightness-50 transition-all duration-300"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                 />
                 <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Play className="w-10 h-10 text-white fill-current transform scale-0 group-hover:scale-100 transition-transform duration-300" />

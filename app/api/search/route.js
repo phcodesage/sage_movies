@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+export const revalidate = 300; // Revalidate search results every 5 minutes
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
@@ -27,15 +30,16 @@ export async function GET(request) {
     if (platformMaps[queryLower]) {
       const platform = platformMaps[queryLower];
       const param = platform.type === 'company' ? 'with_companies' : 'with_networks';
-      
+
       const discoveryPromises = [];
-      for (let page = 1; page <= 3; page++) {
+      // Reduced from 3 pages to 2 pages for faster response
+      for (let page = 1; page <= 2; page++) {
         discoveryPromises.push(
           fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&${param}=${platform.id}&sort_by=popularity.desc&region=PH&page=${page}`).then(res => res.json()),
           fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&${param}=${platform.id}&sort_by=popularity.desc&page=${page}`).then(res => res.json())
         );
       }
-      
+
       // Also add a general search for the platform name in titles just in case
       discoveryPromises.push(
         fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=1`).then(res => res.json())
@@ -56,8 +60,8 @@ export async function GET(request) {
       });
     }
     
-    // Search movies (up to 3 pages)
-    for (let page = 1; page <= 3; page++) {
+    // Search movies (reduced to 2 pages for faster response)
+    for (let page = 1; page <= 2; page++) {
       const response = await fetch(
         `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=${page}`
       );
@@ -70,9 +74,9 @@ export async function GET(request) {
         results.push(...data.results);
       }
     }
-    
-    // Search TV shows (up to 2 pages)
-    for (let page = 1; page <= 2; page++) {
+
+    // Search TV shows (reduced to 1 page for faster response)
+    for (let page = 1; page <= 1; page++) {
       const tvResponse = await fetch(
         `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=${page}`
       );
@@ -91,8 +95,16 @@ export async function GET(request) {
       if (b.relevance_score !== a.relevance_score) return b.relevance_score - a.relevance_score;
       return b.popularity - a.popularity;
     });
-    
-    return NextResponse.json({ results: uniqueResults });
+
+    return NextResponse.json(
+      { results: uniqueResults },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: 'Failed to search TMDB' }, { status: 500 });
   }

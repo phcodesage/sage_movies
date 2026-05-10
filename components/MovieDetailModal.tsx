@@ -1,17 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, PlayCircle, Download, UserCheck } from 'lucide-react';
+import { ArrowLeft, Star, Play, PlayCircle, Download, UserCheck } from 'lucide-react';
 import Image from 'next/image';
+import type { TMDBMovie } from '../types/tmdb';
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 
-export default function MovieDetailModal({ movie, onClose, genres }) {
+interface MovieDetailModalProps {
+  movie: TMDBMovie;
+  onClose: () => void;
+  genres: Record<number, string>;
+}
+
+export default function MovieDetailModal({ movie, onClose, genres }: MovieDetailModalProps) {
+  const router = useRouter();
   const [server, setServer] = useState('vidsrc.cc');
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
+
+  const handlePlay = () => {
+    const slug = (movie.title || movie.name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const mediaType = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
+    onClose();
+    router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
+  };
 
   useEffect(() => {
     const fetchSource = async () => {
@@ -105,8 +124,16 @@ export default function MovieDetailModal({ movie, onClose, genres }) {
 
           <div className="w-full md:w-[30%] flex flex-col gap-6">
             <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl">
-              <Image src={`${IMG_URL}${movie.poster_path}`} alt="Poster" fill className="object-cover" />
+              <Image src={`${IMG_URL}${movie.poster_path || ''}`} alt={movie.title || movie.name || 'Movie Poster'} fill className="object-cover" sizes="(max-width: 768px) 100vw, 30vw" />
             </div>
+
+            {/* Play Now Button */}
+            <button
+              onClick={handlePlay}
+              className="w-full bg-netflix-red hover:bg-red-700 text-white font-bold py-3 rounded flex items-center justify-center transition transform hover:scale-[1.02]"
+            >
+              <Play className="w-5 h-5 mr-2 fill-current" /> PLAY NOW
+            </button>
 
             <div className="flex flex-col gap-3">
               <a href="#" target="_blank" className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 rounded flex items-center justify-center transition">
@@ -119,7 +146,7 @@ export default function MovieDetailModal({ movie, onClose, genres }) {
 
             <div className="bg-netflix-dark p-4 rounded-lg">
               <label className="block text-neutral-300 mb-2 font-medium">Change Server:</label>
-              <select 
+              <select
                 value={server}
                 onChange={(e) => setServer(e.target.value)}
                 className="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:ring-1 focus:ring-netflix-red"

@@ -1,0 +1,290 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { Play, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useScroll } from '../lib/hooks/useScroll';
+import { useSearch } from '../lib/hooks/useSearch';
+import { useWatchHistory } from '../lib/hooks/useWatchHistory';
+import { useAppContext } from '../lib/context/AppContext';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import Navbar from '../components/Navbar';
+import MovieRow from '../components/MovieRow';
+import { MovieRowSkeleton, BannerSkeleton } from '../components/LoadingSkeleton';
+import type { TMDBMovie } from '../types/tmdb';
+
+const SeeAllModal = dynamic(() => import('../components/SeeAllModal'), {
+  loading: () => <div className="fixed inset-0 bg-netflix-black z-[100]" />,
+  ssr: false
+});
+
+// Lazy load modals for better initial load performance
+const SearchModal = dynamic(() => import('../components/SearchModal'), {
+  loading: () => <div className="fixed inset-0 bg-netflix-black z-50" />,
+  ssr: false
+});
+
+const MovieDetailModal = dynamic(() => import('../components/MovieDetailModal'), {
+  loading: () => <div className="fixed inset-0 bg-black/95 z-50" />,
+  ssr: false
+});
+
+const IMG_URL = 'https://image.tmdb.org/t/p/original';
+
+export default function Home() {
+  const [trendingMovies, setTrendingMovies] = useState<TMDBMovie[]>([]);
+  const [trendingTV, setTrendingTV] = useState<TMDBMovie[]>([]);
+  const [anime, setAnime] = useState<TMDBMovie[]>([]);
+  const [actionMovies, setActionMovies] = useState<TMDBMovie[]>([]);
+  const [bannerMovie, setBannerMovie] = useState<TMDBMovie | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [seeAllData, setSeeAllData] = useState<{ title: string; items: TMDBMovie[]; category: string } | null>(null);
+  const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isScrolled = useScroll(50);
+  const { query: searchQuery, setQuery: setSearchQuery, results: searchResults, isSearching } = useSearch(500);
+  const { history: watchHistory } = useWatchHistory();
+  const { genres } = useAppContext();
+  const router = useRouter();
+
+  const handlePlayClick = (movie: TMDBMovie) => {
+    const slug = (movie.title || movie.name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const mediaType = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
+    router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [movieRes, tvRes, animeRes, actionRes] = await Promise.all([
+          fetch('/api/movies/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
+          fetch('/api/tv/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
+          fetch('/api/anime/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
+          fetch('/api/movies/genre/28').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] }))
+        ]);
+
+        const movies = (movieRes as any).results || [];
+        setTrendingMovies(movies);
+        setTrendingTV((tvRes as any).results || []);
+        setAnime((animeRes as any).results || []);
+        setActionMovies((actionRes as any).results || []);
+
+        if (movies.length > 0) {
+          setBannerMovie(movies[0]);
+          
+          // Start banner rotation
+          let index = 0;
+          bannerIntervalRef.current = setInterval(() => {
+            index = (index + 1) % Math.min(movies.length, 10);
+            setBannerMovie(movies[index]);
+          }, 5000);
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
+
+    return () => {
+      if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+    };
+  }, []);
+
+  // Genre filtering logic
+  useEffect(() => {
+    if (!selectedGenre) {
+      // Re-fetch trending movies if genre is cleared
+      fetch('/api/movies/collection')
+        .then(res => res.json())
+        .then(data => setTrendingMovies(data.results || []));
+      return;
+    }
+
+    const fetchByGenre = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/movies/genre/${selectedGenre}`);
+        const data = await res.json();
+        setTrendingMovies(data.results || []);
+        
+        // Scroll to movies section after genre is updated
+        const moviesSection = document.getElementById('movies');
+        if (moviesSection) {
+          window.scrollTo({
+            top: moviesSection.offsetTop - 100,
+            behavior: 'smooth'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching by genre:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchByGenre();
+  }, [selectedGenre]);
+
+  return (
+    <div className="relative min-h-screen bg-netflix-black overflow-x-hidden">
+      {/* Full Page Loader */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[100] bg-netflix-black flex flex-col items-center justify-center"
+          >
+            <div className="netflix-loader scale-150">
+              <div className="netflix-logo">
+                <div className="middle-bar"></div>
+              </div>
+            </div>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-12 text-xl font-bold tracking-widest text-white uppercase"
+            >
+              Preparing your experience
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Navbar */}
+      <Navbar onSearchClick={() => setIsSearchOpen(true)} />
+
+      {/* Hero Banner */}
+      {isLoading ? (
+        <BannerSkeleton />
+      ) : bannerMovie ? (
+        <div className="relative h-[60vh] md:h-[70vh] w-full">
+          <div className="absolute inset-0">
+            <Image
+              src={`${IMG_URL}${bannerMovie.backdrop_path}`}
+              alt={bannerMovie.title || bannerMovie.name || ''}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 banner-gradient" />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 px-3 md:px-8 py-6 md:py-10 z-10">
+            <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 max-w-2xl">
+              {bannerMovie.title || bannerMovie.name}
+            </h1>
+            <p className="text-sm md:text-base text-gray-200 max-w-xl mb-3 md:mb-4 line-clamp-2 md:line-clamp-3">
+              {bannerMovie.overview}
+            </p>
+            <div className="flex flex-wrap gap-2 md:gap-3">
+              <button
+                onClick={() => handlePlayClick(bannerMovie)}
+                className="bg-white text-black hover:bg-opacity-80 px-4 md:px-6 py-2 md:py-3 rounded text-sm md:text-base font-bold flex items-center transition"
+              >
+                <Play className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 fill-current" /> Play
+              </button>
+              <button
+                onClick={() => setSelectedMovie(bannerMovie)}
+                className="bg-gray-500/60 hover:bg-gray-600/80 text-white px-4 md:px-6 py-2 md:py-3 rounded text-sm md:text-base font-bold flex items-center transition"
+              >
+                <Info className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" /> More Info
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Rows */}
+      <div className="px-2 md:px-6 -mt-6 md:-mt-8 relative z-20 pb-16">
+        {isLoading ? (
+          <>
+            <MovieRowSkeleton />
+            <MovieRowSkeleton />
+            <MovieRowSkeleton />
+            <MovieRowSkeleton />
+          </>
+        ) : (
+          <>
+            {watchHistory.length > 0 && (
+              <MovieRow 
+                title="Resume Watching" 
+                items={watchHistory} 
+                id="history" 
+                onSeeAll={() => setSeeAllData({ title: "Resume Watching", items: watchHistory, category: 'history' })}
+              />
+            )}
+            <MovieRow 
+              title={selectedGenre ? `${genres[parseInt(selectedGenre)] || ''} Movies` : "Trending Movies"} 
+              items={trendingMovies} 
+              id="movies" 
+              onSeeAll={() => setSeeAllData({ 
+                title: selectedGenre ? `${genres[parseInt(selectedGenre)] || ''} Movies` : "Trending Movies", 
+                items: trendingMovies,
+                category: selectedGenre || 'trending_movies'
+              })}
+            />
+            <MovieRow 
+              title="Action Movies" 
+              items={actionMovies} 
+              id="action" 
+              onSeeAll={() => setSeeAllData({ title: "Action Movies", items: actionMovies, category: '28' })}
+            />
+            <MovieRow 
+              title="Popular TV Shows" 
+              items={trendingTV} 
+              id="tv" 
+              onSeeAll={() => setSeeAllData({ title: "Popular TV Shows", items: trendingTV, category: 'trending_tv' })}
+            />
+            <MovieRow 
+              title="Anime Collection" 
+              items={anime} 
+              id="anime" 
+              onSeeAll={() => setSeeAllData({ title: "Anime Collection", items: anime, category: 'anime' })}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {seeAllData && (
+          <SeeAllModal
+            title={seeAllData.title}
+            items={seeAllData.items}
+            category={seeAllData.category}
+            onClose={() => setSeeAllData(null)}
+          />
+        )}
+        {isSearchOpen && (
+          <SearchModal 
+            onClose={() => setIsSearchOpen(false)} 
+            query={searchQuery}
+            setQuery={setSearchQuery}
+            results={searchResults}
+            isSearching={isSearching}
+          />
+        )}
+        {selectedMovie && (
+          <MovieDetailModal 
+            movie={selectedMovie} 
+            onClose={() => setSelectedMovie(null)} 
+            genres={genres}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
