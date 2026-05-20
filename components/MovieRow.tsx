@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Play, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import type { TMDBMovie } from '../types/tmdb';
+import PreviewCard from './PreviewCard';
 
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
 
@@ -18,6 +19,10 @@ interface MovieRowProps {
 export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  
+  const [hoveredMovie, setHoveredMovie] = useState<TMDBMovie | null>(null);
+  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
+  const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {
@@ -34,6 +39,22 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
       .replace(/(^-|-$)/g, '');
     const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
     router.push(`/movie/${item.id}/${mediaType}-${slug}`);
+  };
+
+  const handleMouseEnter = (item: TMDBMovie, e: React.MouseEvent) => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPreviewPos({ x: rect.left + rect.width / 2, y: rect.top });
+    
+    hoverTimeout.current = setTimeout(() => {
+      setHoveredMovie(item);
+    }, 600); // 600ms delay before showing preview
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    setHoveredMovie(null);
   };
 
   return (
@@ -66,6 +87,8 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
             <div
               key={item.id}
               onClick={() => handleMovieClick(item)}
+              onMouseEnter={(e) => handleMouseEnter(item, e)}
+              onMouseLeave={handleMouseLeave}
               className="relative min-w-[100px] md:min-w-[140px] h-[150px] md:h-[210px] cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 poster-hover group/poster shrink-0"
             >
               <Image
@@ -89,6 +112,14 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
+
+      <PreviewCard 
+        movie={hoveredMovie as TMDBMovie}
+        isVisible={!!hoveredMovie}
+        position={previewPos}
+        onClose={() => setHoveredMovie(null)}
+        onPlay={handleMovieClick}
+      />
     </section>
   );
 }
