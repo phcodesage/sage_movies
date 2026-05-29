@@ -105,16 +105,14 @@ export default function MovieDetailPage() {
     }
   }, [id, slug]);
 
-  // Fetch video source when user clicks play
-  const handlePlay = async () => {
+  const loadVideoSource = async (selectedServer: string) => {
     if (!movie) return;
-    setIsPlaying(true);
     setIsLoading(true);
     setError(null);
 
     try {
       const type = movie.first_air_date ? 'tv' : 'movie';
-      const res = await fetch(`/api/video-sources/${type}/${movie.id}?server=${server}`);
+      const res = await fetch(`/api/video-sources/${type}/${movie.id}?server=${selectedServer}`);
       if (!res.ok) throw new Error('Failed to fetch video source');
       const data = await res.json();
 
@@ -123,13 +121,26 @@ export default function MovieDetailPage() {
         addToHistory(movie);
       } else {
         setError('Video source not available for this server. Try another server.');
-        setIsPlaying(false);
+        if (!isPlaying) setIsPlaying(false);
       }
     } catch (err) {
       setError('Failed to load video. Please try a different server.');
-      setIsPlaying(false);
+      if (!isPlaying) setIsPlaying(false);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fetch video source when user clicks play
+  const handlePlay = () => {
+    setIsPlaying(true);
+    loadVideoSource(server);
+  };
+
+  const handleServerChange = (newServer: string) => {
+    setServer(newServer);
+    if (isPlaying) {
+      loadVideoSource(newServer);
     }
   };
 
@@ -399,7 +410,7 @@ export default function MovieDetailPage() {
                 <label className="text-[10px] text-gray-500 font-bold uppercase mb-1.5 block">Streaming Server</label>
                 <select
                   value={server}
-                  onChange={(e) => setServer(e.target.value)}
+                  onChange={(e) => handleServerChange(e.target.value)}
                   className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                 >
                   <option value="vidsrc.to">Vidsrc.to (Primary)</option>
@@ -414,7 +425,7 @@ export default function MovieDetailPage() {
               
               <button
                 onClick={handlePlay}
-                disabled={isPlaying && !error}
+                disabled={isLoading}
                 className="w-full bg-white text-black text-sm font-black py-3 rounded-lg hover:bg-netflix-red hover:text-white transition-all active:scale-95 disabled:opacity-50 uppercase tracking-wider"
               >
                 {isPlaying ? 'Refresh Stream' : 'Start Watching'}
