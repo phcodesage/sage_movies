@@ -243,7 +243,6 @@ export default function MovieDetailPage() {
                   <iframe
                     src={embedUrl}
                     className="w-full h-full border-none"
-                    allowFullScreen
                     allow="autoplay; fullscreen"
                   />
                   
@@ -414,11 +413,13 @@ export default function MovieDetailPage() {
                   className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                 >
                   <option value="vidsrc.to">Vidsrc.to (Primary)</option>
+                  <option value="vidsrc.su">Vidsrc.su (Stable)</option>
                   <option value="vidsrc.me">Vidsrc.me (Backup)</option>
-                  <option value="player.videasy.net">Videasy (Multi)</option>
-                  <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
                   <option value="embedsu">Embedsu (Mirror)</option>
-                  <option value="vidsrc.cc">Vidsrc.cc (Alternative)</option>
+                  <option value="superembed">SuperEmbed (Multi)</option>
+                  <option value="player.videasy.net">Videasy (Alternative)</option>
+                  <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
+                  <option value="vidsrc.cc">Vidsrc.cc (Legacy)</option>
                 </select>
                 <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
               </div>

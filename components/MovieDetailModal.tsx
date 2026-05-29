@@ -119,7 +119,7 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
               </div>
             )}
 
-            {embedUrl && <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay; fullscreen" />}
+            {embedUrl && <iframe src={embedUrl} className="w-full h-full border-none" allow="autoplay; fullscreen" />}
           </div>
 
           <div className="w-full md:w-[30%] flex flex-col gap-6">
@@ -152,11 +152,13 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
                 className="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:ring-1 focus:ring-netflix-red"
               >
                 <option value="vidsrc.to">Vidsrc.to (Primary)</option>
+                <option value="vidsrc.su">Vidsrc.su (Stable)</option>
                 <option value="vidsrc.me">Vidsrc.me (Backup)</option>
-                <option value="player.videasy.net">Videasy</option>
-                <option value="vidsrc.pro">Vidsrc.pro</option>
-                <option value="embedsu">Embedsu</option>
-                <option value="vidsrc.cc">Vidsrc.cc (Alternative)</option>
+                <option value="embedsu">Embedsu (Mirror)</option>
+                <option value="superembed">SuperEmbed (Multi)</option>
+                <option value="player.videasy.net">Videasy (Alternative)</option>
+                <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
+                <option value="vidsrc.cc">Vidsrc.cc (Legacy)</option>
               </select>
             </div>
           </div>

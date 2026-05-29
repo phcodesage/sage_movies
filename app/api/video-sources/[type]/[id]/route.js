@@ -16,11 +16,14 @@ export async function GET(request, { params }) {
     case "vidsrc.to":
       embedURL = `https://vidsrc.to/embed/${type}/${id}`;
       break;
+    case "vidsrc.su":
+      embedURL = `https://vidsrc.su/embed/${type}/${id}`;
+      break;
     case "vidsrc.cc":
       embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
       break;
     case "vidsrc.me":
-      embedURL = `https://vidsrc.net/embed/${type}/?tmdb=${id}`;
+      embedURL = `https://vidsrc.me/embed/${type}?tmdb=${id}`;
       break;
     case "vidsrc.pro":
       embedURL = `https://vidsrc.pro/embed/${type}/${id}`;
