@@ -28,7 +28,7 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
       const timer = setTimeout(() => {
         const type = movie.first_air_date ? 'tv' : 'movie';
         // Use a fast server for preview
-        setEmbedUrl(`https://vidsrc.cc/v2/embed/${type}/${movie.id}?autoplay=1&mute=1`);
+        setEmbedUrl(`https://vidsrc.to/embed/${type}/${movie.id}?autoplay=1&mute=1`);
       }, 500);
 
       const readyTimer = setTimeout(() => setIsReady(true), 1500);

@@ -4,7 +4,7 @@ export async function GET(request, { params }) {
   const resolvedParams = await params;
   const { type, id } = resolvedParams;
   const { searchParams } = new URL(request.url);
-  const server = searchParams.get('server') || 'vidsrc.cc';
+  const server = searchParams.get('server') || 'vidsrc.to';
 
   if (!type || !id || !['movie', 'tv'].includes(type)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
@@ -13,6 +13,9 @@ export async function GET(request, { params }) {
   let embedURL = "";
   
   switch(server) {
+    case "vidsrc.to":
+      embedURL = `https://vidsrc.to/embed/${type}/${id}`;
+      break;
     case "vidsrc.cc":
       embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
       break;

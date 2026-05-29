@@ -17,7 +17,7 @@ interface MovieDetailModalProps {
 
 export default function MovieDetailModal({ movie, onClose, genres }: MovieDetailModalProps) {
   const router = useRouter();
-  const [server, setServer] = useState('vidsrc.cc');
+  const [server, setServer] = useState('vidsrc.to');
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -151,11 +151,12 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
                 onChange={(e) => setServer(e.target.value)}
                 className="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:ring-1 focus:ring-netflix-red"
               >
-                <option value="vidsrc.cc">Vidsrc.cc (Primary)</option>
+                <option value="vidsrc.to">Vidsrc.to (Primary)</option>
                 <option value="vidsrc.me">Vidsrc.me (Backup)</option>
                 <option value="player.videasy.net">Videasy</option>
                 <option value="vidsrc.pro">Vidsrc.pro</option>
                 <option value="embedsu">Embedsu</option>
+                <option value="vidsrc.cc">Vidsrc.cc (Alternative)</option>
               </select>
             </div>
           </div>

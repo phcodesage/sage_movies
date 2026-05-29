@@ -23,7 +23,7 @@ export default function MovieDetailPage() {
   const { addToHistory } = useWatchHistory();
 
   const [movie, setMovie] = useState<TMDBMovie | any>(null);
-  const [server, setServer] = useState('vidsrc.cc');
+  const [server, setServer] = useState('vidsrc.to');
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -402,11 +402,12 @@ export default function MovieDetailPage() {
                   onChange={(e) => setServer(e.target.value)}
                   className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                 >
-                  <option value="vidsrc.cc">Vidsrc.cc (HD)</option>
-                  <option value="vidsrc.me">Vidsrc.me (Fast)</option>
+                  <option value="vidsrc.to">Vidsrc.to (Primary)</option>
+                  <option value="vidsrc.me">Vidsrc.me (Backup)</option>
                   <option value="player.videasy.net">Videasy (Multi)</option>
                   <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
                   <option value="embedsu">Embedsu (Mirror)</option>
+                  <option value="vidsrc.cc">Vidsrc.cc (Alternative)</option>
                 </select>
                 <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
               </div>
