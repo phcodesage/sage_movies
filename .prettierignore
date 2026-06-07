@@ -1,0 +1,7 @@
+.next
+dist
+out
+node_modules
+old_assets
+package-lock.json
+sw.js

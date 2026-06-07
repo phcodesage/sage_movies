@@ -11,15 +11,12 @@ export async function GET() {
       { next: { revalidate: 86400 } }
     );
     const data = await response.json();
-    return NextResponse.json(
-      data,
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
-          'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
-        },
-      }
-    );
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
+        'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch genres' }, { status: 500 });
   }
