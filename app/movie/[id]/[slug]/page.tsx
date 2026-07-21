@@ -10,6 +10,7 @@ import { useWatchHistory } from '../../../../lib/hooks/useWatchHistory';
 import { getSimilarMovies } from '../../../../lib/recommendations';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
+import { AdsterraNativeBanner } from '../../../../components/Adsterra';
 import {
   VIDEO_SERVERS,
   SUBTITLE_LANGUAGES,
@@ -522,6 +523,14 @@ export default function MovieDetailPage() {
                 {isPlaying ? 'Refresh Stream' : 'Start Watching'}
               </button>
             </div>
+
+            {/* Ad slot directly beneath the play control. Gated on a stream actually
+                being live (playing, has an embed URL, no error) so we never show an ad
+                against a broken player. It sits below the button and is never layered
+                over it — the play button must stay a play button, not an ad surface. */}
+            {isPlaying && embedUrl && !error && (
+              <AdsterraNativeBanner className="rounded-xl overflow-hidden" />
+            )}
 
             {/* Storyline Section */}
             <div className="flex flex-col gap-3">

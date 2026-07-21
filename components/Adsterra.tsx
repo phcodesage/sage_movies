@@ -57,7 +57,12 @@ export function AdsterraSocialBar() {
   return null;
 }
 
-export function AdsterraNativeBanner({ className = '' }: { className?: string }) {
+/**
+ * Only ONE instance may be mounted at a time: the container id is fixed by Adsterra
+ * and invoke.js resolves it by id, so two live instances would collide. Rendering it
+ * on separate routes is fine.
+ */
+export function AdsterraNativeBanner({ className = 'px-4 md:px-12 my-6' }: { className?: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   // Mount the script inside the host so it sits next to the container div, matching
   // the markup Adsterra ships.
@@ -66,7 +71,7 @@ export function AdsterraNativeBanner({ className = '' }: { className?: string })
   if (!ENABLED) return null;
 
   return (
-    <div ref={hostRef} className={`px-4 md:px-12 my-6 ${className}`}>
+    <div ref={hostRef} className={className}>
       <div id={NATIVE_BANNER_CONTAINER_ID} />
     </div>
   );

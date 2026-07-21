@@ -19,7 +19,7 @@ interface MovieRowProps {
 export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   const [hoveredMovie, setHoveredMovie] = useState<TMDBMovie | null>(null);
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -43,10 +43,10 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
 
   const handleMouseEnter = (item: TMDBMovie, e: React.MouseEvent) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     setPreviewPos({ x: rect.left + rect.width / 2, y: rect.top });
-    
+
     hoverTimeout.current = setTimeout(() => {
       setHoveredMovie(item);
     }, 600); // 600ms delay before showing preview
@@ -89,19 +89,26 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
               onClick={() => handleMovieClick(item)}
               onMouseEnter={(e) => handleMouseEnter(item, e)}
               onMouseLeave={handleMouseLeave}
-              className="relative min-w-[100px] md:min-w-[140px] h-[150px] md:h-[210px] cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 poster-hover group/poster shrink-0"
+              className="min-w-[100px] md:min-w-[140px] cursor-pointer group/poster shrink-0"
             >
-              <Image
-                src={`${THUMB_URL}${item.poster_path}`}
-                alt={item.title || item.name || ''}
-                fill
-                className="rounded-md object-cover"
-                loading="lazy"
-                sizes="(max-width: 768px) 100px, 140px"
-              />
-              <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover/poster:opacity-100 transition-opacity rounded-md flex items-center justify-center">
-                <Play className="w-8 h-8 text-white fill-current opacity-0 group-hover/poster:opacity-100 transition-opacity" />
+              {/* Scale the poster only, not the caption — otherwise the title jitters
+                  on hover and shifts the row. */}
+              <div className="relative h-[150px] md:h-[210px] transition-transform duration-300 group-hover/poster:scale-105 group-hover/poster:z-30 poster-hover">
+                <Image
+                  src={`${THUMB_URL}${item.poster_path}`}
+                  alt={item.title || item.name || ''}
+                  fill
+                  className="rounded-md object-cover"
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100px, 140px"
+                />
+                <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover/poster:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                  <Play className="w-8 h-8 text-white fill-current opacity-0 group-hover/poster:opacity-100 transition-opacity" />
+                </div>
               </div>
+              <h4 className="mt-1.5 font-bold text-[11px] md:text-xs line-clamp-2 leading-tight text-gray-300 group-hover/poster:text-netflix-red transition-colors">
+                {item.title || item.name}
+              </h4>
             </div>
           ))}
         </div>
@@ -113,7 +120,7 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
         </button>
       </div>
 
-      <PreviewCard 
+      <PreviewCard
         movie={hoveredMovie as TMDBMovie}
         isVisible={!!hoveredMovie}
         position={previewPos}
