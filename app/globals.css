@@ -123,3 +123,20 @@ body {
 .aspect-video {
   aspect-ratio: 16 / 9;
 }
+
+/* Adsterra Native Banner — compact (narrow column) variant.
+   The vendor injects a single flex row of 4 tiles. In the movie page sidebar that is
+   ~296px wide, which squeezes headlines to roughly one word per line. Allowing the
+   row to wrap puts the tiles 2-up and gives the text room.
+   Deliberately gentle: these are the vendor's own elements, so if Adsterra changes
+   the markup these rules simply stop matching rather than breaking the unit.
+   Structure: .ad-native-compact > #container-<hash> > row > tile.<hash>__bn-con */
+.ad-native-compact > div > div {
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.ad-native-compact [class*='__bn-con'] {
+  flex: 0 0 calc(50% - 8px) !important;
+  min-width: 0 !important;
+}

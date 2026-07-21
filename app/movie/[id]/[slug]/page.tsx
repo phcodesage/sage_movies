@@ -529,7 +529,7 @@ export default function MovieDetailPage() {
                 against a broken player. It sits below the button and is never layered
                 over it — the play button must stay a play button, not an ad surface. */}
             {isPlaying && embedUrl && !error && (
-              <AdsterraNativeBanner className="rounded-xl overflow-hidden" />
+              <AdsterraNativeBanner className="ad-native-compact rounded-xl overflow-hidden" />
             )}
 
             {/* Storyline Section */}
