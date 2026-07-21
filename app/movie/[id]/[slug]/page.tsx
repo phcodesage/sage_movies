@@ -39,7 +39,12 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState<TMDBMovie | any>(null);
   const [server, setServer] = useState(DEFAULT_SERVER);
   const [lang, setLang] = useState(DEFAULT_LANG);
-  const [blockProviderPopups, setBlockProviderPopups] = useState(true);
+
+  // Popup-blocking is applied automatically per provider rather than exposed as a
+  // toggle: users had no way to know what "Block provider popups" meant, and most
+  // providers detect the sandbox and refuse to play, so a manual switch mostly
+  // produced a broken player. `sandboxTolerant` records which ones actually work.
+  const sandboxed = getServer(server).sandboxTolerant;
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -275,24 +280,23 @@ export default function MovieDetailPage() {
                 </div>
               )}
 
+              {/* Up Next is opened deliberately via the BROWSE UP NEXT button. It used to
+                  also open on hover, which meant the overlay covered the video whenever
+                  the cursor crossed the player — i.e. constantly. */}
               {embedUrl && (
-                <div
-                  className="w-full h-full relative group/player"
-                  onMouseEnter={() => isPlaying && setShowUpNext(true)}
-                  onMouseLeave={() => setShowUpNext(false)}
-                >
+                <div className="w-full h-full relative group/player">
                   <iframe
                     // Changing `sandbox` on a live iframe has no effect until the
-                    // document reloads, so the toggle would silently do nothing while
-                    // playing. Keying on it forces React to remount the element.
-                    key={`${embedUrl}|${blockProviderPopups}`}
+                    // document reloads, so keying on it forces React to remount.
+                    key={`${embedUrl}|${sandboxed}`}
                     src={embedUrl}
                     className="w-full h-full border-none"
                     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                     referrerPolicy="origin"
-                    // Omitting allow-popups / allow-top-navigation is what actually stops
-                    // the provider's popunders and forced redirects. See PLAYER_SANDBOX.
-                    sandbox={blockProviderPopups ? PLAYER_SANDBOX : undefined}
+                    // Omitting allow-popups / allow-top-navigation is what stops the
+                    // provider's popunders and forced redirects. Applied only to
+                    // providers that tolerate it — see PLAYER_SANDBOX.
+                    sandbox={sandboxed ? PLAYER_SANDBOX : undefined}
                   />
 
                   {/* Up Next / Pause Gallery Overlay */}
@@ -504,33 +508,8 @@ export default function MovieDetailPage() {
                 <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
                 {!getServer(server).supportsLang && (
                   <p className="text-[10px] text-gray-500 mt-1.5 leading-snug">
-                    This server ignores the language setting — pick Vidsrc.to, Vidsrc.me or VidCore
-                    to preselect subtitles. Audio tracks are chosen inside the player.
-                  </p>
-                )}
-              </div>
-
-              <div className="border-t border-gray-800 pt-3">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={blockProviderPopups}
-                    onChange={(e) => setBlockProviderPopups(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 shrink-0 accent-netflix-red cursor-pointer"
-                  />
-                  <span className="text-[11px] text-gray-300 font-bold leading-snug">
-                    Block provider popups
-                    <span className="block text-[10px] text-gray-500 font-normal mt-0.5">
-                      Stops the streaming source opening popunder ads or hijacking the tab. If a
-                      server refuses to play, untick this.
-                    </span>
-                  </span>
-                </label>
-
-                {blockProviderPopups && !getServer(server).sandboxTolerant && (
-                  <p className="text-[10px] text-yellow-500/90 mt-2 leading-snug pl-6">
-                    Heads up: this server detects the block and refuses to play. Switch to VidCore,
-                    which works with it on — or untick to use this server unprotected.
+                    This server ignores the language setting — pick Vidsrc.me to preselect
+                    subtitles. Audio tracks are chosen inside the player.
                   </p>
                 )}
               </div>

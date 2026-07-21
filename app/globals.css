@@ -12,7 +12,11 @@
 body {
   background-color: var(--netflix-black);
   color: white;
-  overflow-x: hidden;
+  /* `clip`, not `hidden`: `overflow-x: hidden` makes body a scroll container, which
+     breaks every programmatic scroll on the page — window.scrollTo() and
+     scrollIntoView() both silently do nothing while wheel scrolling still works.
+     `clip` suppresses horizontal overflow without creating a scroll box. */
+  overflow-x: clip;
 }
 
 /* Custom Scrollbar */
@@ -101,13 +105,18 @@ body {
 }
 
 @keyframes netflix-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Banner Gradient */
 .banner-gradient {
-  background: linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0) 100%);
+  background: linear-gradient(to top, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0) 100%);
 }
 
 /* Aspect Ratio for video */

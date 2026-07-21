@@ -1,7 +1,7 @@
 google.com, pub-5533902591486843, DIRECT, f08c47fec0942fa0
 
-# PopAds — REPLACE THE COMMENTED LINE BELOW WITH THE REAL ONE.
-# Get the exact entry from popads.net (Websites -> your site). The publisher ID and
-# any trailing certification-authority ID must match your account exactly; a guessed
-# or malformed line means buyers treat your inventory as unauthorized.
-# popads.net, YOUR_PUBLISHER_ID, DIRECT
+# Adsterra — REPLACE THE COMMENTED LINE BELOW WITH THE REAL ONE.
+# Get the exact entry from the Adsterra dashboard; the publisher ID and any trailing
+# certification-authority ID must match your account exactly, or buyers treat the
+# inventory as unauthorized and bid lower.
+# adsterra.com, YOUR_PUBLISHER_ID, DIRECT

@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AppProvider } from '../lib/context/AppContext';
 import { WebVitals } from '../components/WebVitals';
-import PopAds from '../components/PopAds';
+import { AdsterraSocialBar } from '../components/Adsterra';
 import { WebSiteStructuredData, OrganizationStructuredData } from '../components/StructuredData';
 
 export const metadata: Metadata = {
@@ -80,14 +80,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
         <WebSiteStructuredData />
         <OrganizationStructuredData />
-        {/* PopAds requires its tag inside <head>; keep it last, directly above </head>. */}
-        <PopAds />
       </head>
       <body className="bg-netflix-black text-white min-h-screen font-sans">
         <ErrorBoundary>
           <AppProvider>
             <WebVitals />
             {children}
+            <AdsterraSocialBar />
           </AppProvider>
         </ErrorBoundary>
       </body>

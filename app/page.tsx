@@ -14,22 +14,24 @@ import dynamic from 'next/dynamic';
 import Navbar from '../components/Navbar';
 import MovieRow from '../components/MovieRow';
 import { MovieRowSkeleton, BannerSkeleton } from '../components/LoadingSkeleton';
+import { AdsterraNativeBanner } from '../components/Adsterra';
+import { scrollToSection } from '../lib/utils/scrollToSection';
 import type { TMDBMovie } from '../types/tmdb';
 
 const SeeAllModal = dynamic(() => import('../components/SeeAllModal'), {
   loading: () => <div className="fixed inset-0 bg-netflix-black z-[100]" />,
-  ssr: false
+  ssr: false,
 });
 
 // Lazy load modals for better initial load performance
 const SearchModal = dynamic(() => import('../components/SearchModal'), {
   loading: () => <div className="fixed inset-0 bg-netflix-black z-50" />,
-  ssr: false
+  ssr: false,
 });
 
 const MovieDetailModal = dynamic(() => import('../components/MovieDetailModal'), {
   loading: () => <div className="fixed inset-0 bg-black/95 z-50" />,
-  ssr: false
+  ssr: false,
 });
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
@@ -44,14 +46,26 @@ export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [seeAllData, setSeeAllData] = useState<{ title: string; items: TMDBMovie[]; category: string } | null>(null);
+  const [seeAllData, setSeeAllData] = useState<{
+    title: string;
+    items: TMDBMovie[];
+    category: string;
+  } | null>(null);
   const [recommended, setRecommended] = useState<TMDBMovie[]>([]);
-  const [lastWatchedSimilar, setLastWatchedSimilar] = useState<{ movie: TMDBMovie; similar: TMDBMovie[] } | null>(null);
+  const [lastWatchedSimilar, setLastWatchedSimilar] = useState<{
+    movie: TMDBMovie;
+    similar: TMDBMovie[];
+  } | null>(null);
   const [allFetchedData, setAllFetchedData] = useState<TMDBMovie[]>([]);
   const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isScrolled = useScroll(50);
-  const { query: searchQuery, setQuery: setSearchQuery, results: searchResults, isSearching } = useSearch(500);
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    isSearching,
+  } = useSearch(500);
   const { history: watchHistory } = useWatchHistory();
   const { genres } = useAppContext();
   const router = useRouter();
@@ -85,10 +99,18 @@ export default function Home() {
     const init = async () => {
       try {
         const [movieRes, tvRes, animeRes, actionRes] = await Promise.all([
-          fetch('/api/movies/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
-          fetch('/api/tv/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
-          fetch('/api/anime/collection').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] })),
-          fetch('/api/movies/genre/28').then(res => res.ok ? res.json() : { results: [] }).catch(() => ({ results: [] }))
+          fetch('/api/movies/collection')
+            .then((res) => (res.ok ? res.json() : { results: [] }))
+            .catch(() => ({ results: [] })),
+          fetch('/api/tv/collection')
+            .then((res) => (res.ok ? res.json() : { results: [] }))
+            .catch(() => ({ results: [] })),
+          fetch('/api/anime/collection')
+            .then((res) => (res.ok ? res.json() : { results: [] }))
+            .catch(() => ({ results: [] })),
+          fetch('/api/movies/genre/28')
+            .then((res) => (res.ok ? res.json() : { results: [] }))
+            .catch(() => ({ results: [] })),
         ]);
 
         const movies = (movieRes as any).results || [];
@@ -102,14 +124,14 @@ export default function Home() {
           ...movies,
           ...((tvRes as any).results || []),
           ...((animeRes as any).results || []),
-          ...((actionRes as any).results || [])
+          ...((actionRes as any).results || []),
         ];
-        const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
+        const unique = Array.from(new Map(all.map((item) => [item.id, item])).values());
         setAllFetchedData(unique);
 
         if (movies.length > 0) {
           setBannerMovie(movies[0]);
-          
+
           // Start banner rotation
           let index = 0;
           bannerIntervalRef.current = setInterval(() => {
@@ -130,13 +152,25 @@ export default function Home() {
     };
   }, []);
 
+  // Honour a #section hash once the rows exist. Arriving at /#tv from another page
+  // renders an empty shell first — the sections only mount after the fetches resolve,
+  // so the browser's native hash jump finds nothing and leaves you at the top.
+  useEffect(() => {
+    if (isLoading) return;
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+
+    const frame = requestAnimationFrame(() => scrollToSection(id));
+    return () => cancelAnimationFrame(frame);
+  }, [isLoading]);
+
   // Genre filtering logic
   useEffect(() => {
     if (!selectedGenre) {
       // Re-fetch trending movies if genre is cleared
       fetch('/api/movies/collection')
-        .then(res => res.json())
-        .then(data => setTrendingMovies(data.results || []));
+        .then((res) => res.json())
+        .then((data) => setTrendingMovies(data.results || []));
       return;
     }
 
@@ -146,13 +180,13 @@ export default function Home() {
         const res = await fetch(`/api/movies/genre/${selectedGenre}`);
         const data = await res.json();
         setTrendingMovies(data.results || []);
-        
+
         // Scroll to movies section after genre is updated
         const moviesSection = document.getElementById('movies');
         if (moviesSection) {
           window.scrollTo({
             top: moviesSection.offsetTop - 100,
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
       } catch (error) {
@@ -165,22 +199,31 @@ export default function Home() {
   }, [selectedGenre]);
 
   return (
-    <div className="relative min-h-screen bg-netflix-black overflow-x-hidden">
+    // overflow-x-clip, not -hidden: `hidden` would make this a scroll container and
+    // break programmatic scrolling (see the note in globals.css).
+    <div className="relative min-h-screen bg-netflix-black overflow-x-clip">
       {/* Full Page Loader */}
       <AnimatePresence>
         {isLoading && (
-          <motion.div 
+          <motion.div
+            // `key` lets AnimatePresence track this child — without it the exit
+            // animation never completed and the overlay stayed mounted at opacity 0,
+            // invisibly swallowing every click on the page (the navbar included).
+            key="page-loader"
             initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="fixed inset-0 z-[100] bg-netflix-black flex flex-col items-center justify-center"
+            // Nothing here is interactive, so it must never intercept pointer events —
+            // a stuck overlay would otherwise make the entire site unclickable.
+            className="fixed inset-0 z-[100] bg-netflix-black flex flex-col items-center justify-center pointer-events-none"
           >
             <div className="netflix-loader scale-150">
               <div className="netflix-logo">
                 <div className="middle-bar"></div>
               </div>
             </div>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -248,56 +291,95 @@ export default function Home() {
         ) : (
           <>
             {recommended.length > 0 && (
-              <MovieRow 
-                title="Special Recommendations for You" 
-                items={recommended} 
-                id="recommended" 
-                onSeeAll={() => setSeeAllData({ title: "Recommended for You", items: recommended, category: 'history' })}
+              <MovieRow
+                title="Special Recommendations for You"
+                items={recommended}
+                id="recommended"
+                onSeeAll={() =>
+                  setSeeAllData({
+                    title: 'Recommended for You',
+                    items: recommended,
+                    category: 'history',
+                  })
+                }
               />
             )}
             {lastWatchedSimilar && (
-              <MovieRow 
-                title={`Because you watched ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`} 
-                items={lastWatchedSimilar.similar} 
-                id="because-watched" 
-                onSeeAll={() => setSeeAllData({ title: `More Like ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`, items: lastWatchedSimilar.similar, category: 'history' })}
+              <MovieRow
+                title={`Because you watched ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`}
+                items={lastWatchedSimilar.similar}
+                id="because-watched"
+                onSeeAll={() =>
+                  setSeeAllData({
+                    title: `More Like ${lastWatchedSimilar.movie.title || lastWatchedSimilar.movie.name}`,
+                    items: lastWatchedSimilar.similar,
+                    category: 'history',
+                  })
+                }
               />
             )}
             {watchHistory.length > 0 && (
-              <MovieRow 
-                title="Resume Watching" 
-                items={watchHistory} 
-                id="history" 
-                onSeeAll={() => setSeeAllData({ title: "Resume Watching", items: watchHistory, category: 'history' })}
+              <MovieRow
+                title="Resume Watching"
+                items={watchHistory}
+                id="history"
+                onSeeAll={() =>
+                  setSeeAllData({
+                    title: 'Resume Watching',
+                    items: watchHistory,
+                    category: 'history',
+                  })
+                }
               />
             )}
-            <MovieRow 
-              title={selectedGenre ? `${genres[parseInt(selectedGenre)] || ''} Movies` : "Trending Movies"} 
-              items={trendingMovies} 
-              id="movies" 
-              onSeeAll={() => setSeeAllData({ 
-                title: selectedGenre ? `${genres[parseInt(selectedGenre)] || ''} Movies` : "Trending Movies", 
-                items: trendingMovies,
-                category: selectedGenre || 'trending_movies'
-              })}
+            <MovieRow
+              title={
+                selectedGenre
+                  ? `${genres[parseInt(selectedGenre)] || ''} Movies`
+                  : 'Trending Movies'
+              }
+              items={trendingMovies}
+              id="movies"
+              onSeeAll={() =>
+                setSeeAllData({
+                  title: selectedGenre
+                    ? `${genres[parseInt(selectedGenre)] || ''} Movies`
+                    : 'Trending Movies',
+                  items: trendingMovies,
+                  category: selectedGenre || 'trending_movies',
+                })
+              }
             />
-            <MovieRow 
-              title="Action Movies" 
-              items={actionMovies} 
-              id="action" 
-              onSeeAll={() => setSeeAllData({ title: "Action Movies", items: actionMovies, category: '28' })}
+            <MovieRow
+              title="Action Movies"
+              items={actionMovies}
+              id="action"
+              onSeeAll={() =>
+                setSeeAllData({ title: 'Action Movies', items: actionMovies, category: '28' })
+              }
             />
-            <MovieRow 
-              title="Popular TV Shows" 
-              items={trendingTV} 
-              id="tv" 
-              onSeeAll={() => setSeeAllData({ title: "Popular TV Shows", items: trendingTV, category: 'trending_tv' })}
+            {/* Native banner sits between rows so it reads as another content shelf
+                rather than an interruption. Move it if it underperforms here. */}
+            <AdsterraNativeBanner />
+            <MovieRow
+              title="Popular TV Shows"
+              items={trendingTV}
+              id="tv"
+              onSeeAll={() =>
+                setSeeAllData({
+                  title: 'Popular TV Shows',
+                  items: trendingTV,
+                  category: 'trending_tv',
+                })
+              }
             />
-            <MovieRow 
-              title="Anime Collection" 
-              items={anime} 
-              id="anime" 
-              onSeeAll={() => setSeeAllData({ title: "Anime Collection", items: anime, category: 'anime' })}
+            <MovieRow
+              title="Anime Collection"
+              items={anime}
+              id="anime"
+              onSeeAll={() =>
+                setSeeAllData({ title: 'Anime Collection', items: anime, category: 'anime' })
+              }
             />
           </>
         )}
@@ -314,8 +396,8 @@ export default function Home() {
           />
         )}
         {isSearchOpen && (
-          <SearchModal 
-            onClose={() => setIsSearchOpen(false)} 
+          <SearchModal
+            onClose={() => setIsSearchOpen(false)}
             query={searchQuery}
             setQuery={setSearchQuery}
             results={searchResults}
@@ -323,9 +405,9 @@ export default function Home() {
           />
         )}
         {selectedMovie && (
-          <MovieDetailModal 
-            movie={selectedMovie} 
-            onClose={() => setSelectedMovie(null)} 
+          <MovieDetailModal
+            movie={selectedMovie}
+            onClose={() => setSelectedMovie(null)}
             genres={genres}
           />
         )}

@@ -47,75 +47,26 @@ export const SUBTITLE_LANGUAGES = [
   { code: 'ar', label: 'Arabic' },
 ];
 
-// VidCore is the default because it is the only provider that plays with the popup
-// sandbox enabled — and vidsrc.to, the previous default, served no stream at all.
-export const DEFAULT_SERVER = 'vidcore';
+// Default and ordering come from a measured bake-off, not vibes. On 2026-07-22 all
+// providers were loaded against the 5 newest now-playing releases (TMDB 1318621,
+// 1368337, 1491920, 1108427, 1645603) and scored on whether the title actually came
+// up. Re-run that test before changing this — availability shifts constantly.
+//
+//   videasy    5/5   clean player, no interstitial seen
+//   2embed     5/5   clean player
+//   superembed 5/5   reliable BUT served an adult "video chat" interstitial on one
+//                    title; kept as a backup, deliberately not the default
+//   vidsrc.me  4/5   missing Kung Fu Soccer
+//
+// Dropped: vidsrc.su (0/5, blank every time), vidsrc.to (0/5, always behind a
+// gambling ad wall), vidcore (1/5), vidlink (2/5).
+export const DEFAULT_SERVER = 'player.videasy.net';
 export const DEFAULT_LANG = 'en';
 
 export const VIDEO_SERVERS: VideoServer[] = [
   {
-    id: 'vidsrc.to',
-    label: 'Vidsrc.to (Primary)',
-    supportsLang: true,
-    sandboxTolerant: false, // no stream for the probe title either way
-    build: (type, id, { lang }) =>
-      `https://vidsrc.to/embed/${type}/${id}${lang ? `?ds_lang=${lang}` : ''}`,
-  },
-  {
-    id: 'vidsrc.me',
-    label: 'Vidsrc.me (Backup)',
-    supportsLang: true,
-    sandboxTolerant: false, // blank 'media unavailable' under sandbox
-    build: (type, id, { lang }) =>
-      `https://vidsrc.me/embed/${type}?tmdb=${id}${lang ? `&ds_lang=${lang}` : ''}`,
-  },
-  {
-    id: 'vidcore',
-    label: 'VidCore (Multi-subtitle)',
-    supportsLang: true,
-    sandboxTolerant: true, // only provider that plays sandboxed
-    build: (type, id, { lang, season = 1, episode = 1 }) => {
-      const path = type === 'tv' ? `tv/${id}/${season}/${episode}` : `movie/${id}`;
-      return `https://vidcore.org/embed/${path}${lang ? `?sub=${lang}` : ''}`;
-    },
-  },
-  {
-    id: 'vidlink',
-    label: 'VidLink (Ad-light)',
-    supportsLang: false,
-    sandboxTolerant: false, // shows 'Please Disable Sandbox'
-    build: (type, id, { season = 1, episode = 1 }) =>
-      type === 'tv'
-        ? `https://vidlink.pro/tv/${id}/${season}/${episode}`
-        : `https://vidlink.pro/movie/${id}`,
-  },
-  {
-    id: 'vidsrc.su',
-    label: 'Vidsrc.su (Stable)',
-    supportsLang: false,
-    sandboxTolerant: false, // shows 'Restricted Embed Detected'
-    build: (type, id) => `https://vidsrc.su/embed/${type}/${id}`,
-  },
-  {
-    id: 'superembed',
-    label: 'SuperEmbed (Multi)',
-    supportsLang: false,
-    sandboxTolerant: false, // shows 'Sandboxing is not allowed!'
-    build: (type, id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-  },
-  {
-    id: '2embed',
-    label: '2Embed (Mirror)',
-    supportsLang: false,
-    sandboxTolerant: false, // shows 'Sandbox Detected'
-    build: (type, id, { season = 1, episode = 1 }) =>
-      type === 'tv'
-        ? `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
-        : `https://www.2embed.cc/embed/${id}`,
-  },
-  {
     id: 'player.videasy.net',
-    label: 'Videasy (Alternative)',
+    label: 'Videasy (Recommended)',
     supportsLang: false,
     sandboxTolerant: false, // shows 'Iframe Sandbox Detected'
     build: (type, id, { season, episode }) => {
@@ -124,6 +75,31 @@ export const VIDEO_SERVERS: VideoServer[] = [
         type === 'tv' && season && episode ? `tv/${id}/${season}/${episode}` : `${type}/${id}`;
       return `https://player.videasy.net/${path}?ads_behavior=background&popup_mode=quiet`;
     },
+  },
+  {
+    id: '2embed',
+    label: '2Embed (Reliable)',
+    supportsLang: false,
+    sandboxTolerant: false, // shows 'Sandbox Detected'
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
+        : `https://www.2embed.cc/embed/${id}`,
+  },
+  {
+    id: 'vidsrc.me',
+    label: 'Vidsrc.me (Subtitles)',
+    supportsLang: true,
+    sandboxTolerant: false, // blank 'media unavailable' under sandbox
+    build: (type, id, { lang }) =>
+      `https://vidsrc.me/embed/${type}?tmdb=${id}${lang ? `&ds_lang=${lang}` : ''}`,
+  },
+  {
+    id: 'superembed',
+    label: 'SuperEmbed (Backup)',
+    supportsLang: false,
+    sandboxTolerant: false, // shows 'Sandboxing is not allowed!'
+    build: (type, id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
   },
 ];
 
