@@ -1,51 +1,36 @@
 import { NextResponse } from 'next/server';
+import { getServer, DEFAULT_LANG, SUBTITLE_LANGUAGES } from '../../../../../lib/videoServers';
 
 export async function GET(request, { params }) {
   const resolvedParams = await params;
   const { type, id } = resolvedParams;
   const { searchParams } = new URL(request.url);
-  const server = searchParams.get('server') || 'vidsrc.to';
 
   if (!type || !id || !['movie', 'tv'].includes(type)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
-  let embedURL = "";
-  
-  switch(server) {
-    case "vidsrc.to":
-      embedURL = `https://vidsrc.to/embed/${type}/${id}`;
-      break;
-    case "vidsrc.su":
-      embedURL = `https://vidsrc.su/embed/${type}/${id}`;
-      break;
-    case "vidsrc.cc":
-      embedURL = `https://vidsrc.cc/v2/embed/${type}/${id}`;
-      break;
-    case "vidsrc.me":
-      embedURL = `https://vidsrc.me/embed/${type}?tmdb=${id}`;
-      break;
-    case "vidsrc.pro":
-      embedURL = `https://vidsrc.pro/embed/${type}/${id}`;
-      break;
-    case "embedsu":
-      embedURL = `https://embed.su/embed/${type}/${id}`;
-      break;
-    case "2embed":
-      embedURL = `https://www.2embed.cc/embed/${type}/${id}`;
-      break;
-    case "moviesapi":
-      embedURL = `https://moviesapi.club/movie/${id}`;
-      break;
-    case "superembed":
-      embedURL = `https://multiembed.mov/?video_id=${id}&tmdb=1`;
-      break;
-    case "player.videasy.net":
-    default:
-      const mediaType = type === 'tv' ? 'show' : 'movie';
-      embedURL = `https://player.videasy.net/embed/${mediaType}/${id}?ads_behavior=background&popup_mode=quiet`;
-      break;
-  }
+  const server = getServer(searchParams.get('server'));
 
-  return NextResponse.json({ embedURL });
+  const requestedLang = searchParams.get('lang') || DEFAULT_LANG;
+  const lang = SUBTITLE_LANGUAGES.some((l) => l.code === requestedLang)
+    ? requestedLang
+    : DEFAULT_LANG;
+
+  const season = parseInt(searchParams.get('season') || '1', 10) || 1;
+  const episode = parseInt(searchParams.get('episode') || '1', 10) || 1;
+
+  const embedURL = server.build(type, id, {
+    lang: server.supportsLang ? lang : undefined,
+    season,
+    episode,
+  });
+
+  return NextResponse.json({
+    embedURL,
+    server: server.id,
+    // The UI reads this to tell the user when the language picker has no effect
+    // on the provider they selected.
+    langApplied: server.supportsLang ? lang : null,
+  });
 }

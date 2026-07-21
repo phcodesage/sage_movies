@@ -4,15 +4,18 @@ import { Metadata } from 'next';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AppProvider } from '../lib/context/AppContext';
 import { WebVitals } from '../components/WebVitals';
+import PopAds from '../components/PopAds';
 import { WebSiteStructuredData, OrganizationStructuredData } from '../components/StructuredData';
 
 export const metadata: Metadata = {
   title: {
     default: 'Sage Movies - Free Movies, TV Shows & Anime Streaming',
-    template: '%s | Sage Movies'
+    template: '%s | Sage Movies',
   },
-  description: 'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
-  keywords: 'free movies, 123movies, trending movies, movies for kids, anime streaming, TV shows online, watch movies free, streaming site',
+  description:
+    'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
+  keywords:
+    'free movies, 123movies, trending movies, movies for kids, anime streaming, TV shows online, watch movies free, streaming site',
   authors: [{ name: 'Sage Movies' }],
   creator: 'Sage Movies',
   publisher: 'Sage Movies',
@@ -27,7 +30,8 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://sagemovies.com',
     title: 'Sage Movies - Free Movies, TV Shows & Anime Streaming',
-    description: 'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
+    description:
+      'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
     siteName: 'Sage Movies',
     images: [
       {
@@ -41,7 +45,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Sage Movies - Free Movies, TV Shows & Anime Streaming',
-    description: 'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
+    description:
+      'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
     images: ['https://image.tmdb.org/t/p/original/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg'],
   },
   robots: {
@@ -68,9 +73,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <link rel="icon" href="https://ui-avatars.com/api/?name=SM&background=e50914&color=fff&rounded=true&size=32" type="image/png"/>
+        <link
+          rel="icon"
+          href="https://ui-avatars.com/api/?name=SM&background=e50914&color=fff&rounded=true&size=32"
+          type="image/png"
+        />
         <WebSiteStructuredData />
         <OrganizationStructuredData />
+        {/* PopAds requires its tag inside <head>; keep it last, directly above </head>. */}
+        <PopAds />
       </head>
       <body className="bg-netflix-black text-white min-h-screen font-sans">
         <ErrorBoundary>
