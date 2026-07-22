@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Play, X, Star } from 'lucide-react';
+import { Search, Play, X, Star, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { SEARCH_BRANDS, matchSearchBrand } from '../lib/streamingServices';
 import type { TMDBMovie } from '../types/tmdb';
 
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
+const LOGO_URL = 'https://image.tmdb.org/t/p/w92';
 
 interface SearchModalProps {
   onClose: () => void;
@@ -26,6 +29,14 @@ export default function SearchModal({
 }: SearchModalProps) {
   const router = useRouter();
 
+  // Brand queries ("netflix", "prime video", …) get a dedicated platform view
+  // instead of being mixed into title matches. `titleModeFor` remembers which
+  // brand the user opted out of — keyed on the brand so switching to a different
+  // brand query automatically returns to platform view, with no effect needed.
+  const brand = query ? matchSearchBrand(query) : undefined;
+  const [titleModeFor, setTitleModeFor] = useState<string | null>(null);
+  const showTitleResults = !brand || titleModeFor === brand.key;
+
   const handleMovieClick = (movie: TMDBMovie) => {
     const slug = (movie.title || movie.name || '')
       .toLowerCase()
@@ -35,16 +46,6 @@ export default function SearchModal({
     router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
     onClose();
   };
-
-  // Common platforms for "Quick Explore"
-  const platforms = [
-    { name: 'Vivamax', icon: '🇵🇭' },
-    { name: 'Netflix', icon: '🔴' },
-    { name: 'HBO', icon: '📺' },
-    { name: 'Disney', icon: '🏰' },
-    { name: 'Amazon', icon: '📦' },
-    { name: 'Apple', icon: '🍎' },
-  ];
 
   // Group results for better organization
   const platformMatches = results.filter((m) => m.relevance_score === 110);
@@ -71,18 +72,23 @@ export default function SearchModal({
               onClick={() => handleMovieClick(item)}
               className="flex flex-col gap-2 cursor-pointer transition-all duration-300 hover:scale-105 group"
             >
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-2xl">
-                <Image
-                  src={
-                    item.poster_path
-                      ? `${THUMB_URL}${item.poster_path}`
-                      : 'https://via.placeholder.com/500x750?text=No+Image'
-                  }
-                  alt={item.title || item.name || ''}
-                  fill
-                  className="object-cover group-hover:brightness-50 transition-all duration-300"
-                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                />
+              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-2xl bg-gray-900">
+                {/* via.placeholder.com is dead (500s through next/image), so
+                    posterless items get a styled box instead of a remote fallback */}
+                {item.poster_path ? (
+                  <Image
+                    src={`${THUMB_URL}${item.poster_path}`}
+                    alt={item.title || item.name || ''}
+                    fill
+                    className="object-cover group-hover:brightness-50 transition-all duration-300"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-600 border border-gray-800 rounded-md">
+                    <Search className="w-8 h-8" />
+                    <span className="text-[10px] font-bold uppercase">No Image</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Play className="w-10 h-10 text-white fill-current transform scale-0 group-hover:scale-100 transition-transform duration-300" />
                 </div>
@@ -163,13 +169,22 @@ export default function SearchModal({
           <div className="mt-6 animate-in fade-in zoom-in-95 duration-500">
             <p className="text-gray-500 text-sm mb-3">Popular Platforms:</p>
             <div className="flex flex-wrap gap-2">
-              {platforms.map((p) => (
+              {SEARCH_BRANDS.map((b) => (
                 <button
-                  key={p.name}
-                  onClick={() => setQuery(p.name)}
-                  className="bg-[#333] hover:bg-netflix-red text-white px-4 py-2 rounded-full text-sm transition font-medium flex items-center"
+                  key={b.key}
+                  onClick={() => setQuery(b.label)}
+                  className="bg-[#333] hover:bg-netflix-red text-white pl-1.5 pr-4 py-1.5 rounded-full text-sm transition font-medium flex items-center gap-2"
                 >
-                  <span className="mr-2">{p.icon}</span> {p.name}
+                  <span className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
+                    <Image
+                      src={`${LOGO_URL}${b.logoPath}`}
+                      alt={b.label}
+                      fill
+                      className="object-cover"
+                      sizes="28px"
+                    />
+                  </span>
+                  {b.label}
                 </button>
               ))}
             </div>
@@ -186,9 +201,73 @@ export default function SearchModal({
           </div>
         )}
 
-        {query && (
+        {/* Brand view: the query is a platform, show its catalog — not title matches */}
+        {query && brand && !showTitleResults && (
           <>
-            {renderSection('Originating Platform Matches', platformMatches, true)}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 px-2">
+              <div className="flex items-center gap-4">
+                <span className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-700 shrink-0">
+                  <Image
+                    src={`${LOGO_URL}${brand.logoPath}`}
+                    alt={brand.label}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </span>
+                <div>
+                  <h3 className="text-2xl font-black text-white leading-tight">{brand.label}</h3>
+                  <p className="text-xs text-gray-400">Movies & shows from {brand.label}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTitleModeFor(brand.key)}
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-gray-700 px-4 py-2 rounded-full transition-colors"
+              >
+                Search &quot;{query}&quot; as a movie title instead{' '}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {renderSection(`Popular on ${brand.label}`, platformMatches, true)}
+
+            {!isSearching && platformMatches.length === 0 && (
+              <div className="flex flex-col items-center justify-center mt-20 opacity-70 gap-4">
+                <Search className="w-16 h-16" />
+                <p className="text-xl">No {brand.label} catalog results right now</p>
+                <button
+                  onClick={() => setTitleModeFor(brand.key)}
+                  className="text-netflix-red font-bold text-sm hover:underline"
+                >
+                  Search &quot;{query}&quot; as a movie title instead
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Title view: regular search; for brand queries a switch back is offered */}
+        {query && showTitleResults && (
+          <>
+            {brand && (
+              <button
+                onClick={() => setTitleModeFor(null)}
+                className="flex items-center gap-2.5 mb-8 mx-2 text-sm text-white bg-white/5 hover:bg-white/10 border border-gray-700 pl-1.5 pr-4 py-1.5 rounded-full transition-colors"
+              >
+                <span className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
+                  <Image
+                    src={`${LOGO_URL}${brand.logoPath}`}
+                    alt={brand.label}
+                    fill
+                    className="object-cover"
+                    sizes="28px"
+                  />
+                </span>
+                Show {brand.label} platform results instead
+              </button>
+            )}
+
+            {!brand && renderSection('Originating Platform Matches', platformMatches, true)}
             {renderSection('Exact Matches', exactMatches, true)}
             {renderSection('Starts With', startsWithMatches)}
             {renderSection('Related Results', otherMatches)}

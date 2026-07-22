@@ -16,40 +16,74 @@ export async function GET(request) {
     const results = [];
     const queryLower = query.toLowerCase();
 
-    // Map common platform names to TMDB IDs (Companies or Networks)
+    // Map common platform names to TMDB IDs. Movies and TV need different
+    // filters: `with_networks` only works on discover/tv (discover/movie
+    // silently ignores it and returns generic popular titles), so movies use
+    // watch-provider ids (`with_watch_providers` + watch_region) instead.
+    // Vivamax has no watch-provider entry; its producing company covers both.
     const platformMaps = {
-      'vivamax': { type: 'company', id: 3161 }, // Viva Films is the primary producer for Vivamax
-      'netflix': { type: 'network', id: 213 },
-      'hbo': { type: 'network', id: 49 },
-      'disney': { type: 'company', id: 2 },
-      'apple': { type: 'network', id: 2552 },
-      'amazon': { type: 'network', id: 1024 }
+      // Vivamax (149142) OR Viva Films PH (8356) — pipe means OR in discover.
+      // (The old mapping, 3161, was actually Odessa Film Studio.)
+      vivamax: { company: '149142|8356' },
+      netflix: { provider: 8, network: 213 },
+      hbo: { provider: 1899, network: 49 },
+      disney: { provider: 337, network: 2739 },
+      apple: { provider: 350, network: 2552 },
+      amazon: { provider: 9, network: 1024 },
     };
 
+    // Variant spellings resolve to the canonical platform key above.
+    // Keep in sync with SEARCH_BRANDS aliases in lib/streamingServices.ts.
+    const platformAliases = {
+      viva: 'vivamax',
+      'hbo max': 'hbo',
+      max: 'hbo',
+      'disney+': 'disney',
+      'disney plus': 'disney',
+      'apple tv': 'apple',
+      'apple tv+': 'apple',
+      prime: 'amazon',
+      'prime video': 'amazon',
+      'amazon prime': 'amazon',
+    };
+    const normalizedQuery = queryLower.trim().replace(/\s+/g, ' ');
+    const platformKey = platformAliases[normalizedQuery] || normalizedQuery;
+
     // If query matches a platform, fetch from discover API too
-    if (platformMaps[queryLower]) {
-      const platform = platformMaps[queryLower];
-      const param = platform.type === 'company' ? 'with_companies' : 'with_networks';
+    if (platformMaps[platformKey]) {
+      const platform = platformMaps[platformKey];
+      const movieFilter = platform.company
+        ? `with_companies=${platform.company}`
+        : `with_watch_providers=${platform.provider}&watch_region=US`;
+      const tvFilter = platform.company
+        ? `with_companies=${platform.company}`
+        : `with_networks=${platform.network}`;
 
       const discoveryPromises = [];
       // Reduced from 3 pages to 2 pages for faster response
       for (let page = 1; page <= 2; page++) {
         discoveryPromises.push(
-          fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&${param}=${platform.id}&sort_by=popularity.desc&region=PH&page=${page}`).then(res => res.json()),
-          fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&${param}=${platform.id}&sort_by=popularity.desc&page=${page}`).then(res => res.json())
+          fetch(
+            `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&${movieFilter}&sort_by=popularity.desc&page=${page}`
+          ).then((res) => res.json()),
+          fetch(
+            `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&${tvFilter}&sort_by=popularity.desc&page=${page}`
+          ).then((res) => res.json())
         );
       }
 
       // Also add a general search for the platform name in titles just in case
       discoveryPromises.push(
-        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=1`).then(res => res.json())
+        fetch(
+          `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=1`
+        ).then((res) => res.json())
       );
 
       const discoveryResults = await Promise.all(discoveryPromises);
 
-      discoveryResults.forEach(data => {
+      discoveryResults.forEach((data) => {
         if (data.results) {
-          data.results.forEach(item => {
+          data.results.forEach((item) => {
             // Determine media type if possible, discovery returns what you ask for
             // but we'll use a hint from the URL structure or data
             item.media_type = item.title ? 'movie' : 'tv';
@@ -59,7 +93,7 @@ export async function GET(request) {
         }
       });
     }
-    
+
     // Search movies (reduced to 2 pages for faster response)
     for (let page = 1; page <= 2; page++) {
       const response = await fetch(
@@ -67,7 +101,7 @@ export async function GET(request) {
       );
       const data = await response.json();
       if (data.results) {
-        data.results.forEach(item => {
+        data.results.forEach((item) => {
           item.media_type = 'movie';
           item.relevance_score = calculateRelevance(item.title, query);
         });
@@ -82,15 +116,15 @@ export async function GET(request) {
       );
       const tvData = await tvResponse.json();
       if (tvData.results) {
-        tvData.results.forEach(item => {
+        tvData.results.forEach((item) => {
           item.media_type = 'tv';
           item.relevance_score = calculateRelevance(item.name || '', query);
         });
         results.push(...tvData.results);
       }
     }
-    
-    const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
+
+    const uniqueResults = Array.from(new Map(results.map((item) => [item.id, item])).values());
     uniqueResults.sort((a, b) => {
       if (b.relevance_score !== a.relevance_score) return b.relevance_score - a.relevance_score;
       return b.popularity - a.popularity;
