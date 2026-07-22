@@ -24,7 +24,8 @@ import {
 // without `allow-top-navigation` it cannot redirect the whole tab. This cannot remove
 // banner/overlay ads painted inside the player — those are same-origin to the provider
 // and unreachable from here.
-const PLAYER_SANDBOX = 'allow-scripts allow-same-origin allow-presentation allow-forms';
+const PLAYER_SANDBOX =
+  'allow-scripts allow-same-origin allow-presentation allow-forms allow-fullscreen';
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
@@ -292,7 +293,8 @@ export default function MovieDetailPage() {
                     key={`${embedUrl}|${sandboxed}`}
                     src={embedUrl}
                     className="w-full h-full border-none"
-                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                    allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+                    allowFullScreen
                     referrerPolicy="origin"
                     // Omitting allow-popups / allow-top-navigation is what stops the
                     // provider's popunders and forced redirects. Applied only to

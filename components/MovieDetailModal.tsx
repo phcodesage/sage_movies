@@ -119,7 +119,7 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
               </div>
             )}
 
-            {embedUrl && <iframe src={embedUrl} className="w-full h-full border-none" allow="autoplay; fullscreen" />}
+            {embedUrl && <iframe src={embedUrl} className="w-full h-full border-none" allow="autoplay; fullscreen *" allowFullScreen />}
           </div>
 
           <div className="w-full md:w-[30%] flex flex-col gap-6">
