@@ -32,6 +32,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
+  allowedDevOrigins: ['192.168.0.100']
 };
 
 export default nextConfig;

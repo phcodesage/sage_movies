@@ -15,6 +15,8 @@ import Navbar from '../components/Navbar';
 import MovieRow from '../components/MovieRow';
 import { MovieRowSkeleton, BannerSkeleton } from '../components/LoadingSkeleton';
 import { AdsterraNativeBanner } from '../components/Adsterra';
+import ServiceBottomNav from '../components/ServiceBottomNav';
+import { STREAMING_SERVICES } from '../lib/streamingServices';
 import { scrollToSection } from '../lib/utils/scrollToSection';
 import type { TMDBMovie } from '../types/tmdb';
 
@@ -41,6 +43,7 @@ export default function Home() {
   const [trendingTV, setTrendingTV] = useState<TMDBMovie[]>([]);
   const [anime, setAnime] = useState<TMDBMovie[]>([]);
   const [actionMovies, setActionMovies] = useState<TMDBMovie[]>([]);
+  const [serviceRows, setServiceRows] = useState<Record<number, TMDBMovie[]>>({});
   const [bannerMovie, setBannerMovie] = useState<TMDBMovie | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -98,7 +101,7 @@ export default function Home() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [movieRes, tvRes, animeRes, actionRes] = await Promise.all([
+        const [movieRes, tvRes, animeRes, actionRes, ...serviceRes] = await Promise.all([
           fetch('/api/movies/collection')
             .then((res) => (res.ok ? res.json() : { results: [] }))
             .catch(() => ({ results: [] })),
@@ -111,6 +114,11 @@ export default function Home() {
           fetch('/api/movies/genre/28')
             .then((res) => (res.ok ? res.json() : { results: [] }))
             .catch(() => ({ results: [] })),
+          ...STREAMING_SERVICES.map((s) =>
+            fetch(`/api/movies/provider/${s.id}`)
+              .then((res) => (res.ok ? res.json() : { results: [] }))
+              .catch(() => ({ results: [] }))
+          ),
         ]);
 
         const movies = (movieRes as any).results || [];
@@ -119,12 +127,19 @@ export default function Home() {
         setAnime((animeRes as any).results || []);
         setActionMovies((actionRes as any).results || []);
 
+        const services: Record<number, TMDBMovie[]> = {};
+        STREAMING_SERVICES.forEach((s, i) => {
+          services[s.id] = (serviceRes[i] as any).results || [];
+        });
+        setServiceRows(services);
+
         // Flatten all for recommendation pool
         const all = [
           ...movies,
           ...((tvRes as any).results || []),
           ...((animeRes as any).results || []),
           ...((actionRes as any).results || []),
+          ...Object.values(services).flat(),
         ];
         const unique = Array.from(new Map(all.map((item) => [item.id, item])).values());
         setAllFetchedData(unique);
@@ -279,8 +294,8 @@ export default function Home() {
         </div>
       ) : null}
 
-      {/* Rows */}
-      <div className="px-2 md:px-6 -mt-6 md:-mt-8 relative z-20 pb-16">
+      {/* Rows — extra bottom padding keeps the last row clear of the fixed bottom nav */}
+      <div className="px-2 md:px-6 -mt-6 md:-mt-8 relative z-20 pb-28 md:pb-24">
         {isLoading ? (
           <>
             <MovieRowSkeleton />
@@ -373,6 +388,24 @@ export default function Home() {
                 })
               }
             />
+            {STREAMING_SERVICES.map(
+              (s) =>
+                (serviceRows[s.id]?.length ?? 0) > 0 && (
+                  <MovieRow
+                    key={s.id}
+                    title={`${s.name} Movies`}
+                    items={serviceRows[s.id]}
+                    id={s.rowId}
+                    onSeeAll={() =>
+                      setSeeAllData({
+                        title: `${s.name} Movies`,
+                        items: serviceRows[s.id],
+                        category: `provider_${s.id}`,
+                      })
+                    }
+                  />
+                )
+            )}
             <MovieRow
               title="Anime Collection"
               items={anime}
@@ -384,6 +417,9 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* Bottom nav: quick jump to each streaming service's shelf */}
+      {!isLoading && <ServiceBottomNav />}
 
       {/* Modals */}
       <AnimatePresence>

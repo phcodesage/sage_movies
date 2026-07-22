@@ -16,7 +16,12 @@ interface SeeAllModalProps {
   category?: string; // e.g., 'movies', 'tv', 'anime', or a genre ID
 }
 
-export default function SeeAllModal({ title, items: initialItems, onClose, category }: SeeAllModalProps) {
+export default function SeeAllModal({
+  title,
+  items: initialItems,
+  onClose,
+  category,
+}: SeeAllModalProps) {
   const router = useRouter();
   const [items, setItems] = useState<TMDBMovie[]>(initialItems);
   const [page, setPage] = useState(1);
@@ -45,8 +50,10 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
       if (category === 'trending_movies') url = `/api/movies/collection?page=${nextPage}`;
       else if (category === 'trending_tv') url = `/api/tv/collection?page=${nextPage}`;
       else if (category === 'anime') url = `/api/anime/collection?page=${nextPage}`;
+      else if (category.startsWith('provider_'))
+        url = `/api/movies/provider/${category.slice('provider_'.length)}?page=${nextPage}`;
       else if (!isNaN(parseInt(category))) url = `/api/movies/genre/${category}?page=${nextPage}`;
-      
+
       if (!url) {
         setHasMore(false);
         return;
@@ -56,10 +63,10 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
       const data = await res.json();
 
       if (data.results && data.results.length > 0) {
-        setItems(prev => {
+        setItems((prev) => {
           const newItems = [...prev, ...data.results];
           // Filter duplicates
-          return Array.from(new Map(newItems.map(item => [item.id, item])).values());
+          return Array.from(new Map(newItems.map((item) => [item.id, item])).values());
         });
         setPage(nextPage);
         setHasMore(data.hasMore);
@@ -99,13 +106,8 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
       className="fixed inset-0 z-[100] bg-netflix-black flex flex-col"
     >
       <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-netflix-black/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
-        <h2 className="text-xl md:text-3xl font-extrabold text-white">
-          {title}
-        </h2>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-gray-800 rounded-full transition-colors"
-        >
+        <h2 className="text-xl md:text-3xl font-extrabold text-white">{title}</h2>
+        <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full transition-colors">
           <X className="w-6 h-6 md:w-8 md:h-8" />
         </button>
       </header>
@@ -120,7 +122,11 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
             >
               <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <Image
-                  src={item.poster_path ? `${THUMB_URL}${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'}
+                  src={
+                    item.poster_path
+                      ? `${THUMB_URL}${item.poster_path}`
+                      : 'https://via.placeholder.com/500x750?text=No+Image'
+                  }
                   alt={item.title || item.name || ''}
                   fill
                   className="object-cover group-hover:brightness-50 transition-all duration-300"
@@ -142,16 +148,20 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
                   <span className="bg-gray-800 px-1.5 py-0.5 rounded text-[10px] uppercase mr-2">
                     {item.media_type === 'movie' ? 'Movie' : 'TV'}
                   </span>
-                  <span>{item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0] || 'N/A'}</span>
+                  <span>
+                    {item.release_date?.split('-')[0] ||
+                      item.first_air_date?.split('-')[0] ||
+                      'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
           ))}
         </div>
-        
+
         {/* Loading Indicator / Intersection Target */}
-        <div 
-          ref={observerTarget} 
+        <div
+          ref={observerTarget}
           className="py-12 flex flex-col items-center justify-center text-gray-500"
         >
           {isLoadingMore ? (
@@ -160,10 +170,12 @@ export default function SeeAllModal({ title, items: initialItems, onClose, categ
               <p className="text-sm font-medium animate-pulse">Loading more magic...</p>
             </div>
           ) : hasMore && category && category !== 'history' ? (
-            <div className="h-20" /> 
+            <div className="h-20" />
           ) : (
             <div className="text-center animate-in fade-in duration-1000">
-              <p className="text-lg font-bold text-gray-400">You've reached the end of the collection.</p>
+              <p className="text-lg font-bold text-gray-400">
+                You've reached the end of the collection.
+              </p>
               <p className="mt-2 italic">New titles are added every day!</p>
             </div>
           )}
