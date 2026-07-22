@@ -18,12 +18,19 @@ export async function GET(request, { params }) {
     const data = await response.json();
 
     if (data.success === false) {
-      return NextResponse.json({ error: data.status_message || 'Movie not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: data.status_message || 'Movie not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        // Netlify's CDN cache key ignores query strings unless told otherwise.
+        // Without this, a cached ?type=movie response gets served for ?type=tv
+        // whenever a movie and TV show share the same numeric TMDB id.
+        'Netlify-Vary': 'query',
       },
     });
   } catch (error) {
