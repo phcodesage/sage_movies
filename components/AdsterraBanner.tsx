@@ -3,68 +3,44 @@
 import React, { useEffect, useRef } from 'react';
 
 interface AdsterraBannerProps {
-  adKey?: string;
-  format?: '300x250' | '468x60' | '728x90';
   className?: string;
 }
 
-export default function AdsterraBanner({
-  adKey = process.env.NEXT_PUBLIC_ADSTERRA_KEY || '',
-  format = '300x250',
-  className = '',
-}: AdsterraBannerProps) {
+export default function AdsterraBanner({ className = '' }: AdsterraBannerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!adKey || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     // Clear previous ad content if any
     containerRef.current.innerHTML = '';
 
-    const width = format === '300x250' ? 300 : format === '468x60' ? 468 : 728;
-    const height = format === '300x250' ? 250 : format === '468x60' ? 60 : 90;
+    // Create container div required by Adsterra Native Banner
+    const adContainer = document.createElement('div');
+    adContainer.id = 'container-7abdf4c8f0cb2b40ae9d9f5fece86bd7';
 
-    const confScript = document.createElement('script');
-    confScript.type = 'text/javascript';
-    confScript.text = `
-      atOptions = {
-        'key' : '${adKey}',
-        'format' : 'iframe',
-        'height' : ${height},
-        'width' : ${width},
-        'params' : {}
-      };
-    `;
-
+    // Create Adsterra invoke script
     const invokeScript = document.createElement('script');
-    invokeScript.type = 'text/javascript';
-    invokeScript.src = `//www.topcreativeformat.com/${adKey}/invoke.js`;
+    invokeScript.async = true;
+    invokeScript.setAttribute('data-cfasync', 'false');
+    invokeScript.src =
+      'https://pl30470198.effectivecpmnetwork.com/7abdf4c8f0cb2b40ae9d9f5fece86bd7/invoke.js';
 
-    containerRef.current.appendChild(confScript);
+    containerRef.current.appendChild(adContainer);
     containerRef.current.appendChild(invokeScript);
-  }, [adKey, format]);
-
-  if (!adKey) {
-    return (
-      <div className={`p-4 rounded-xl bg-gradient-to-br from-netflix-red/20 via-black/60 to-purple-900/20 border border-netflix-red/30 text-left ${className}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-netflix-red/30 text-netflix-red border border-netflix-red/40">
-            FEATURED SPONSOR
-          </span>
-        </div>
-        <h4 className="text-sm font-bold text-white mb-1">
-          SageMovies Ultra Fast Streaming
-        </h4>
-        <p className="text-xs text-gray-300 leading-relaxed">
-          Enjoy zero-lag 1080p playback, offline downloads, and active server failover across all your devices.
-        </p>
-      </div>
-    );
-  }
+  }, []);
 
   return (
-    <div className={`flex items-center justify-center my-2 ${className}`}>
-      <div ref={containerRef} className="overflow-hidden rounded-xl border border-white/10" />
+    <div className={`w-full overflow-hidden rounded-xl bg-black/40 border border-white/10 p-2 ${className}`}>
+      <div className="flex items-center justify-between mb-1.5 px-1">
+        <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-netflix-red/20 text-netflix-red border border-netflix-red/30">
+          SPONSORED AD
+        </span>
+      </div>
+      <div
+        ref={containerRef}
+        className="w-full flex items-center justify-center min-h-[100px] overflow-hidden"
+      />
     </div>
   );
 }
