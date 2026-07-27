@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Sparkles, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Star, ArrowRight, Play, Film } from 'lucide-react';
 import AdsterraBanner from './AdsterraBanner';
 
 interface DownloadAppModalProps {
@@ -9,14 +10,57 @@ interface DownloadAppModalProps {
   onClose: () => void;
 }
 
+const FEATURED_SHOWCASE_MOVIES = [
+  {
+    title: 'Deadpool & Wolverine',
+    poster: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzypqBkZ6yRSuE.jpg',
+    studio: 'MARVEL STUDIOS',
+    rating: '8.9',
+    tagline: 'Stream in 4K Ultra HD on Mobile',
+  },
+  {
+    title: 'Moana 2',
+    poster: 'https://image.tmdb.org/t/p/w500/a26cQPRhJPX6GbWfQkZBDhRj0x5.jpg',
+    studio: 'DISNEY+',
+    rating: '8.7',
+    tagline: 'Trending Family Hits',
+  },
+  {
+    title: 'Gladiator II',
+    poster: 'https://image.tmdb.org/t/p/w500/2cxhvwyEwRlysAmRH4iodkvo0zE.jpg',
+    studio: 'PARAMOUNT+',
+    rating: '8.6',
+    tagline: 'Instant 60fps Playback',
+  },
+  {
+    title: 'Stranger Things 5',
+    poster: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
+    studio: 'NETFLIX',
+    rating: '9.1',
+    tagline: 'Exclusive Series & Movies',
+  },
+];
+
 export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalProps) {
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [hasStartedDownload, setHasStartedDownload] = useState(false);
+  const [showcaseMovie, setShowcaseMovie] = useState(FEATURED_SHOWCASE_MOVIES[0]);
 
   const downloadUrl =
     process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
     'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.0.0.apk';
+
+  useEffect(() => {
+    if (isOpen) {
+      // Pick a random featured movie poster when modal opens
+      const randomItem =
+        FEATURED_SHOWCASE_MOVIES[
+          Math.floor(Math.random() * FEATURED_SHOWCASE_MOVIES.length)
+        ];
+      setShowcaseMovie(randomItem);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -24,7 +68,6 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
       timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     } else if (isCountingDown && countdown === 0 && !hasStartedDownload) {
       setHasStartedDownload(true);
-      // Trigger direct APK download automatically
       window.location.href = downloadUrl;
     }
     return () => clearTimeout(timer);
@@ -46,99 +89,148 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-fadeIn">
-      <div className="relative w-full max-w-md bg-[#141419] border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-6 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-black/85 backdrop-blur-md transition-all animate-fadeIn">
+      <div className="relative w-full max-w-2xl bg-[#141419] border border-white/15 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden text-white grid grid-cols-1 md:grid-cols-12">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-black/60 text-gray-300 hover:text-white hover:bg-white/20 transition-colors border border-white/10"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        {!isCountingDown ? (
-          <>
-            {/* Header Icon */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-netflix-red/20 border border-netflix-red/40 flex items-center justify-center text-netflix-red shrink-0 shadow-lg">
-                <Smartphone className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-extrabold text-white tracking-tight">
-                  Get SageMovies for Android
-                </h3>
-                <p className="text-xs text-gray-400">Official Release Build • v1.0.3 (1.2k+ downloads)</p>
-              </div>
-            </div>
+        {/* LEFT COLUMN: Movie Poster Showcase (Visible on all devices, 5 cols on md) */}
+        <div className="relative md:col-span-5 hidden sm:flex flex-col justify-end p-5 overflow-hidden group min-h-[220px] md:min-h-full">
+          {/* Background Poster with Gradient Overlay */}
+          <Image
+            src={showcaseMovie.poster}
+            alt={showcaseMovie.title}
+            fill
+            className="object-cover object-center group-hover:scale-105 transition-transform duration-700 brightness-90"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141419] via-[#141419]/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#141419]/90 hidden md:block" />
 
-            {/* App Features List */}
-            <div className="space-y-2.5 my-5 bg-black/40 border border-white/5 rounded-xl p-3.5 text-xs text-gray-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>13 Studio Brand Hubs (Netflix, Disney+, Marvel, etc.)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Automated Active Server Pre-Checks & Auto Fallback</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>Zero Ads • Fast 60fps Native Streaming</span>
-              </div>
-            </div>
-
-            {/* Download Action Button */}
-            <button
-              onClick={handleStartDownloadFlow}
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
-            >
-              <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-              <span>Download Android APK (1.2k+ downloads)</span>
-            </button>
-
-            <p className="text-[10px] text-center text-gray-500 mt-3">
-              Compatible with Android 7.0+ (ARM64 / x86_64)
-            </p>
-          </>
-        ) : (
-          <div className="text-center py-2">
-            {/* Internal Ad / Sponsor Promo Banner / Adsterra Unit */}
-            <AdsterraBanner className="mb-4" />
-
-            {/* Countdown State */}
-            <div className="my-4">
-              {countdown > 0 ? (
-                <div>
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-netflix-red/15 border-2 border-netflix-red text-netflix-red text-xl font-black mb-2 animate-pulse">
-                    {countdown}s
-                  </div>
-                  <p className="text-xs text-gray-300 font-medium">
-                    Your APK download will begin automatically...
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-2 animate-bounce" />
-                  <p className="text-sm font-bold text-white">Download Started!</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    If the download didn&apos;t trigger automatically, click below:
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Manual Download Button */}
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white/10 hover:bg-white/20 active:scale-98 text-white font-bold text-xs rounded-xl transition-all border border-white/10 mt-2"
-            >
-              <span>Download Immediately</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+          {/* Top Badges */}
+          <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5">
+            <span className="flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-netflix-red text-white uppercase tracking-wider shadow-lg">
+              <Film className="w-2.5 h-2.5" />
+              {showcaseMovie.studio}
+            </span>
+            <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-black/70 text-amber-400 border border-amber-400/30">
+              <Star className="w-2.5 h-2.5 fill-amber-400" />
+              {showcaseMovie.rating}
+            </span>
           </div>
-        )}
+
+          {/* Poster Content Overlay */}
+          <div className="relative z-10 pt-16">
+            <p className="text-[10px] uppercase font-black text-netflix-red tracking-wider">
+              {showcaseMovie.tagline}
+            </p>
+            <h4 className="text-base font-extrabold text-white leading-tight drop-shadow-md">
+              {showcaseMovie.title}
+            </h4>
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-300 mt-1">
+              <Play className="w-3 h-3 text-netflix-red fill-netflix-red" />
+              <span>Watch offline on Mobile App</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Download Action & Adsterra Interstitial (7 cols on md) */}
+        <div className="md:col-span-7 p-5 md:p-6 flex flex-col justify-between">
+          {!isCountingDown ? (
+            <>
+              <div>
+                {/* Header Icon */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-netflix-red/20 border border-netflix-red/40 flex items-center justify-center text-netflix-red shrink-0 shadow-lg">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base md:text-lg font-extrabold text-white tracking-tight leading-tight">
+                      Get SageMovies for Android
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Official Build • v1.0.3 <span className="text-emerald-400 font-bold">(1.2k+ downloads)</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Features List */}
+                <div className="space-y-2 my-4 bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>13 Studio Hubs (Netflix, Disney+, Vivamax, etc.)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Active Server Pre-Checks & Auto Failover</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span>Zero App Ads • Fast 60fps Native Player</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                {/* Download Action Button */}
+                <button
+                  onClick={handleStartDownloadFlow}
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-xs md:text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
+                >
+                  <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                  <span>Download Android APK (1.2k+ downloads)</span>
+                </button>
+
+                <p className="text-[10px] text-center text-gray-500 mt-2.5">
+                  Compatible with Android 7.0+ (ARM64 / x86_64)
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-1 flex flex-col justify-between h-full">
+              {/* Adsterra Native Banner Unit */}
+              <AdsterraBanner className="mb-2" />
+
+              {/* Countdown State */}
+              <div className="my-2">
+                {countdown > 0 ? (
+                  <div>
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-netflix-red/15 border-2 border-netflix-red text-netflix-red text-lg font-black mb-1.5 animate-pulse">
+                      {countdown}s
+                    </div>
+                    <p className="text-xs text-gray-300 font-medium">
+                      Your APK download will begin automatically...
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-1 animate-bounce" />
+                    <p className="text-xs md:text-sm font-bold text-white">Download Started!</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      If download didn&apos;t trigger automatically, click below:
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Direct Download Button */}
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white/10 hover:bg-white/20 active:scale-98 text-white font-bold text-xs rounded-xl transition-all border border-white/10 mt-1"
+              >
+                <span>Download Immediately</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
