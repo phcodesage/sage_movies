@@ -7,77 +7,77 @@ export interface StudioInfo {
 export const KNOWN_STUDIO_LOGOS: Record<string, StudioInfo> = {
   disney: {
     name: 'Disney+',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg',
+    iconUrl: '/studios/disney.png',
     bgColor: 'bg-gradient-to-br from-cyan-900 to-blue-950',
   },
   netflix: {
     name: 'Netflix',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_N_logo.svg',
+    iconUrl: '/studios/netflix.png',
     bgColor: 'bg-black',
   },
   prime: {
     name: 'Prime Video',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Prime_Video.png',
+    iconUrl: '/studios/prime.png',
     bgColor: 'bg-blue-600',
   },
   amazon: {
     name: 'Prime Video',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Prime_Video.png',
+    iconUrl: '/studios/prime.png',
     bgColor: 'bg-blue-600',
   },
   apple: {
     name: 'Apple TV+',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Apple_TV_plus_logo.svg',
+    iconUrl: '/studios/appletv.png',
     bgColor: 'bg-zinc-900',
   },
   hbo: {
     name: 'HBO',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/de/HBO_logo.svg',
+    iconUrl: '/studios/hbo.png',
     bgColor: 'bg-purple-950',
   },
   max: {
     name: 'Max',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Max_logo.svg',
+    iconUrl: '/studios/max.png',
     bgColor: 'bg-blue-900',
   },
   paramount: {
     name: 'Paramount+',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Paramount_Plus.svg',
+    iconUrl: '/studios/paramount.png',
     bgColor: 'bg-blue-700',
   },
   hulu: {
     name: 'Hulu',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Hulu_Logo.svg',
+    iconUrl: '/studios/hulu.png',
     bgColor: 'bg-emerald-900',
   },
   vivamax: {
     name: 'Vivamax',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Vivamax_logo.svg/512px-Vivamax_logo.svg.png',
+    iconUrl: '/studios/vivamax.png',
     bgColor: 'bg-amber-600',
   },
   warner: {
     name: 'Warner Bros',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Warner_Bros_logo.svg',
+    iconUrl: '/studios/warner.png',
     bgColor: 'bg-blue-900',
   },
   marvel: {
     name: 'Marvel',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/71/Marvel-Studios-1-1.svg',
+    iconUrl: '/studios/marvel.png',
     bgColor: 'bg-red-700',
   },
   universal: {
     name: 'Universal',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Universal_Pictures_logo.svg',
+    iconUrl: '/studios/universal.png',
     bgColor: 'bg-black',
   },
   sony: {
     name: 'Sony Pictures',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/Columbia_Pictures_logo.svg',
+    iconUrl: '/studios/sony.png',
     bgColor: 'bg-gray-900',
   },
   a24: {
     name: 'A24',
-    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/A24_logo.svg',
+    iconUrl: '/studios/a24.png',
     bgColor: 'bg-neutral-900',
   },
 };
