@@ -13,7 +13,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
 
   const downloadUrl =
     process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
-    'https://github.com/phcodesage/sage-movies-app/releases/download/v1.0.0/app-release.apk';
+    'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.0.0.apk';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-fadeIn">
