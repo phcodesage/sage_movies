@@ -13,7 +13,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
 
   const downloadUrl =
     process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
-    'https://link-center.net/7848832/gBVDxSZ1rUTX';
+    'https://shrinkme.click/wRTWJwKz';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-fadeIn">
