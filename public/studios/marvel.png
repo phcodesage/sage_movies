@@ -1,41 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-<meta charset="utf-8">
-<title>Wikimedia Error</title>
-<style>
-* { margin: 0; padding: 0; }
-body { background: #fff; font: 15px/1.6 sans-serif; color: #333; }
-.content { margin: 7% auto 0; padding: 2em 1em 1em; max-width: 640px; display: flex; flex-direction: row; flex-wrap: wrap; }
-.footer { clear: both; margin-top: 14%; border-top: 1px solid #e5e5e5; background: #f9f9f9; padding: 2em 0; font-size: 0.8em; text-align: center; }
-img { margin: 0 2em 2em 0; }
-a img { border: 0; }
-h1 { margin-top: 1em; font-size: 1.2em; }
-.content-text { flex: 1; }
-p { margin: 0.7em 0 1em 0; }
-a { color: #0645ad; text-decoration: none; }
-a:hover { text-decoration: underline; }
-code { font-family: sans-serif; }
-summary { font-weight: bold; cursor: pointer; }
-details[open] { background: #970302; color: #dfdedd; }
-.text-muted { color: #777; }
-@media (prefers-color-scheme: dark) {
-  a { color: #9e9eff; }
-  body { background: transparent; color: #ddd; }
-  .footer { border-top: 1px solid #444; background: #060606; }
-  #logo { filter: invert(1) hue-rotate(180deg); }
-  .text-muted { color: #888; }
-}
-</style>
-<meta name="color-scheme" content="light dark">
-<div class="content" role="main">
-<a href="https://www.wikimedia.org"><img id="logo" src="https://www.wikimedia.org/static/images/wmf-logo.png" srcset="https://www.wikimedia.org/static/images/wmf-logo-2x.png 2x" alt="Wikimedia" width="135" height="101">
-</a>
-<div class="content-text">
-<h1>Error</h1>
-
-<p>Use thumbnail sizes listed on https://w.wiki/GHai</p>
-</div>
-</div>
-<div class="footer"><p>If you report this error to the Wikimedia System Administrators, please include the details below.</p><p class="text-muted"><code>Request served via cp5031 cp5031, Varnish XID 297085546<br>Upstream caches: cp5031 int<br>Error: 400, Use thumbnail sizes listed on https://w.wiki/GHai at Mon, 27 Jul 2026 13:15:01 GMT<br><details><summary>Sensitive client information</summary>IP address: 124.217.117.222</details></code></p>
-</div>
+<head>
+  <title>File Not Found - The Movie Database (TMDb)</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta http-equiv="cleartype" content="on">
+  <meta charset="utf-8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=1120">
+  <style>
+    html {--lightGrey: 227, 227, 227;--tmdbDarkBlue: 3, 37, 65;--tmdbLightBlue: 1, 180, 228;--tmdbLighterGreen: 192, 254, 207;--tmdbLightGreen: 30, 213, 169;--maxPrimaryPageWidth: 1400px;}
+    html, body {width: 100%;height: 100%;font-size: 100%;}
+    body {display: flex;flex-direction: column;min-height: 100%;height: auto;-ms-overflow-style: -ms-autohiding-scrollbar;background-color: rgba(var(--tmdbDarkBlue), 1);color: #000;font-family: 'Source Sans Pro', Arial, sans-serif;font-size: 1em;-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing:grayscale;}
+    .page_wrap {display: flex;flex: 1 1 auto;min-height: 100%;height: auto;position: relative;top: 0;left:0;justify-content:center;align-items:center;}
+    .card {box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);border: 1px solid rgba(var(--lightGrey), 1);background-color:#fff;display:flex;flex-wrap:wrap;width:500px;padding:20px;border-radius:20px}
+    .header{width:100%;display:flex;padding-bottom:20px}
+    .card h2 {margin:0;display:inline-flex;align-items:center}
+    .card p:first-of-type{padding-top:8px}
+    .card p:last-child{margin-bottom:0}
+  </style>
+</head>
+<body class="en">
+  <div class="page_wrap">
+    <div class="card">
+      <div class="header">
+        <img src="https://www.themoviedb.org/assets/2/apple-touch-icon-cfba7699efe7a742de25c28e08c38525f19381d31087c69e89d6bcb8e3c0ddfa.png" width="60" height="60">
+      </div>
+      <h2>File Not Found</h2>
+    </div>
+  </div>
+</body>
 </html>

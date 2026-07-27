@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { STREAMING_SERVICES } from '../lib/streamingServices';
 import { scrollToSection } from '../lib/utils/scrollToSection';
 
@@ -15,11 +14,9 @@ export default function ServiceBottomNav() {
     >
       <div className="flex items-center justify-start md:justify-center gap-1.5 md:gap-3 px-3 py-1.5 md:py-2 overflow-x-auto no-scrollbar scroll-smooth">
         {STREAMING_SERVICES.map((s) => {
-          const logoSrc = s.logoPath.startsWith('/studios')
+          const logoSrc = s.logoPath.startsWith('http')
             ? s.logoPath
-            : s.logoPath.startsWith('/')
-            ? `${LOGO_URL}${s.logoPath}`
-            : s.logoPath;
+            : `${LOGO_URL}${s.logoPath}`;
 
           return (
             <button
@@ -33,7 +30,7 @@ export default function ServiceBottomNav() {
                   alt={s.name}
                   className="w-full h-full object-contain rounded"
                   onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
+                    (e.target as HTMLElement).style.opacity = '0.5';
                   }}
                 />
               </span>
