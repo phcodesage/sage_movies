@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Sparkles, ArrowRight } from 'lucide-react';
 
 interface DownloadAppModalProps {
   isOpen: boolean;
@@ -9,67 +9,148 @@ interface DownloadAppModalProps {
 }
 
 export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalProps) {
-  if (!isOpen) return null;
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const [hasStartedDownload, setHasStartedDownload] = useState(false);
 
   const downloadUrl =
     process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
-    'https://shrinkme.click/wRTWJwKz';
+    'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.0.0.apk';
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isCountingDown && countdown > 0) {
+      timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    } else if (isCountingDown && countdown === 0 && !hasStartedDownload) {
+      setHasStartedDownload(true);
+      // Trigger direct APK download automatically
+      window.location.href = downloadUrl;
+    }
+    return () => clearTimeout(timer);
+  }, [isCountingDown, countdown, hasStartedDownload, downloadUrl]);
+
+  const handleStartDownloadFlow = () => {
+    setIsCountingDown(true);
+    setCountdown(5);
+    setHasStartedDownload(false);
+  };
+
+  const handleClose = () => {
+    setIsCountingDown(false);
+    setCountdown(5);
+    setHasStartedDownload(false);
+    onClose();
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all animate-fadeIn">
       <div className="relative w-full max-w-md bg-[#141419] border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-6 text-white">
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header Icon */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-netflix-red/20 border border-netflix-red/40 flex items-center justify-center text-netflix-red shrink-0 shadow-lg">
-            <Smartphone className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-extrabold text-white tracking-tight">
-              Get SageMovies for Android
-            </h3>
-            <p className="text-xs text-gray-400">Official Native Release Build • Version 1.0.0</p>
-          </div>
-        </div>
+        {!isCountingDown ? (
+          <>
+            {/* Header Icon */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-netflix-red/20 border border-netflix-red/40 flex items-center justify-center text-netflix-red shrink-0 shadow-lg">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-white tracking-tight">
+                  Get SageMovies for Android
+                </h3>
+                <p className="text-xs text-gray-400">Official Release Build • Version 1.0.3</p>
+              </div>
+            </div>
 
-        {/* App Features List */}
-        <div className="space-y-2.5 my-5 bg-black/40 border border-white/5 rounded-xl p-3.5 text-xs text-gray-300">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>13 Studio Brand Hubs (Netflix, Disney+, Marvel, etc.)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Automated Active Server Pre-Checks & Auto Fallback</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
-            <span>Zero Ads • Fast 60fps Native Streaming</span>
-          </div>
-        </div>
+            {/* App Features List */}
+            <div className="space-y-2.5 my-5 bg-black/40 border border-white/5 rounded-xl p-3.5 text-xs text-gray-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>13 Studio Brand Hubs (Netflix, Disney+, Marvel, etc.)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Automated Active Server Pre-Checks & Auto Fallback</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>Zero Ads • Fast 60fps Native Streaming</span>
+              </div>
+            </div>
 
-        {/* Download Action Button */}
-        <a
-          href={downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onClose}
-          className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
-        >
-          <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-          <span>Download Android APK</span>
-        </a>
+            {/* Download Action Button */}
+            <button
+              onClick={handleStartDownloadFlow}
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
+            >
+              <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+              <span>Download Android APK</span>
+            </button>
 
-        <p className="text-[10px] text-center text-gray-500 mt-3">
-          Compatible with Android 7.0+ (ARM64 / x86_64)
-        </p>
+            <p className="text-[10px] text-center text-gray-500 mt-3">
+              Compatible with Android 7.0+ (ARM64 / x86_64)
+            </p>
+          </>
+        ) : (
+          <div className="text-center py-2">
+            {/* Internal Ad / Sponsor Promo Banner */}
+            <div className="relative mb-5 p-4 rounded-xl bg-gradient-to-br from-netflix-red/20 via-black/60 to-purple-900/20 border border-netflix-red/30 text-left overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-netflix-red/30 text-netflix-red border border-netflix-red/40">
+                  Featured Sponsor / Announcement
+                </span>
+                <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+              </div>
+              <h4 className="text-sm font-bold text-white mb-1">
+                SageMovies Ultra Fast Streaming
+              </h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Enjoy zero-lag 1080p playback, offline downloads, and active server failover across all your devices.
+              </p>
+            </div>
+
+            {/* Countdown State */}
+            <div className="my-4">
+              {countdown > 0 ? (
+                <div>
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-netflix-red/15 border-2 border-netflix-red text-netflix-red text-xl font-black mb-2 animate-pulse">
+                    {countdown}s
+                  </div>
+                  <p className="text-xs text-gray-300 font-medium">
+                    Your APK download will begin automatically...
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-2 animate-bounce" />
+                  <p className="text-sm font-bold text-white">Download Started!</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    If the download didn&apos;t trigger automatically, click below:
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Manual Download Button */}
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white/10 hover:bg-white/20 active:scale-98 text-white font-bold text-xs rounded-xl transition-all border border-white/10 mt-2"
+            >
+              <span>Download Immediately</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
