@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Play, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { Play, ChevronLeft, ChevronRight, ArrowRight, Film } from 'lucide-react';
 import type { TMDBMovie } from '../types/tmdb';
 import PreviewCard from './PreviewCard';
 
@@ -102,6 +102,9 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
                   loading="lazy"
                   sizes="(max-width: 768px) 100px, 140px"
                 />
+                <div className="absolute top-1.5 right-1.5 z-20 bg-netflix-red text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg flex items-center gap-0.5 uppercase tracking-tighter">
+                  <Film className="w-2.5 h-2.5" /> STUDIO
+                </div>
                 <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover/poster:opacity-100 transition-opacity rounded-md flex items-center justify-center">
                   <Play className="w-8 h-8 text-white fill-current opacity-0 group-hover/poster:opacity-100 transition-opacity" />
                 </div>

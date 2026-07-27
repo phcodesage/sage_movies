@@ -387,13 +387,30 @@ export default function MovieDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="bg-netflix-red text-white px-2 py-0.5 rounded text-[10px] font-black uppercase">
                     {movie.first_air_date ? 'TV Series' : 'Movie'}
                   </span>
                   <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold">
                     HD / 4K
                   </span>
+                  {movie.production_companies && movie.production_companies.length > 0 && (
+                    <div className="flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded border border-white/20">
+                      {movie.production_companies[0].logo_path ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w200${movie.production_companies[0].logo_path}`}
+                          alt={movie.production_companies[0].name}
+                          className="h-3.5 max-w-[60px] object-contain filter invert brightness-200"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : null}
+                      <span className="text-[10px] font-black text-gray-200 uppercase tracking-tight">
+                        {movie.production_companies[0].name}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -576,12 +593,28 @@ export default function MovieDetailPage() {
                       <h4 className="text-[10px] font-black uppercase text-gray-500 mb-2">
                         Studios
                       </h4>
-                      <p className="text-xs text-gray-400 font-medium">
-                        {movie.production_companies
-                          .slice(0, 2)
-                          .map((c: { name: string }) => c.name)
-                          .join(', ')}
-                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {movie.production_companies.slice(0, 3).map((c: any) => (
+                          <div
+                            key={c.id}
+                            className="flex items-center gap-2 bg-gray-900/80 px-2.5 py-1.5 rounded-lg border border-gray-800"
+                          >
+                            {c.logo_path ? (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w200${c.logo_path}`}
+                                alt={c.name}
+                                className="h-5 max-w-[80px] object-contain filter invert brightness-200"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-netflix-red" />
+                            )}
+                            <span className="text-xs text-gray-300 font-bold">{c.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
