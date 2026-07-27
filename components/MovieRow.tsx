@@ -60,8 +60,10 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
     }
   };
 
+  const previewPos = { x: cardPosition.left + 70, y: cardPosition.top };
+
   return (
-    <div className="relative my-6 px-4 md:px-8 group">
+    <section id={id} className="relative my-6 px-4 md:px-8 group">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm md:text-lg font-black tracking-wider text-gray-200 uppercase">
           {title}
