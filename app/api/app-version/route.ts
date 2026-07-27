@@ -8,7 +8,7 @@ export async function GET() {
     direct_apk_url:
       'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.0.0.apk',
     release_notes:
-      '• Added 13 major studio brand hubs (Netflix, Disney+, Marvel, etc.)\n• Automated server health pre-checks (zero dead streams)\n• Enhanced web-parity search and genre filters',
+      '• Added 13 major studio brand hubs\n• New SageMovies App Launcher Icon\n• Instant 60fps streaming & active server checks',
     force_update: false,
   });
 }
