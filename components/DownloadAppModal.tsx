@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Sparkles, ArrowRight } from 'lucide-react';
+import AdsterraBanner from './AdsterraBanner';
 
 interface DownloadAppModalProps {
   isOpen: boolean;
@@ -101,21 +102,8 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
           </>
         ) : (
           <div className="text-center py-2">
-            {/* Internal Ad / Sponsor Promo Banner */}
-            <div className="relative mb-5 p-4 rounded-xl bg-gradient-to-br from-netflix-red/20 via-black/60 to-purple-900/20 border border-netflix-red/30 text-left overflow-hidden">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-netflix-red/30 text-netflix-red border border-netflix-red/40">
-                  Featured Sponsor / Announcement
-                </span>
-                <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-              </div>
-              <h4 className="text-sm font-bold text-white mb-1">
-                SageMovies Ultra Fast Streaming
-              </h4>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Enjoy zero-lag 1080p playback, offline downloads, and active server failover across all your devices.
-              </p>
-            </div>
+            {/* Internal Ad / Sponsor Promo Banner / Adsterra Unit */}
+            <AdsterraBanner className="mb-4" />
 
             {/* Countdown State */}
             <div className="my-4">
