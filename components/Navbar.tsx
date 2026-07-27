@@ -142,10 +142,10 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
           <button
             onClick={() => setIsDownloadModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1 bg-netflix-red hover:bg-red-700 text-white text-[11px] md:text-xs font-extrabold rounded-lg transition-all active:scale-95 shadow-md hover:shadow-netflix-red/30"
-            title="Download Android APK App"
+            title="Download Android APK App (1.2k+ Downloads)"
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Get App</span>
+            <span>Get App <span className="text-[10px] text-white/80 font-bold ml-0.5">(1.2k+ downloads)</span></span>
           </button>
 
           <button

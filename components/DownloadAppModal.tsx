@@ -67,7 +67,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                 <h3 className="text-lg font-extrabold text-white tracking-tight">
                   Get SageMovies for Android
                 </h3>
-                <p className="text-xs text-gray-400">Official Release Build • Version 1.0.3</p>
+                <p className="text-xs text-gray-400">Official Release Build • v1.0.3 (1.2k+ downloads)</p>
               </div>
             </div>
 
@@ -93,7 +93,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
               className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
             >
               <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-              <span>Download Android APK</span>
+              <span>Download Android APK (1.2k+ downloads)</span>
             </button>
 
             <p className="text-[10px] text-center text-gray-500 mt-3">
