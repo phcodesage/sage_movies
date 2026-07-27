@@ -97,27 +97,25 @@ export default function Home() {
     router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
   };
 
-  // Initial fetch
+  // Fetch initial collections and services in parallel
   useEffect(() => {
-    const init = async () => {
+    async function loadData() {
       try {
+        setIsLoading(true);
+
         const [movieRes, tvRes, animeRes, actionRes, ...serviceRes] = await Promise.all([
-          fetch('/api/movies/collection')
-            .then((res) => (res.ok ? res.json() : { results: [] }))
-            .catch(() => ({ results: [] })),
-          fetch('/api/tv/collection')
-            .then((res) => (res.ok ? res.json() : { results: [] }))
-            .catch(() => ({ results: [] })),
-          fetch('/api/anime/collection')
-            .then((res) => (res.ok ? res.json() : { results: [] }))
-            .catch(() => ({ results: [] })),
-          fetch('/api/movies/genre/28')
-            .then((res) => (res.ok ? res.json() : { results: [] }))
-            .catch(() => ({ results: [] })),
+          fetch('/api/movies/collection').then((res) => res.json()),
+          fetch('/api/tv/collection').then((res) => res.json()),
+          fetch('/api/anime/collection').then((res) => res.json()),
+          fetch('/api/movies/genre/28').then((res) => res.json()),
           ...STREAMING_SERVICES.map((s) =>
-            fetch(`/api/movies/provider/${s.id}`)
-              .then((res) => (res.ok ? res.json() : { results: [] }))
-              .catch(() => ({ results: [] }))
+            s.isCompany
+              ? fetch(`/api/movies/studio/${s.id}`)
+                  .then((res) => res.json())
+                  .catch(() => ({ results: [] }))
+              : fetch(`/api/movies/provider/${s.id}`)
+                  .then((res) => res.json())
+                  .catch(() => ({ results: [] }))
           ),
         ]);
 
@@ -127,7 +125,7 @@ export default function Home() {
         setAnime((animeRes as any).results || []);
         setActionMovies((actionRes as any).results || []);
 
-        const services: Record<number, TMDBMovie[]> = {};
+        const services: Record<string | number, TMDBMovie[]> = {};
         STREAMING_SERVICES.forEach((s, i) => {
           services[s.id] = (serviceRes[i] as any).results || [];
         });
@@ -159,8 +157,8 @@ export default function Home() {
       } finally {
         setIsLoading(false);
       }
-    };
-    init();
+    }
+    loadData();
 
     return () => {
       if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
@@ -390,16 +388,16 @@ export default function Home() {
             />
             {STREAMING_SERVICES.map(
               (s) =>
-                (serviceRows[s.id]?.length ?? 0) > 0 && (
+                (serviceRows[s.id as any]?.length ?? 0) > 0 && (
                   <MovieRow
                     key={s.id}
                     title={`${s.name} Movies`}
-                    items={serviceRows[s.id]}
+                    items={serviceRows[s.id as any]}
                     id={s.rowId}
                     onSeeAll={() =>
                       setSeeAllData({
                         title: `${s.name} Movies`,
-                        items: serviceRows[s.id],
+                        items: serviceRows[s.id as any],
                         category: `provider_${s.id}`,
                       })
                     }
