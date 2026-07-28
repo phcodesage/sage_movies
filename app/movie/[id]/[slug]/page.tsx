@@ -22,6 +22,15 @@ import {
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
 
+type PlaybackSource = {
+  url: string;
+  mode: 'stream' | 'iframe';
+  provider: string;
+  streamType?: 'hls' | 'video';
+  quality?: string;
+  subtitles?: Array<{ label?: string; file?: string }>;
+};
+
 export default function MovieDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -34,7 +43,7 @@ export default function MovieDetailPage() {
   const [server, setServer] = useState(DEFAULT_SERVER);
   const [lang, setLang] = useState(DEFAULT_LANG);
 
-  const [embedUrl, setEmbedUrl] = useState('');
+  const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,29 +134,87 @@ export default function MovieDetailPage() {
     }
   }, [id, slug]);
 
+  const loadIframeSource = async (selectedServer: string, selectedLang: string) => {
+    const type = movie.first_air_date ? 'tv' : 'movie';
+    const res = await fetch(
+      `/api/video-sources/${type}/${movie.id}?server=${selectedServer}&lang=${selectedLang}`
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch iframe video source');
+    }
+
+    const data = await res.json();
+
+    if (!data.embedURL) {
+      return null;
+    }
+
+    return {
+      url: data.embedURL,
+      mode: 'iframe' as const,
+      provider: data.server || selectedServer,
+    };
+  };
+
   const loadVideoSource = async (selectedServer: string, selectedLang: string = lang) => {
     if (!movie) return;
     setIsLoading(true);
     setError(null);
+    setPlaybackSource(null);
 
     try {
       const type = movie.first_air_date ? 'tv' : 'movie';
-      const res = await fetch(
-        `/api/video-sources/${type}/${movie.id}?server=${selectedServer}&lang=${selectedLang}`
-      );
-      if (!res.ok) throw new Error('Failed to fetch video source');
-      const data = await res.json();
+      const releaseYear = (movie.release_date || movie.first_air_date || '').slice(0, 4);
+      const imdbId = movie.imdb_id || movie.external_ids?.imdb_id || '';
+      let nextSource: PlaybackSource | null = null;
 
-      if (data.embedURL) {
-        setEmbedUrl(data.embedURL);
-        addToHistory(movie);
+      if (selectedServer === DEFAULT_SERVER) {
+        const resolveQuery = new URLSearchParams({
+          server: selectedServer,
+          title: movie.title || movie.name || '',
+          year: releaseYear,
+          imdbId,
+          season: '1',
+          episode: '1',
+        });
+        const resolveRes = await fetch(`/api/resolve-stream/${type}/${movie.id}?${resolveQuery.toString()}`);
+
+        if (!resolveRes.ok) {
+          throw new Error('Failed to resolve direct stream');
+        }
+
+        const resolveData = await resolveRes.json();
+
+        if (resolveData.ok && resolveData.streamUrl) {
+          nextSource = {
+            url: resolveData.streamUrl,
+            mode: 'stream',
+            provider: resolveData.provider || 'videasy-resolver',
+            streamType: resolveData.streamType,
+            quality: resolveData.quality,
+            subtitles: resolveData.subtitles,
+          };
+        } else if (resolveData.fallbackEmbedUrl) {
+          nextSource = {
+            url: resolveData.fallbackEmbedUrl,
+            mode: 'iframe',
+            provider: selectedServer,
+          };
+        }
       } else {
-        setError('Video source not available for this server. Try another server.');
-        if (!isPlaying) setIsPlaying(false);
+        nextSource = await loadIframeSource(selectedServer, selectedLang);
       }
+
+      if (!nextSource) {
+        throw new Error('Video source not available for this server');
+      }
+
+      setPlaybackSource(nextSource);
+      addToHistory(movie);
     } catch (err) {
       setError('Failed to load video. Please try a different server.');
-      if (!isPlaying) setIsPlaying(false);
+      setIsPlaying(false);
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +242,7 @@ export default function MovieDetailPage() {
 
   const handleClosePlayer = () => {
     setIsPlaying(false);
-    setEmbedUrl('');
+    setPlaybackSource(null);
     setShowUpNext(false);
   };
 
@@ -270,9 +337,9 @@ export default function MovieDetailPage() {
                 </div>
               )}
 
-              {embedUrl && (
+              {playbackSource?.url && (
                 <SmartVideoPlayer
-                  src={embedUrl}
+                  src={playbackSource.url}
                   title={title}
                   poster={backdropPath ? `${IMG_URL}${backdropPath}` : undefined}
                   className="h-full w-full rounded-none shadow-none ring-0"
@@ -598,7 +665,7 @@ export default function MovieDetailPage() {
           </div>
 
           {/* Browse Up Next trigger — floats over the details panel, never the player */}
-          {isPlaying && embedUrl && similarMovies.length > 0 && (
+          {isPlaying && playbackSource?.url && similarMovies.length > 0 && (
             <button
               onClick={() => setShowUpNext(!showUpNext)}
               className={cn(

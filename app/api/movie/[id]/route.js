@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
 
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=production_companies`,
+      `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=external_ids`,
       { next: { revalidate: 3600 } }
     );
     const data = await response.json();
@@ -24,7 +24,12 @@ export async function GET(request, { params }) {
       );
     }
 
-    return NextResponse.json(data, {
+    return NextResponse.json(
+      {
+        ...data,
+        imdb_id: data.imdb_id || data.external_ids?.imdb_id || null,
+      },
+      {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
         // Netlify's CDN cache key ignores query strings unless told otherwise.
@@ -32,7 +37,8 @@ export async function GET(request, { params }) {
         // whenever a movie and TV show share the same numeric TMDB id.
         'Netlify-Vary': 'query',
       },
-    });
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch movie details' }, { status: 500 });
   }
