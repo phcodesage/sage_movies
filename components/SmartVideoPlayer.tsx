@@ -46,6 +46,7 @@ export const IFRAME_WHITELIST_KEYWORDS = [
   'multiembed',
   'superembed',
   'embed',
+  'player',
   'vidplay',
   'cloud',
   'stream',
@@ -53,8 +54,7 @@ export const IFRAME_WHITELIST_KEYWORDS = [
   'm3u8',
 ] as const;
 
-const IFRAME_SANDBOX = 'allow-scripts allow-same-origin allow-popups-to-escape-sandbox';
-const IFRAME_ALLOW = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+const IFRAME_ALLOW = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -78,6 +78,7 @@ function getHost(url: string) {
 
 export function detectType(url: string): SmartVideoType {
   const pathname = getUrlPathname(url);
+  const normalizedUrl = url.toLowerCase();
 
   if (pathname.endsWith('.m3u8')) {
     return 'hls';
@@ -85,6 +86,10 @@ export function detectType(url: string): SmartVideoType {
 
   if (VIDEO_EXTENSIONS.some((extension) => pathname.endsWith(extension))) {
     return 'video';
+  }
+
+  if (normalizedUrl.includes('/embed/') || normalizedUrl.includes('/player/')) {
+    return 'iframe';
   }
 
   return 'iframe';
@@ -234,9 +239,14 @@ function HlsPlayer({ src, title, poster, autoPlay, muted, controls }: SharedPlay
     }
 
     if (!Hls.isSupported()) {
-      setIsLoading(false);
-      setError('This browser does not support HLS playback.');
-      return undefined;
+      const unsupportedTimer = window.setTimeout(() => {
+        setIsLoading(false);
+        setError('This browser does not support HLS playback.');
+      }, 0);
+
+      return () => {
+        window.clearTimeout(unsupportedTimer);
+      };
     }
 
     const hls = new Hls({
@@ -313,6 +323,7 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showClickOverlay, setShowClickOverlay] = useState(true);
 
   const isInitialUrlAllowed = useMemo(
     () => isAllowedIframeUrl(src, whitelistKeywords),
@@ -320,8 +331,15 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
   );
 
   useEffect(() => {
-    setIsLoading(true);
-    setError(null);
+    const resetTimer = window.setTimeout(() => {
+      setIsLoading(true);
+      setError(null);
+      setShowClickOverlay(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(resetTimer);
+    };
   }, [src]);
 
   useEffect(() => {
@@ -335,9 +353,15 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
       reason: 'Initial iframe URL is not in the whitelist.',
     };
 
-    logBlockedNavigation(blockedInfo);
-    setIsLoading(false);
-    setError('Blocked iframe URL because its host is not whitelisted.');
+    const blockedTimer = window.setTimeout(() => {
+      logBlockedNavigation(blockedInfo);
+      setIsLoading(false);
+      setError('Blocked iframe URL because its host is not whitelisted.');
+    }, 0);
+
+    return () => {
+      window.clearTimeout(blockedTimer);
+    };
   }, [isInitialUrlAllowed, src]);
 
   useEffect(() => {
@@ -378,6 +402,8 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
         }
 
         const originalOpen = frameWindow.open?.bind(frameWindow);
+        const originalAssign = frameWindow.location.assign?.bind(frameWindow.location);
+        const originalReplace = frameWindow.location.replace?.bind(frameWindow.location);
 
         frameWindow.open = ((url?: string | URL, target?: string, features?: string) => {
           const nextUrl = typeof url === 'string' ? url : url?.toString() ?? '';
@@ -396,10 +422,38 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
           return null;
         }) as Window['open'];
 
+        frameWindow.location.assign = ((nextUrl: string | URL) => {
+          const normalizedUrl = typeof nextUrl === 'string' ? nextUrl : nextUrl.toString();
+
+          if (isAllowedIframeUrl(normalizedUrl, whitelistKeywords)) {
+            return originalAssign?.(nextUrl);
+          }
+
+          logBlockedNavigation({
+            url: normalizedUrl,
+            host: getHost(normalizedUrl),
+            reason: 'Blocked location.assign from same-origin iframe.',
+          });
+        }) as Location['assign'];
+
+        frameWindow.location.replace = ((nextUrl: string | URL) => {
+          const normalizedUrl = typeof nextUrl === 'string' ? nextUrl : nextUrl.toString();
+
+          if (isAllowedIframeUrl(normalizedUrl, whitelistKeywords)) {
+            return originalReplace?.(normalizedUrl);
+          }
+
+          logBlockedNavigation({
+            url: normalizedUrl,
+            host: getHost(normalizedUrl),
+            reason: 'Blocked location.replace from same-origin iframe.',
+          });
+        }) as Location['replace'];
+
         frameWindow.__smartVideoPlayerGuarded = true;
       } catch (guardError) {
         console.info(
-          '[SmartVideoPlayer] Cross-origin iframe detected. Popup blocking relies on sandbox and referrerPolicy.',
+          '[SmartVideoPlayer] Cross-origin iframe detected. Popup blocking on the web is best effort only and cannot be enforced reliably without same-origin access or a proxy.',
           guardError
         );
       } finally {
@@ -409,6 +463,32 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
 
     applySameOriginGuards();
   }, [isInitialUrlAllowed, src, whitelistKeywords]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const originHost = getHost(event.origin);
+
+      if (originHost && !isAllowedIframeUrl(event.origin, whitelistKeywords)) {
+        logBlockedNavigation({
+          url: event.origin,
+          host: originHost,
+          reason: 'Received postMessage from a non-whitelisted origin.',
+        });
+        return;
+      }
+
+      console.debug('[SmartVideoPlayer] Received iframe message', {
+        origin: event.origin,
+        data: event.data,
+      });
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [whitelistKeywords]);
 
   if (!isInitialUrlAllowed) {
     return (
@@ -433,17 +513,60 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
         />
       )}
 
+      {/* Blocking pop-ups from a cross-origin iframe cannot be done reliably on the web.
+          This player intentionally does NOT use `sandbox` because many streaming sources
+          break under sandbox restrictions. The logic below only logs/blocks what is
+          observable in same-origin cases or via cooperative postMessage integrations. */}
+
+      {showClickOverlay && (
+        <button
+          type="button"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-white transition hover:bg-black/10"
+          onClick={() => {
+            console.debug('[SmartVideoPlayer] Overlay click captured before enabling iframe interaction.');
+            setShowClickOverlay(false);
+          }}
+          aria-label="Tap to start interacting with the iframe player"
+        >
+          <span className="rounded-full bg-black/70 px-4 py-2 text-sm font-medium backdrop-blur">
+            Bam de bat dau tuong tac voi player
+          </span>
+        </button>
+      )}
+
       <iframe
         ref={iframeRef}
         src={src}
         title={title}
         className="h-full w-full border-0"
         loading="lazy"
-        sandbox={IFRAME_SANDBOX}
         allow={IFRAME_ALLOW}
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={() => setIsLoading(false)}
+        onLoad={() => {
+          setIsLoading(false);
+
+          try {
+            const currentUrl = iframeRef.current?.contentWindow?.location?.href;
+
+            if (currentUrl) {
+              console.debug('[SmartVideoPlayer] Iframe loaded URL', currentUrl);
+
+              if (!isAllowedIframeUrl(currentUrl, whitelistKeywords)) {
+                logBlockedNavigation({
+                  url: currentUrl,
+                  host: getHost(currentUrl),
+                  reason: 'Loaded same-origin iframe URL is outside the whitelist.',
+                });
+              }
+            }
+          } catch (loadError) {
+            console.info(
+              '[SmartVideoPlayer] Unable to inspect iframe URL on load because the frame is cross-origin.',
+              loadError
+            );
+          }
+        }}
       />
     </div>
   );
