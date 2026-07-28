@@ -14,7 +14,6 @@ import dynamic from 'next/dynamic';
 import Navbar from '../components/Navbar';
 import MovieRow from '../components/MovieRow';
 import { MovieRowSkeleton, BannerSkeleton } from '../components/LoadingSkeleton';
-import { AdsterraNativeBanner } from '../components/Adsterra';
 import ServiceBottomNav from '../components/ServiceBottomNav';
 import { STREAMING_SERVICES } from '../lib/streamingServices';
 import { scrollToSection } from '../lib/utils/scrollToSection';
@@ -371,9 +370,6 @@ export default function Home() {
                 setSeeAllData({ title: 'Action Movies', items: actionMovies, category: '28' })
               }
             />
-            {/* Native banner sits between rows so it reads as another content shelf
-                rather than an interruption. Move it if it underperforms here. */}
-            <AdsterraNativeBanner />
             <MovieRow
               title="Popular TV Shows"
               items={trendingTV}

@@ -10,7 +10,7 @@ import { useWatchHistory } from '../../../../lib/hooks/useWatchHistory';
 import { getSimilarMovies } from '../../../../lib/recommendations';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
-import { AdsterraNativeBanner } from '../../../../components/Adsterra';
+import SmartVideoPlayer from '../../../../components/SmartVideoPlayer';
 import {
   VIDEO_SERVERS,
   SUBTITLE_LANGUAGES,
@@ -18,14 +18,6 @@ import {
   DEFAULT_LANG,
   getServer,
 } from '../../../../lib/videoServers';
-
-// Grants the embed only what a video player genuinely needs. The privileges left OUT
-// are the point: without `allow-popups` the provider cannot open popunder ads, and
-// without `allow-top-navigation` it cannot redirect the whole tab. This cannot remove
-// banner/overlay ads painted inside the player — those are same-origin to the provider
-// and unreachable from here.
-const PLAYER_SANDBOX =
-  'allow-scripts allow-same-origin allow-presentation allow-forms allow-fullscreen';
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
@@ -42,11 +34,6 @@ export default function MovieDetailPage() {
   const [server, setServer] = useState(DEFAULT_SERVER);
   const [lang, setLang] = useState(DEFAULT_LANG);
 
-  // Popup-blocking is applied automatically per provider rather than exposed as a
-  // toggle: users had no way to know what "Block provider popups" meant, and most
-  // providers detect the sandbox and refuse to play, so a manual switch mostly
-  // produced a broken player. `sandboxTolerant` records which ones actually work.
-  const sandboxed = getServer(server).sandboxTolerant;
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -283,23 +270,12 @@ export default function MovieDetailPage() {
                 </div>
               )}
 
-              {/* The Up Next gallery deliberately lives in the details panel, NOT here:
-                  anything layered over the iframe covers the video and its controls.
-                  Keep the player surface clear of our own UI. */}
               {embedUrl && (
-                <iframe
-                  // Changing `sandbox` on a live iframe has no effect until the
-                  // document reloads, so keying on it forces React to remount.
-                  key={`${embedUrl}|${sandboxed}`}
+                <SmartVideoPlayer
                   src={embedUrl}
-                  className="w-full h-full border-none"
-                  allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                  referrerPolicy="origin"
-                  // Omitting allow-popups / allow-top-navigation is what stops the
-                  // provider's popunders and forced redirects. Applied only to
-                  // providers that tolerate it — see PLAYER_SANDBOX.
-                  sandbox={sandboxed ? PLAYER_SANDBOX : undefined}
+                  title={title}
+                  poster={backdropPath ? `${IMG_URL}${backdropPath}` : undefined}
+                  className="h-full w-full rounded-none shadow-none ring-0"
                 />
               )}
 
@@ -467,14 +443,6 @@ export default function MovieDetailPage() {
                   {isPlaying ? 'Refresh Stream' : 'Start Watching'}
                 </button>
               </div>
-
-              {/* Ad slot directly beneath the play control. Gated on a stream actually
-                being live (playing, has an embed URL, no error) so we never show an ad
-                against a broken player. It sits below the button and is never layered
-                over it — the play button must stay a play button, not an ad surface. */}
-              {isPlaying && embedUrl && !error && (
-                <AdsterraNativeBanner className="ad-native-compact rounded-xl overflow-hidden" />
-              )}
 
               {/* Storyline Section */}
               <div className="flex flex-col gap-3">

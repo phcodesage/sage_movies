@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Play, PlayCircle, Download, UserCheck } from 'lucide-react';
+import { ArrowLeft, Star, Play } from 'lucide-react';
 import Image from 'next/image';
 import type { TMDBMovie } from '../types/tmdb';
+import SmartVideoPlayer from './SmartVideoPlayer';
+import { DEFAULT_SERVER, VIDEO_SERVERS } from '../lib/videoServers';
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
 
@@ -17,10 +19,9 @@ interface MovieDetailModalProps {
 
 export default function MovieDetailModal({ movie, onClose, genres }: MovieDetailModalProps) {
   const router = useRouter();
-  const [server, setServer] = useState('vidsrc.to');
+  const [server, setServer] = useState(DEFAULT_SERVER);
   const [embedUrl, setEmbedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [showOverlay, setShowOverlay] = useState(true);
 
   const handlePlay = () => {
     const slug = (movie.title || movie.name || '')
@@ -94,24 +95,6 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
               </div>
             )}
             
-            {showOverlay && !isLoading && embedUrl && (
-              <div className="absolute inset-0 z-20 bg-black/90 flex flex-col items-center justify-center text-center p-6">
-                <h3 className="text-2xl font-bold mb-4">Verification Required</h3>
-                <p className="text-gray-400 mb-6 max-w-md">To unlock high-speed streaming and remove ads, please complete a quick verification.</p>
-                <div className="flex flex-col gap-4 w-full max-w-xs">
-                  <button 
-                    onClick={() => setShowOverlay(false)}
-                    className="bg-netflix-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition flex items-center justify-center"
-                  >
-                    <UserCheck className="w-5 h-5 mr-2" /> Verify You're Human
-                  </button>
-                  <button onClick={() => setShowOverlay(false)} className="text-sm text-gray-500 hover:text-white underline">
-                    Continue to Player (with ads)
-                  </button>
-                </div>
-              </div>
-            )}
-
             {!isLoading && !embedUrl && (
               <div className="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center text-center p-6">
                 <p className="text-xl font-bold text-gray-300">Video Source Not Available</p>
@@ -119,7 +102,14 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
               </div>
             )}
 
-            {embedUrl && <iframe src={embedUrl} className="w-full h-full border-none" allow="autoplay; fullscreen *" allowFullScreen />}
+            {embedUrl && (
+              <SmartVideoPlayer
+                src={embedUrl}
+                title={movie.title || movie.name || 'Video Player'}
+                poster={movie.backdrop_path ? `${IMG_URL}${movie.backdrop_path}` : undefined}
+                className="h-full w-full rounded-none shadow-none ring-0"
+              />
+            )}
           </div>
 
           <div className="w-full md:w-[30%] flex flex-col gap-6">
@@ -135,15 +125,6 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
               <Play className="w-5 h-5 mr-2 fill-current" /> PLAY NOW
             </button>
 
-            <div className="flex flex-col gap-3">
-              <a href="#" target="_blank" className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 rounded flex items-center justify-center transition">
-                <PlayCircle className="w-5 h-5 mr-2" /> WATCH IN FULL HD
-              </a>
-              <a href="#" target="_blank" className="w-full bg-netflix-dark hover:bg-gray-800 text-white font-bold py-3 rounded border border-gray-700 flex items-center justify-center transition">
-                <Download className="w-5 h-5 mr-2" /> DOWNLOAD MOVIE
-              </a>
-            </div>
-
             <div className="bg-netflix-dark p-4 rounded-lg">
               <label className="block text-neutral-300 mb-2 font-medium">Change Server:</label>
               <select
@@ -151,14 +132,11 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
                 onChange={(e) => setServer(e.target.value)}
                 className="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:ring-1 focus:ring-netflix-red"
               >
-                <option value="vidsrc.to">Vidsrc.to (Primary)</option>
-                <option value="vidsrc.su">Vidsrc.su (Stable)</option>
-                <option value="vidsrc.me">Vidsrc.me (Backup)</option>
-                <option value="embedsu">Embedsu (Mirror)</option>
-                <option value="superembed">SuperEmbed (Multi)</option>
-                <option value="player.videasy.net">Videasy (Alternative)</option>
-                <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
-                <option value="vidsrc.cc">Vidsrc.cc (Legacy)</option>
+                {VIDEO_SERVERS.map((videoServer) => (
+                  <option key={videoServer.id} value={videoServer.id}>
+                    {videoServer.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

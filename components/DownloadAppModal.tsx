@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Star, ArrowRight, Play, Film } from 'lucide-react';
-import AdsterraBanner from './AdsterraBanner';
 
 interface DownloadAppModalProps {
   isOpen: boolean;
@@ -139,7 +138,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Download Action & Adsterra Interstitial (7 cols on md) */}
+        {/* RIGHT COLUMN: Download Action (7 cols on md) */}
         <div className="md:col-span-7 p-5 md:p-6 flex flex-col justify-between">
           {!isCountingDown ? (
             <>
@@ -193,9 +192,6 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
             </>
           ) : (
             <div className="text-center py-1 flex flex-col justify-between h-full">
-              {/* Adsterra Native Banner Unit */}
-              <AdsterraBanner className="mb-2" />
-
               {/* Countdown State */}
               <div className="my-2">
                 {countdown > 0 ? (

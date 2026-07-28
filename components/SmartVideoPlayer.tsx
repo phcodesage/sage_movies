@@ -19,7 +19,7 @@ export type SmartVideoPlayerProps = {
   autoPlay?: boolean;
   muted?: boolean;
   controls?: boolean;
-  whitelistKeywords?: string[];
+  whitelistKeywords?: readonly string[];
 };
 
 type SharedPlayerProps = {
@@ -34,12 +34,12 @@ type SharedPlayerProps = {
 type IframePlayerProps = {
   src: string;
   title: string;
-  whitelistKeywords: string[];
+  whitelistKeywords: readonly string[];
 };
 
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mkv', '.avi', '.mov', '.flv'];
 
-export const IFRAME_WHITELIST_KEYWORDS = [
+export const IFRAME_WHITELIST_KEYWORDS: readonly string[] = [
   'videasy',
   '2embed',
   'vidsrc',
@@ -95,7 +95,10 @@ export function detectType(url: string): SmartVideoType {
   return 'iframe';
 }
 
-export function isAllowedIframeUrl(url: string, whitelistKeywords = [...IFRAME_WHITELIST_KEYWORDS]) {
+export function isAllowedIframeUrl(
+  url: string,
+  whitelistKeywords: readonly string[] = IFRAME_WHITELIST_KEYWORDS
+) {
   const host = getHost(url);
 
   if (!host) {
@@ -321,11 +324,13 @@ function HlsPlayer({ src, title, poster, autoPlay, muted, controls }: SharedPlay
 
 function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const lastPlayerInteractionRef = useRef(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showClickOverlay, setShowClickOverlay] = useState(true);
 
-  const isInitialUrlAllowed = useMemo(
+  const isTrustedSource = useMemo(
     () => isAllowedIframeUrl(src, whitelistKeywords),
     [src, whitelistKeywords]
   );
@@ -343,31 +348,29 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
   }, [src]);
 
   useEffect(() => {
-    if (isInitialUrlAllowed) {
+    if (isTrustedSource) {
       return;
     }
 
     const blockedInfo = {
       url: src,
       host: getHost(src),
-      reason: 'Initial iframe URL is not in the whitelist.',
+      reason: 'Initial iframe URL is outside the reference whitelist. Allowing playback and logging only.',
     };
 
-    const blockedTimer = window.setTimeout(() => {
+    const warningTimer = window.setTimeout(() => {
       logBlockedNavigation(blockedInfo);
-      setIsLoading(false);
-      setError('Blocked iframe URL because its host is not whitelisted.');
     }, 0);
 
     return () => {
-      window.clearTimeout(blockedTimer);
+      window.clearTimeout(warningTimer);
     };
-  }, [isInitialUrlAllowed, src]);
+  }, [isTrustedSource, src]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
 
-    if (!iframe || !isInitialUrlAllowed) {
+    if (!iframe) {
       return;
     }
 
@@ -462,7 +465,7 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
     };
 
     applySameOriginGuards();
-  }, [isInitialUrlAllowed, src, whitelistKeywords]);
+  }, [src, whitelistKeywords]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -490,21 +493,39 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
     };
   }, [whitelistKeywords]);
 
-  if (!isInitialUrlAllowed) {
-    return (
-      <div className="relative h-full w-full">
-        {error && (
-          <ErrorOverlay
-            title="Iframe bi chan"
-            message="URL iframe ban dau khong nam trong danh sach trang. Hay kiem tra lai host hoac bo sung `whitelistKeywords`."
-          />
-        )}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const originalWindowOpen = window.open.bind(window);
+
+    window.open = ((url?: string | URL, target?: string, features?: string) => {
+      const nextUrl = typeof url === 'string' ? url : url?.toString() ?? '';
+      const withinPlayerGestureWindow = Date.now() - lastPlayerInteractionRef.current < 1500;
+
+      if (withinPlayerGestureWindow && nextUrl && !isAllowedIframeUrl(nextUrl, whitelistKeywords)) {
+        logBlockedNavigation({
+          url: nextUrl,
+          host: getHost(nextUrl),
+          reason: 'Blocked top-window popup attempt during player interaction.',
+        });
+
+        return null;
+      }
+
+      return originalWindowOpen(url as string | URL | undefined, target, features);
+    }) as Window['open'];
+
+    return () => {
+      window.open = originalWindowOpen;
+    };
+  }, [whitelistKeywords]);
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      ref={wrapperRef}
+      className="relative h-full w-full"
+      onPointerDownCapture={() => {
+        lastPlayerInteractionRef.current = Date.now();
+      }}
+    >
       {isLoading && <LoadingOverlay label="Dang tai iframe..." />}
       {error && (
         <ErrorOverlay
@@ -517,6 +538,12 @@ function IframePlayer({ src, title, whitelistKeywords }: IframePlayerProps) {
           This player intentionally does NOT use `sandbox` because many streaming sources
           break under sandbox restrictions. The logic below only logs/blocks what is
           observable in same-origin cases or via cooperative postMessage integrations. */}
+
+      {!isTrustedSource && !error && (
+        <div className="absolute left-3 right-3 top-3 z-20 rounded-lg border border-amber-400/30 bg-black/70 px-3 py-2 text-xs text-amber-200 backdrop-blur">
+          Nguon iframe nay nam ngoai whitelist tham khao. Player van cho phep phat, nhung viec chan pop-up chi o muc best effort.
+        </div>
+      )}
 
       {showClickOverlay && (
         <button
@@ -580,7 +607,7 @@ export default function SmartVideoPlayer({
   autoPlay = true,
   muted = false,
   controls = true,
-  whitelistKeywords = [...IFRAME_WHITELIST_KEYWORDS],
+  whitelistKeywords = IFRAME_WHITELIST_KEYWORDS,
 }: SmartVideoPlayerProps) {
   const type = useMemo(() => detectType(src), [src]);
 

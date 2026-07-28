@@ -327,12 +327,6 @@ app.get('/api/video-sources/:type/:id', async (req, res) => {
         embedURL = `https://player.videasy.net/embed/${mediaType}/${id}`;
         break;
     }
-    
-    // Add anti-popup parameters where applicable
-    if (server === 'player.videasy.net') {
-      embedURL += '?ads_behavior=background&popup_mode=quiet';
-    }
-    
     console.log(`[API] Generated embed URL: ${embedURL}`);
     res.json({ embedURL });
   } catch (error) {

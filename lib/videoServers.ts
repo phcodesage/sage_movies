@@ -73,7 +73,7 @@ export const VIDEO_SERVERS: VideoServer[] = [
       // Videasy is /{type}/{id}, NOT /embed/{type}/{id} — the latter 404s.
       const path =
         type === 'tv' && season && episode ? `tv/${id}/${season}/${episode}` : `${type}/${id}`;
-      return `https://player.videasy.net/${path}?ads_behavior=background&popup_mode=quiet`;
+      return `https://player.videasy.net/${path}`;
     },
   },
   {
