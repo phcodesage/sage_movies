@@ -373,16 +373,16 @@ export default function MovieDetailPage() {
                         {title}
                       </h1>
                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="flex items-center text-yellow-400 font-black text-xs bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">
-                          <Star className="w-3.5 h-3.5 mr-1 fill-current" /> {voteAverage}
+                        <span className="inline-flex items-center gap-1 bg-amber-500 text-black px-2.5 py-0.5 rounded-full text-xs font-black shadow-sm">
+                          <Star className="w-3.5 h-3.5 fill-current" /> {voteAverage}
                         </span>
-                        <span className="text-gray-300 text-xs font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                        <span className="bg-gray-800 text-gray-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
                           {releaseDate?.split('-')[0]}
                         </span>
-                        <span className="bg-netflix-red/20 text-netflix-red px-2 py-0.5 rounded text-[10px] font-black uppercase border border-netflix-red/30">
+                        <span className="bg-netflix-red text-white px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
                           {movie.first_air_date ? 'TV Series' : 'Movie'}
                         </span>
-                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black">
+                        <span className="bg-emerald-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide">
                           HD / 4K
                         </span>
                       </div>
