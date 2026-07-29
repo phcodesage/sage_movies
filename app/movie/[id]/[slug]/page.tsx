@@ -352,12 +352,12 @@ export default function MovieDetailPage() {
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
             {/* Main Info Padding Wrapper */}
             <div className="p-5 md:p-8 flex flex-col gap-6">
-              {/* Header: Title & Meta */}
+              {/* Header: Title, Meta, & Primary CTA */}
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4 items-start">
                   {/* Compact Poster */}
                   {posterPath && (
-                    <div className="relative w-20 h-28 md:w-24 md:h-36 rounded shadow-xl overflow-hidden shrink-0 border border-gray-800">
+                    <div className="relative w-20 h-28 md:w-24 md:h-36 rounded-xl shadow-2xl overflow-hidden shrink-0 border border-gray-800">
                       <Image
                         src={`${THUMB_URL}${posterPath}`}
                         alt={title}
@@ -367,176 +367,151 @@ export default function MovieDetailPage() {
                       />
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h1 className="text-2xl md:text-3xl font-black leading-tight tracking-tight text-white mb-2">
-                      {title}
-                    </h1>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="flex items-center text-yellow-500 font-black text-sm">
-                        <Star className="w-4 h-4 mr-1 fill-current" /> {voteAverage}
-                      </span>
-                      <span className="text-gray-400 text-sm font-bold">
-                        {releaseDate?.split('-')[0]}
-                      </span>
+                  <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
+                    <div>
+                      <h1 className="text-xl md:text-2xl font-black leading-tight tracking-tight text-white mb-2 line-clamp-2">
+                        {title}
+                      </h1>
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="flex items-center text-yellow-400 font-black text-xs bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">
+                          <Star className="w-3.5 h-3.5 mr-1 fill-current" /> {voteAverage}
+                        </span>
+                        <span className="text-gray-300 text-xs font-bold bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                          {releaseDate?.split('-')[0]}
+                        </span>
+                        <span className="bg-netflix-red/20 text-netflix-red px-2 py-0.5 rounded text-[10px] font-black uppercase border border-netflix-red/30">
+                          {movie.first_air_date ? 'TV Series' : 'Movie'}
+                        </span>
+                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black">
+                          HD / 4K
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="bg-netflix-red text-white px-2 py-0.5 rounded text-[10px] font-black uppercase">
-                    {movie.first_air_date ? 'TV Series' : 'Movie'}
-                  </span>
-                  <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold">
-                    HD / 4K
-                  </span>
-                  {movie.production_companies && movie.production_companies.length > 0 && (
-                    <div className="flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded border border-white/20">
-                      {movie.production_companies[0].logo_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w200${movie.production_companies[0].logo_path}`}
-                          alt={movie.production_companies[0].name}
-                          className="h-3.5 max-w-[60px] object-contain filter invert brightness-200"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : null}
-                      <span className="text-[10px] font-black text-gray-200 uppercase tracking-tight">
-                        {movie.production_companies[0].name}
-                      </span>
-                    </div>
-                  )}
+                    {/* Instant Play CTA Button */}
+                    <button
+                      onClick={() => handlePlay()}
+                      disabled={isLoading}
+                      className="w-full bg-netflix-red hover:bg-red-700 text-white text-xs font-black py-3 px-4 rounded-xl shadow-lg shadow-red-900/30 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-wider"
+                    >
+                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                      {isPlaying ? 'REFRESH STREAM' : 'WATCH NOW FREE'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Server Controls - Compacted */}
-              <div className="flex flex-col gap-3 p-4 bg-gray-900/50 rounded-xl border border-gray-800">
-                <div className="relative">
-                  <label className="text-[10px] text-gray-500 font-bold uppercase mb-1.5 block">
-                    Streaming Server
-                  </label>
-                  <select
-                    value={server}
-                    onChange={(e) => handleServerChange(e.target.value)}
-                    className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
-                  >
-                    {VIDEO_SERVERS.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
-                </div>
+              {/* TV Series Season & Episode Picker */}
+              {(movie.first_air_date || movie.number_of_seasons) && (
+                <div className="flex flex-col gap-3 p-4 bg-gray-900/60 rounded-2xl border border-gray-800/80 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-netflix-red animate-pulse" />
+                      EPISODE SELECTOR
+                    </span>
+                    <span className="text-[11px] font-bold text-netflix-red">
+                      Season {selectedSeason} of {movie.number_of_seasons || movie.seasons?.length || 1}
+                    </span>
+                  </div>
 
-                <div className="relative">
-                  <label className="text-[10px] text-gray-500 font-bold uppercase mb-1.5 block">
-                    Subtitle Language
-                  </label>
-                  <select
-                    value={lang}
-                    onChange={(e) => handleLangChange(e.target.value)}
-                    disabled={!getServer(server).supportsLang}
-                    className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {SUBTITLE_LANGUAGES.map((l) => (
-                      <option key={l.code} value={l.code}>
-                        {l.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
-                  {!getServer(server).supportsLang && (
-                    <p className="text-[10px] text-gray-500 mt-1.5 leading-snug">
-                      This server ignores the language setting — pick Vidsrc.me to preselect
-                      subtitles. Audio tracks are chosen inside the player.
-                    </p>
-                  )}
-                </div>
-
-                {/* TV Series Season & Episode Picker */}
-                {(movie.first_air_date || movie.number_of_seasons) && (
-                  <div className="flex flex-col gap-3 pt-3 border-t border-gray-800">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] text-gray-500 font-bold uppercase block">
-                        Select Season
-                      </label>
-                      <span className="text-[10px] font-bold text-netflix-red">
-                        Season {selectedSeason} of {movie.number_of_seasons || movie.seasons?.length || 1}
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={selectedSeason}
-                        onChange={(e) => {
-                          const s = parseInt(e.target.value, 10);
-                          setSelectedSeason(s);
-                          setSelectedEpisode(1);
-                          if (isPlaying) loadVideoSource(server, lang, s, 1);
-                        }}
-                        className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
-                      >
-                        {Array.from(
-                          { length: movie.number_of_seasons || movie.seasons?.length || 1 },
-                          (_, i) => i + 1
-                        ).map((sNum) => (
-                          <option key={sNum} value={sNum}>
-                            Season {sNum}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
-                    </div>
-
-                    <div className="flex items-center justify-between mt-1">
-                      <label className="text-[10px] text-gray-500 font-bold uppercase block">
-                        Select Episode
-                      </label>
-                      <span className="text-[10px] font-bold text-gray-400">
-                        Playing S{selectedSeason}:E{selectedEpisode}
-                      </span>
-                    </div>
-                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
+                  {/* Season Dropdown */}
+                  <div className="relative">
+                    <select
+                      value={selectedSeason}
+                      onChange={(e) => {
+                        const s = parseInt(e.target.value, 10);
+                        setSelectedSeason(s);
+                        setSelectedEpisode(1);
+                        if (isPlaying) loadVideoSource(server, lang, s, 1);
+                      }}
+                      className="w-full bg-netflix-black text-white text-xs font-bold border border-gray-700 rounded-xl px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
+                    >
                       {Array.from(
-                        {
-                          length:
-                            movie.seasons?.find((s: any) => s.season_number === selectedSeason)
-                              ?.episode_count || 24,
-                        },
+                        { length: movie.number_of_seasons || movie.seasons?.length || 1 },
                         (_, i) => i + 1
-                      ).map((ep) => (
-                        <button
-                          key={ep}
-                          onClick={() => {
-                            setSelectedEpisode(ep);
-                            if (isPlaying) {
-                              loadVideoSource(server, lang, selectedSeason, ep);
-                            } else {
-                              handlePlay(selectedSeason, ep);
-                            }
-                          }}
-                          className={cn(
-                            'px-3 py-1.5 rounded text-xs font-bold transition-colors shrink-0 border',
-                            selectedEpisode === ep
-                              ? 'bg-netflix-red text-white border-netflix-red shadow-md font-black'
-                              : 'bg-netflix-black text-gray-400 border-gray-700 hover:border-gray-500'
-                          )}
-                        >
-                          E{ep}
-                        </button>
+                      ).map((sNum) => (
+                        <option key={sNum} value={sNum}>
+                          Season {sNum}
+                        </option>
                       ))}
-                    </div>
+                    </select>
+                    <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
-                )}
 
-                <button
-                  onClick={handlePlay}
-                  disabled={isLoading}
-                  className="w-full bg-white text-black text-sm font-black py-3 rounded-lg hover:bg-netflix-red hover:text-white transition-all active:scale-95 disabled:opacity-50 uppercase tracking-wider"
-                >
-                  {isPlaying ? 'Refresh Stream' : 'Start Watching'}
-                </button>
-              </div>
+                  {/* Horizontal Episode Scroll Chips */}
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                    {Array.from(
+                      {
+                        length:
+                          movie.seasons?.find((s: any) => s.season_number === selectedSeason)
+                            ?.episode_count || 24,
+                      },
+                      (_, i) => i + 1
+                    ).map((ep) => (
+                      <button
+                        key={ep}
+                        onClick={() => {
+                          setSelectedEpisode(ep);
+                          if (isPlaying) {
+                            loadVideoSource(server, lang, selectedSeason, ep);
+                          } else {
+                            handlePlay(selectedSeason, ep);
+                          }
+                        }}
+                        className={cn(
+                          'px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 border flex items-center gap-1',
+                          selectedEpisode === ep
+                            ? 'bg-netflix-red text-white border-netflix-red shadow-lg shadow-red-900/40'
+                            : 'bg-netflix-black text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
+                        )}
+                      >
+                        <span>E{ep}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Stream Settings Accordion */}
+              <details className="group bg-gray-900/40 rounded-2xl border border-gray-800/80 overflow-hidden">
+                <summary className="flex items-center justify-between p-3.5 text-xs font-bold text-gray-400 cursor-pointer select-none hover:text-white transition-colors">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    STREAM SETTINGS ({server})
+                  </span>
+                  <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180 text-gray-500" />
+                </summary>
+                <div className="p-4 pt-1 flex flex-col gap-3 border-t border-gray-800/60">
+                  <div className="relative">
+                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">Streaming Server</label>
+                    <select
+                      value={server}
+                      onChange={(e) => handleServerChange(e.target.value)}
+                      className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
+                    >
+                      {VIDEO_SERVERS.map((s) => (
+                        <option key={s.id} value={s.id}>{s.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+                  </div>
+
+                  <div className="relative">
+                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">Subtitle Language</label>
+                    <select
+                      value={lang}
+                      onChange={(e) => handleLangChange(e.target.value)}
+                      disabled={!getServer(server).supportsLang}
+                      className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer disabled:opacity-40"
+                    >
+                      {SUBTITLE_LANGUAGES.map((l) => (
+                        <option key={l.code} value={l.code}>{l.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+                  </div>
+                </div>
+              </details>
 
               {/* Ad slot directly beneath the play control. Gated on a stream actually
                 being live (playing, has an embed URL, no error) so we never show an ad
