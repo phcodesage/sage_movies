@@ -256,12 +256,7 @@ export default function MovieDetailPage() {
       {/* Main Content: Player (Top) + Details (Bottom) */}
       <div className="flex-1 flex flex-col md:flex-row h-full">
         {/* Left/Top Section: Player Area */}
-        <div
-          className={cn(
-            'relative transition-all duration-500 bg-black',
-            isPlaying ? 'h-[55vh] md:h-full md:flex-[2.5]' : 'h-[45vh] md:h-full md:flex-[3]'
-          )}
-        >
+        <div className="relative bg-black h-[45vh] md:h-full md:flex-[2.5] shrink-0">
           {isPlaying ? (
             <>
               {isLoading && (
@@ -351,14 +346,7 @@ export default function MovieDetailPage() {
         </div>
 
         {/* Right/Bottom Section: Details Sidebar (Desktop) or Scrollable Info (Mobile) */}
-        <div
-          className={cn(
-            'relative bg-netflix-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col transition-all duration-500',
-            isPlaying
-              ? 'flex-1 min-h-0 md:h-full md:flex-1'
-              : 'h-[55vh] md:h-full md:flex-1 lg:max-w-md'
-          )}
-        >
+        <div className="relative bg-netflix-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col flex-1 min-h-0 h-[55vh] md:h-full">
           {/* Scroll container — the overlay below must stay pinned to the panel, so
               scrolling happens one level down from the `relative` positioning context. */}
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
@@ -528,9 +516,9 @@ export default function MovieDetailPage() {
                             }
                           }}
                           className={cn(
-                            'px-3 py-1.5 rounded text-xs font-bold transition-all shrink-0 border',
+                            'px-3 py-1.5 rounded text-xs font-bold transition-colors shrink-0 border',
                             selectedEpisode === ep
-                              ? 'bg-netflix-red text-white border-netflix-red shadow-md scale-105'
+                              ? 'bg-netflix-red text-white border-netflix-red shadow-md font-black'
                               : 'bg-netflix-black text-gray-400 border-gray-700 hover:border-gray-500'
                           )}
                         >
