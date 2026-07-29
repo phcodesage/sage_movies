@@ -330,7 +330,7 @@ export default function MovieDetailPage() {
 
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
                 <button
-                  onClick={handlePlay}
+                  onClick={() => handlePlay()}
                   className="group flex flex-col items-center gap-4 active:scale-95 transition-transform"
                 >
                   <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/80 flex items-center justify-center group-hover:bg-netflix-red group-hover:border-netflix-red transition-all duration-300 group-hover:scale-110 shadow-2xl">
