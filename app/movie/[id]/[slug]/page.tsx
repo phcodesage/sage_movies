@@ -51,6 +51,8 @@ export default function MovieDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [similarMovies, setSimilarMovies] = useState<TMDBMovie[]>([]);
   const [showUpNext, setShowUpNext] = useState(false);
@@ -138,7 +140,12 @@ export default function MovieDetailPage() {
     }
   }, [id, slug]);
 
-  const loadVideoSource = async (selectedServer: string, selectedLang: string = lang) => {
+  const loadVideoSource = async (
+    selectedServer: string,
+    selectedLang: string = lang,
+    sNum: number = selectedSeason,
+    eNum: number = selectedEpisode
+  ) => {
     if (!movie) return;
     setIsLoading(true);
     setError(null);
@@ -146,7 +153,7 @@ export default function MovieDetailPage() {
     try {
       const type = movie.first_air_date ? 'tv' : 'movie';
       const res = await fetch(
-        `/api/video-sources/${type}/${movie.id}?server=${selectedServer}&lang=${selectedLang}`
+        `/api/video-sources/${type}/${movie.id}?server=${selectedServer}&lang=${selectedLang}&season=${sNum}&episode=${eNum}`
       );
       if (!res.ok) throw new Error('Failed to fetch video source');
       const data = await res.json();
@@ -167,9 +174,9 @@ export default function MovieDetailPage() {
   };
 
   // Fetch video source when user clicks play
-  const handlePlay = () => {
+  const handlePlay = (sNum: number = selectedSeason, eNum: number = selectedEpisode) => {
     setIsPlaying(true);
-    loadVideoSource(server);
+    loadVideoSource(server, lang, sNum, eNum);
   };
 
   const handleServerChange = (newServer: string) => {
@@ -458,6 +465,81 @@ export default function MovieDetailPage() {
                     </p>
                   )}
                 </div>
+
+                {/* TV Series Season & Episode Picker */}
+                {(movie.first_air_date || movie.number_of_seasons) && (
+                  <div className="flex flex-col gap-3 pt-3 border-t border-gray-800">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-gray-500 font-bold uppercase block">
+                        Select Season
+                      </label>
+                      <span className="text-[10px] font-bold text-netflix-red">
+                        Season {selectedSeason} of {movie.number_of_seasons || movie.seasons?.length || 1}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={selectedSeason}
+                        onChange={(e) => {
+                          const s = parseInt(e.target.value, 10);
+                          setSelectedSeason(s);
+                          setSelectedEpisode(1);
+                          if (isPlaying) loadVideoSource(server, lang, s, 1);
+                        }}
+                        className="w-full bg-netflix-black text-white text-sm border border-gray-700 rounded-lg px-3 py-2.5 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
+                      >
+                        {Array.from(
+                          { length: movie.number_of_seasons || movie.seasons?.length || 1 },
+                          (_, i) => i + 1
+                        ).map((sNum) => (
+                          <option key={sNum} value={sNum}>
+                            Season {sNum}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 bottom-3 w-4 h-4 text-gray-500 pointer-events-none" />
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1">
+                      <label className="text-[10px] text-gray-500 font-bold uppercase block">
+                        Select Episode
+                      </label>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        Playing S{selectedSeason}:E{selectedEpisode}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
+                      {Array.from(
+                        {
+                          length:
+                            movie.seasons?.find((s: any) => s.season_number === selectedSeason)
+                              ?.episode_count || 24,
+                        },
+                        (_, i) => i + 1
+                      ).map((ep) => (
+                        <button
+                          key={ep}
+                          onClick={() => {
+                            setSelectedEpisode(ep);
+                            if (isPlaying) {
+                              loadVideoSource(server, lang, selectedSeason, ep);
+                            } else {
+                              handlePlay(selectedSeason, ep);
+                            }
+                          }}
+                          className={cn(
+                            'px-3 py-1.5 rounded text-xs font-bold transition-all shrink-0 border',
+                            selectedEpisode === ep
+                              ? 'bg-netflix-red text-white border-netflix-red shadow-md scale-105'
+                              : 'bg-netflix-black text-gray-400 border-gray-700 hover:border-gray-500'
+                          )}
+                        >
+                          E{ep}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={handlePlay}
