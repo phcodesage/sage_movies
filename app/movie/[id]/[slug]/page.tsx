@@ -253,10 +253,10 @@ export default function MovieDetailPage() {
         <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
       </button>
 
-      {/* Main Content: Player (Top) + Details (Bottom) */}
-      <div className="flex-1 flex flex-col md:flex-row h-full">
-        {/* Left/Top Section: Player Area */}
-        <div className="relative bg-black h-[45vh] md:h-full md:flex-[2.5] shrink-0">
+      {/* Main Content: Player (Left/Top) + Details Sidebar (Right/Bottom) */}
+      <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+        {/* Left/Top Section: Dominant Video Player Stage */}
+        <div className="relative bg-black h-[40vh] md:h-full flex-1 md:min-w-0">
           {isPlaying ? (
             <>
               {isLoading && (
@@ -346,7 +346,7 @@ export default function MovieDetailPage() {
         </div>
 
         {/* Right/Bottom Section: Details Sidebar (Desktop) or Scrollable Info (Mobile) */}
-        <div className="relative bg-netflix-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col flex-1 min-h-0 h-[55vh] md:h-full">
+        <div className="relative bg-netflix-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col h-[60vh] md:h-full md:w-[420px] lg:w-[480px] xl:w-[520px] shrink-0 min-h-0">
           {/* Scroll container — the overlay below must stay pinned to the panel, so
               scrolling happens one level down from the `relative` positioning context. */}
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
