@@ -89,17 +89,17 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-black/85 backdrop-blur-md transition-all animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#141419] border border-white/15 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden text-white grid grid-cols-1 md:grid-cols-12">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-black/90 backdrop-blur-md transition-all animate-fadeIn">
+      <div className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden text-white grid grid-cols-1 md:grid-cols-12">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-black/60 text-gray-300 hover:text-white hover:bg-white/20 transition-colors border border-white/10"
+          className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-zinc-900 text-gray-300 hover:text-white hover:bg-zinc-800 transition-colors border border-zinc-700 shadow-md"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* LEFT COLUMN: Movie Poster Showcase (Visible on all devices, 5 cols on md) */}
+        {/* LEFT COLUMN: Movie Poster Showcase */}
         <div className="relative md:col-span-5 hidden sm:flex flex-col justify-end p-5 overflow-hidden group min-h-[220px] md:min-h-full">
           {/* Background Poster with Gradient Overlay */}
           <Image
@@ -109,17 +109,17 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
             className="object-cover object-center group-hover:scale-105 transition-transform duration-700 brightness-90"
             unoptimized
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141419] via-[#141419]/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#141419]/90 hidden md:block" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-zinc-950/90 hidden md:block" />
 
-          {/* Top Badges */}
+          {/* Top Material 3 Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5">
-            <span className="flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-netflix-red text-white uppercase tracking-wider shadow-lg">
+            <span className="flex items-center gap-1 text-[9px] font-black px-2.5 py-0.5 rounded-full bg-netflix-red text-white uppercase tracking-wider shadow-md">
               <Film className="w-2.5 h-2.5" />
               {showcaseMovie.studio}
             </span>
-            <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-black/70 text-amber-400 border border-amber-400/30">
-              <Star className="w-2.5 h-2.5 fill-amber-400" />
+            <span className="flex items-center gap-1 text-[9px] font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-black shadow-md">
+              <Star className="w-2.5 h-2.5 fill-current" />
               {showcaseMovie.rating}
             </span>
           </div>
@@ -139,14 +139,14 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Download Action & Adsterra Interstitial (7 cols on md) */}
+        {/* RIGHT COLUMN: Download Action & Adsterra Interstitial */}
         <div className="md:col-span-7 p-5 md:p-6 flex flex-col justify-between">
           {!isCountingDown ? (
             <>
               <div>
                 {/* Header Icon */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-netflix-red/20 border border-netflix-red/40 flex items-center justify-center text-netflix-red shrink-0 shadow-lg">
+                  <div className="w-11 h-11 rounded-xl bg-netflix-red text-white flex items-center justify-center shrink-0 shadow-lg">
                     <Smartphone className="w-5 h-5" />
                   </div>
                   <div>
@@ -160,7 +160,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                 </div>
 
                 {/* Features List */}
-                <div className="space-y-2 my-4 bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-gray-300">
+                <div className="space-y-2.5 my-4 bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 text-xs text-gray-200 shadow-inner">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>13 Studio Hubs (Netflix, Disney+, Vivamax, etc.)</span>
@@ -200,7 +200,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
               <div className="my-2">
                 {countdown > 0 ? (
                   <div>
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-netflix-red/15 border-2 border-netflix-red text-netflix-red text-lg font-black mb-1.5 animate-pulse">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-netflix-red text-white text-lg font-black mb-1.5 animate-pulse shadow-lg">
                       {countdown}s
                     </div>
                     <p className="text-xs text-gray-300 font-medium">
@@ -223,7 +223,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white/10 hover:bg-white/20 active:scale-98 text-white font-bold text-xs rounded-xl transition-all border border-white/10 mt-1"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-bold text-xs rounded-xl transition-all shadow-md mt-1"
               >
                 <span>Download Immediately</span>
                 <ArrowRight className="w-3.5 h-3.5" />

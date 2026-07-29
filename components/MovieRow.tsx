@@ -110,7 +110,7 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
                     sizes="(max-width: 768px) 100px, 140px"
                   />
                   {studio && (
-                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 bg-black/85 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-white/20 shadow-xl">
+                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 bg-zinc-900 px-2 py-0.5 rounded-full shadow-lg border border-zinc-800">
                       {studio.iconUrl ? (
                         <img
                           src={studio.iconUrl}

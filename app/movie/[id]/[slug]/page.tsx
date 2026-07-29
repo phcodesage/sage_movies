@@ -473,7 +473,7 @@ export default function MovieDetailPage() {
               )}
 
               {/* Stream Settings Accordion */}
-              <details className="group bg-gray-900/40 rounded-2xl border border-gray-800/80 overflow-hidden">
+              <details className="group bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-md">
                 <summary className="flex items-center justify-between p-3.5 text-xs font-bold text-gray-400 cursor-pointer select-none hover:text-white transition-colors">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
