@@ -1,0 +1,20 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/anime/collection/route": "/api/anime/collection",
+  "/api/app-version/route": "/api/app-version",
+  "/api/check-servers/route": "/api/check-servers",
+  "/api/genres/route": "/api/genres",
+  "/api/movie/[id]/route": "/api/movie/[id]",
+  "/api/movies/collection/route": "/api/movies/collection",
+  "/api/movies/genre/[id]/route": "/api/movies/genre/[id]",
+  "/api/movies/provider/[id]/route": "/api/movies/provider/[id]",
+  "/api/movies/studio/[id]/route": "/api/movies/studio/[id]",
+  "/api/search/route": "/api/search",
+  "/api/trending/[type]/route": "/api/trending/[type]",
+  "/api/tv/collection/route": "/api/tv/collection",
+  "/api/video-sources/[type]/[id]/route": "/api/video-sources/[type]/[id]",
+  "/genre/[id]/page": "/genre/[id]",
+  "/movie/[id]/[slug]/page": "/movie/[id]/[slug]",
+  "/page": "/"
+}
