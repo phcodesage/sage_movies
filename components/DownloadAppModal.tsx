@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Star, ArrowRight, Play, Film } from 'lucide-react';
+import { Smartphone, Download, X, CheckCircle2, ShieldCheck, Zap, Star, ArrowRight, Play, Film, Check } from 'lucide-react';
 import AdsterraBanner from './AdsterraBanner';
+import { useAppContext } from '../lib/context/AppContext';
 
 interface DownloadAppModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ const FEATURED_SHOWCASE_MOVIES = [
 ];
 
 export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalProps) {
+  const { markAppDownloaded, hasDownloadedApp } = useAppContext();
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [hasStartedDownload, setHasStartedDownload] = useState(false);
@@ -68,12 +70,14 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
       timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     } else if (isCountingDown && countdown === 0 && !hasStartedDownload) {
       setHasStartedDownload(true);
+      markAppDownloaded();
       window.location.href = downloadUrl;
     }
     return () => clearTimeout(timer);
-  }, [isCountingDown, countdown, hasStartedDownload, downloadUrl]);
+  }, [isCountingDown, countdown, hasStartedDownload, downloadUrl, markAppDownloaded]);
 
   const handleStartDownloadFlow = () => {
+    markAppDownloaded();
     setIsCountingDown(true);
     setCountdown(5);
     setHasStartedDownload(false);
@@ -139,7 +143,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Download Action & Adsterra Interstitial */}
+        {/* RIGHT COLUMN: Download Action & Interstitial */}
         <div className="md:col-span-7 p-5 md:p-6 flex flex-col justify-between">
           {!isCountingDown ? (
             <>
@@ -159,6 +163,13 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                   </div>
                 </div>
 
+                {hasDownloadedApp && (
+                  <div className="mb-3 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-400 font-bold shadow-inner">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>Ad-Free Active! All site ads disabled for easier mobile streaming.</span>
+                  </div>
+                )}
+
                 {/* Features List */}
                 <div className="space-y-2.5 my-4 bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 text-xs text-gray-200 shadow-inner">
                   <div className="flex items-center gap-2">
@@ -171,7 +182,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                   </div>
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span>Zero App Ads • Fast 60fps Native Player</span>
+                    <span>Removes all site ads for a clean mobile experience</span>
                   </div>
                 </div>
               </div>
@@ -183,7 +194,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                   className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-netflix-red hover:bg-red-700 active:scale-98 text-white font-extrabold text-xs md:text-sm rounded-xl transition-all shadow-xl shadow-netflix-red/20 group"
                 >
                   <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-                  <span>Download Android APK (1.2k+ downloads)</span>
+                  <span>{hasDownloadedApp ? 'Re-download Android APK' : 'Download Android APK (Remove Ads)'}</span>
                 </button>
 
                 <p className="text-[10px] text-center text-gray-500 mt-2.5">
@@ -193,7 +204,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
             </>
           ) : (
             <div className="text-center py-1 flex flex-col justify-between h-full">
-              {/* Adsterra Native Banner Unit */}
+              {/* Adsterra Native Banner Unit (Hidden if app is downloaded) */}
               <AdsterraBanner className="mb-2" />
 
               {/* Countdown State */}
@@ -206,13 +217,16 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                     <p className="text-xs text-gray-300 font-medium">
                       Your APK download will begin automatically...
                     </p>
+                    <p className="text-[10px] text-emerald-400 font-bold mt-1">
+                      Ad-Free mode will be activated on your browser!
+                    </p>
                   </div>
                 ) : (
                   <div>
                     <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-1 animate-bounce" />
                     <p className="text-xs md:text-sm font-bold text-white">Download Started!</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">
-                      If download didn&apos;t trigger automatically, click below:
+                    <p className="text-[11px] text-emerald-400 font-bold mt-0.5">
+                      Ads removed on site for easier mobile streaming!
                     </p>
                   </div>
                 )}
@@ -223,6 +237,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => markAppDownloaded()}
                 className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-bold text-xs rounded-xl transition-all shadow-md mt-1"
               >
                 <span>Download Immediately</span>

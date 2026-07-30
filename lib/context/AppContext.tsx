@@ -8,6 +8,8 @@ interface AppContextType {
   genres: Record<number, string>;
   isLoadingGenres: boolean;
   refreshGenres: () => Promise<void>;
+  hasDownloadedApp: boolean;
+  markAppDownloaded: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -19,6 +21,23 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [genres, setGenres] = useState<Record<number, string>>({});
   const [isLoadingGenres, setIsLoadingGenres] = useState(true);
+  const [hasDownloadedApp, setHasDownloadedApp] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const downloaded = localStorage.getItem('sagemovies_app_downloaded') === 'true';
+      if (downloaded) {
+        setHasDownloadedApp(true);
+      }
+    }
+  }, []);
+
+  const markAppDownloaded = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sagemovies_app_downloaded', 'true');
+    }
+    setHasDownloadedApp(true);
+  };
 
   const fetchGenres = async () => {
     setIsLoadingGenres(true);
@@ -49,7 +68,15 @@ export function AppProvider({ children }: AppProviderProps) {
   };
 
   return (
-    <AppContext.Provider value={{ genres, isLoadingGenres, refreshGenres }}>
+    <AppContext.Provider
+      value={{
+        genres,
+        isLoadingGenres,
+        refreshGenres,
+        hasDownloadedApp,
+        markAppDownloaded,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

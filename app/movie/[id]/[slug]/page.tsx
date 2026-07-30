@@ -11,7 +11,7 @@ import { useWatchedEpisodes } from '../../../../lib/hooks/useWatchedEpisodes';
 import { getSimilarMovies } from '../../../../lib/recommendations';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
-import { AdsterraNativeBanner } from '../../../../components/Adsterra';
+import { AdsterraNativeBanner, openAdsterraDirectLink } from '../../../../components/Adsterra';
 import {
   VIDEO_SERVERS,
   SUBTITLE_LANGUAGES,
@@ -39,6 +39,19 @@ export default function MovieDetailPage() {
   const { genres } = useAppContext();
   const { addToHistory } = useWatchHistory();
   const { isWatched, markWatched, toggleWatched } = useWatchedEpisodes();
+
+  // Ad frequency: every Nth playback interaction (Play/Refresh, server switch, episode
+  // switch) opens an Adsterra Direct Link. A ref, not state, so counting never triggers
+  // a re-render. Must be called straight from the click handler to keep the user gesture
+  // the popup blocker requires.
+  const AD_EVERY = 3;
+  const playbackInteractions = React.useRef(0);
+  const registerPlaybackAdInteraction = React.useCallback(() => {
+    playbackInteractions.current += 1;
+    if (playbackInteractions.current % AD_EVERY === 0) {
+      openAdsterraDirectLink();
+    }
+  }, []);
 
   const [movie, setMovie] = useState<TMDBMovie | any>(null);
   const [server, setServer] = useState(DEFAULT_SERVER);
@@ -442,7 +455,10 @@ export default function MovieDetailPage() {
 
                     {/* Instant Play CTA Button */}
                     <button
-                      onClick={() => handlePlay()}
+                      onClick={() => {
+                        registerPlaybackAdInteraction();
+                        handlePlay();
+                      }}
                       disabled={isLoading}
                       className="w-full bg-netflix-red hover:bg-red-700 text-white text-xs font-black py-3 px-4 rounded-xl shadow-lg shadow-red-900/30 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-wider"
                     >
@@ -509,6 +525,7 @@ export default function MovieDetailPage() {
                         <button
                           key={ep}
                           onClick={() => {
+                            registerPlaybackAdInteraction();
                             setSelectedEpisode(ep);
                             if (isPlaying) {
                               loadVideoSource(server, lang, selectedSeason, ep);
@@ -591,7 +608,10 @@ export default function MovieDetailPage() {
                     </div>
                     <select
                       value={server}
-                      onChange={(e) => handleServerChange(e.target.value)}
+                      onChange={(e) => {
+                        registerPlaybackAdInteraction();
+                        handleServerChange(e.target.value);
+                      }}
                       className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                     >
                       {VIDEO_SERVERS.map((s, i) => {

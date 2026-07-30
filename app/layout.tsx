@@ -5,7 +5,7 @@ import Script from 'next/script';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AppProvider } from '../lib/context/AppContext';
 import { WebVitals } from '../components/WebVitals';
-import { AdsterraSocialBar } from '../components/Adsterra';
+import { AdsterraSocialBar, AdsterraGlobalScript } from '../components/Adsterra';
 import { WebSiteStructuredData, OrganizationStructuredData } from '../components/StructuredData';
 
 export const metadata: Metadata = {
@@ -88,10 +88,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <WebVitals />
             {children}
             <AdsterraSocialBar />
-            <Script
-              src="https://pl30566060.effectivecpmnetwork.com/0b/05/3c/0b053ca6d8fa77c3cd61797ebae4b7bb.js"
-              strategy="afterInteractive"
-            />
+            <AdsterraGlobalScript />
           </AppProvider>
         </ErrorBoundary>
       </body>

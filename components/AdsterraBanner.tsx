@@ -1,12 +1,19 @@
 'use client';
 
 import React from 'react';
+import { useAppContext } from '../lib/context/AppContext';
 
 interface AdsterraBannerProps {
   className?: string;
 }
 
 export default function AdsterraBanner({ className = '' }: AdsterraBannerProps) {
+  const { hasDownloadedApp } = useAppContext();
+  const isDownloaded =
+    hasDownloadedApp ||
+    (typeof window !== 'undefined' && localStorage.getItem('sagemovies_app_downloaded') === 'true');
+
+  if (isDownloaded) return null;
   const iframeHtml = `
     <!DOCTYPE html>
     <html>
