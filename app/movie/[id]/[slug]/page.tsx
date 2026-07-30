@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Star, Play, X, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ArrowLeft, Star, Play, X, ChevronDown, ChevronUp, Info, Check } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '../../../../lib/context/AppContext';
 import { useWatchHistory } from '../../../../lib/hooks/useWatchHistory';
+import { useWatchedEpisodes } from '../../../../lib/hooks/useWatchedEpisodes';
 import { getSimilarMovies } from '../../../../lib/recommendations';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
@@ -37,6 +38,7 @@ export default function MovieDetailPage() {
   const slug = params?.slug as string;
   const { genres } = useAppContext();
   const { addToHistory } = useWatchHistory();
+  const { isWatched, markWatched, toggleWatched } = useWatchedEpisodes();
 
   const [movie, setMovie] = useState<TMDBMovie | any>(null);
   const [server, setServer] = useState(DEFAULT_SERVER);
@@ -56,6 +58,12 @@ export default function MovieDetailPage() {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [similarMovies, setSimilarMovies] = useState<TMDBMovie[]>([]);
   const [showUpNext, setShowUpNext] = useState(false);
+
+  // Live per-server reachability, keyed by server id. 'checking' while a probe is in
+  // flight; 'up'/'down' once /api/video-health reports back. Empty until the movie loads.
+  type ServerStatus = 'up' | 'down' | 'checking';
+  const [serverHealth, setServerHealth] = useState<Record<string, ServerStatus>>({});
+  const serverNumber = (sid: string) => VIDEO_SERVERS.findIndex((s) => s.id === sid) + 1;
 
   // Fetch movie details from our API
   useEffect(() => {
@@ -140,6 +148,47 @@ export default function MovieDetailPage() {
     }
   }, [id, slug]);
 
+  // Probe every provider once the movie is known, so the server picker can mark dead
+  // servers and default to a working one. Host-level reachability barely moves with
+  // season/episode, so we key on the movie id only and keep the outbound probes rare.
+  const healthReqId = React.useRef(0);
+  const runHealthCheck = React.useCallback(() => {
+    if (!movie) return;
+    const type = movie.first_air_date ? 'tv' : 'movie';
+    const reqId = ++healthReqId.current;
+
+    setServerHealth(Object.fromEntries(VIDEO_SERVERS.map((s) => [s.id, 'checking'])));
+
+    fetch(
+      `/api/video-health/${type}/${movie.id}?season=${selectedSeason}&episode=${selectedEpisode}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        // Ignore a stale probe that a newer re-check has superseded.
+        if (reqId !== healthReqId.current || !data?.servers) return;
+        setServerHealth(data.servers);
+        // If the current pick is dead, silently switch to the first reachable server so
+        // the default the user lands on actually plays. Never overrides a manual pick
+        // mid-playback — the probe resolves before anyone hits play.
+        if (!isPlaying && data.servers[server] === 'down') {
+          const firstUp = VIDEO_SERVERS.find((s) => data.servers[s.id] === 'up');
+          if (firstUp) setServer(firstUp.id);
+        }
+      })
+      .catch(() => {
+        if (reqId === healthReqId.current) setServerHealth({});
+      });
+  }, [movie, selectedSeason, selectedEpisode, isPlaying, server]);
+
+  useEffect(() => {
+    // Auto-probe once per title; manual re-checks go through the button in Stream Settings.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    runHealthCheck();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movie?.id]);
+
+  const isCheckingHealth = Object.values(serverHealth).some((v) => v === 'checking');
+
   const loadVideoSource = async (
     selectedServer: string,
     selectedLang: string = lang,
@@ -161,6 +210,9 @@ export default function MovieDetailPage() {
       if (data.embedURL) {
         setEmbedUrl(data.embedURL);
         addToHistory(movie);
+        // Playing an episode counts as watching it. Movies have no episode grid, so
+        // this only applies to TV. Idempotent, so re-loads (server/lang change) are fine.
+        if (type === 'tv') markWatched(movie.id, sNum, eNum);
       } else {
         setError('Video source not available for this server. Try another server.');
         if (!isPlaying) setIsPlaying(false);
@@ -410,7 +462,8 @@ export default function MovieDetailPage() {
                       EPISODE SELECTOR
                     </span>
                     <span className="text-[11px] font-bold text-netflix-red">
-                      Season {selectedSeason} of {movie.number_of_seasons || movie.seasons?.length || 1}
+                      Season {selectedSeason} of{' '}
+                      {movie.number_of_seasons || movie.seasons?.length || 1}
                     </span>
                   </div>
 
@@ -438,7 +491,9 @@ export default function MovieDetailPage() {
                     <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
 
-                  {/* Horizontal Episode Scroll Chips */}
+                  {/* Horizontal Episode Scroll Chips. Watched episodes carry a green check
+                    badge; tap the badge to toggle watched without playing, or just play
+                    (which auto-marks it). */}
                   <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
                     {Array.from(
                       {
@@ -447,27 +502,56 @@ export default function MovieDetailPage() {
                             ?.episode_count || 24,
                       },
                       (_, i) => i + 1
-                    ).map((ep) => (
-                      <button
-                        key={ep}
-                        onClick={() => {
-                          setSelectedEpisode(ep);
-                          if (isPlaying) {
-                            loadVideoSource(server, lang, selectedSeason, ep);
-                          } else {
-                            handlePlay(selectedSeason, ep);
-                          }
-                        }}
-                        className={cn(
-                          'px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 border flex items-center gap-1',
-                          selectedEpisode === ep
-                            ? 'bg-netflix-red text-white border-netflix-red shadow-lg shadow-red-900/40'
-                            : 'bg-netflix-black text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
-                        )}
-                      >
-                        <span>E{ep}</span>
-                      </button>
-                    ))}
+                    ).map((ep) => {
+                      const watched = isWatched(movie.id, selectedSeason, ep);
+                      const selected = selectedEpisode === ep;
+                      return (
+                        <button
+                          key={ep}
+                          onClick={() => {
+                            setSelectedEpisode(ep);
+                            if (isPlaying) {
+                              loadVideoSource(server, lang, selectedSeason, ep);
+                            } else {
+                              handlePlay(selectedSeason, ep);
+                            }
+                          }}
+                          className={cn(
+                            'px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 border flex items-center gap-1.5',
+                            selected
+                              ? 'bg-netflix-red text-white border-netflix-red shadow-lg shadow-red-900/40'
+                              : watched
+                                ? 'bg-netflix-black text-gray-300 border-emerald-700/60 hover:border-emerald-500'
+                                : 'bg-netflix-black text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
+                          )}
+                        >
+                          <span>E{ep}</span>
+                          <span
+                            role="button"
+                            aria-label={
+                              watched
+                                ? `Mark episode ${ep} as unwatched`
+                                : `Mark episode ${ep} as watched`
+                            }
+                            title={watched ? 'Watched — tap to unmark' : 'Mark as watched'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleWatched(movie.id, selectedSeason, ep);
+                            }}
+                            className={cn(
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                              watched
+                                ? 'border-emerald-400 bg-emerald-500 text-white'
+                                : selected
+                                  ? 'border-white/60 text-transparent hover:text-white/80'
+                                  : 'border-gray-600 text-transparent hover:text-gray-300'
+                            )}
+                          >
+                            <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -476,28 +560,65 @@ export default function MovieDetailPage() {
               <details className="group bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-md">
                 <summary className="flex items-center justify-between p-3.5 text-xs font-bold text-gray-400 cursor-pointer select-none hover:text-white transition-colors">
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    STREAM SETTINGS ({server})
+                    <span
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        serverHealth[server] === 'down'
+                          ? 'bg-red-500'
+                          : serverHealth[server] === 'checking'
+                            ? 'bg-amber-400 animate-pulse'
+                            : 'bg-emerald-400'
+                      )}
+                    />
+                    STREAM SETTINGS (Server {serverNumber(server)})
                   </span>
                   <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180 text-gray-500" />
                 </summary>
                 <div className="p-4 pt-1 flex flex-col gap-3 border-t border-gray-800/60">
                   <div className="relative">
-                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">Streaming Server</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-gray-500 font-bold uppercase block">
+                        Streaming Server
+                      </label>
+                      <button
+                        type="button"
+                        onClick={runHealthCheck}
+                        disabled={isCheckingHealth}
+                        className="text-[10px] font-bold uppercase text-gray-500 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-default"
+                      >
+                        {isCheckingHealth ? 'Checking…' : 'Re-check'}
+                      </button>
+                    </div>
                     <select
                       value={server}
                       onChange={(e) => handleServerChange(e.target.value)}
                       className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                     >
-                      {VIDEO_SERVERS.map((s) => (
-                        <option key={s.id} value={s.id}>{s.label}</option>
-                      ))}
+                      {VIDEO_SERVERS.map((s, i) => {
+                        const st = serverHealth[s.id];
+                        const tag =
+                          st === 'down'
+                            ? ' — Offline'
+                            : st === 'checking'
+                              ? ' — Checking…'
+                              : st === 'up'
+                                ? ' — Online'
+                                : '';
+                        return (
+                          <option key={s.id} value={s.id}>
+                            Server {i + 1}
+                            {tag}
+                          </option>
+                        );
+                      })}
                     </select>
-                    <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+                    <ChevronDown className="pointer-events-none absolute right-3 bottom-2.5 h-4 w-4 text-gray-500" />
                   </div>
 
                   <div className="relative">
-                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">Subtitle Language</label>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">
+                      Subtitle Language
+                    </label>
                     <select
                       value={lang}
                       onChange={(e) => handleLangChange(e.target.value)}
@@ -505,7 +626,9 @@ export default function MovieDetailPage() {
                       className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer disabled:opacity-40"
                     >
                       {SUBTITLE_LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code}>{l.label}</option>
+                        <option key={l.code} value={l.code}>
+                          {l.label}
+                        </option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
