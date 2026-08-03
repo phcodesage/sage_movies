@@ -51,7 +51,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
 
   const downloadUrl =
     process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
-    'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.0.0.apk';
+    'https://github.com/phcodesage/sage-movies-app/releases/download/v1.4.7/sagemovies-v1.4.7.apk';
 
   useEffect(() => {
     if (isOpen) {
