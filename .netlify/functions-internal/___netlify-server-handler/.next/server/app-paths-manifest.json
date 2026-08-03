@@ -13,6 +13,7 @@
   "/api/search/route": "app/api/search/route.js",
   "/api/trending/[type]/route": "app/api/trending/[type]/route.js",
   "/api/tv/collection/route": "app/api/tv/collection/route.js",
+  "/api/video-health/[type]/[id]/route": "app/api/video-health/[type]/[id]/route.js",
   "/api/video-sources/[type]/[id]/route": "app/api/video-sources/[type]/[id]/route.js",
   "/genre/[id]/page": "app/genre/[id]/page.js",
   "/movie/[id]/[slug]/page": "app/movie/[id]/[slug]/page.js",

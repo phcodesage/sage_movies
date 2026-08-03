@@ -5,11 +5,11 @@ export async function GET() {
     latest_version: '1.4.7',
     version_code: 23,
     download_url:
-      'https://github.com/phcodesage/sage-movies-app/releases/download/v1.4.7/sagemovies-v1.4.7.apk',
+      'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.4.7.apk',
     direct_apk_url:
-      'https://sagemovies.netlify.app/sagemovies-latest.apk',
+      'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.4.7.apk',
     release_notes:
-      '• Fixed APK download link with high-speed GitHub & Netlify CDN mirrors\n• Fixed fullscreen stream black screen on mobile\n• Ads restored\n• Much faster downloads: HLS segments now download in parallel\n• Tap the badge on any episode to toggle watched',
+      '• Fixed Cloudflare R2 download links\n• Fixed fullscreen stream black screen on mobile\n• Ads restored',
     force_update: false,
   });
 }

@@ -63,6 +63,15 @@
       "namedRegex": "^/api/trending/(?<nxtPtype>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/video-health/[type]/[id]",
+      "regex": "^/api/video\\-health/([^/]+?)/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtype": "nxtPtype",
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/video\\-health/(?<nxtPtype>[^/]+?)/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/api/video-sources/[type]/[id]",
       "regex": "^/api/video\\-sources/([^/]+?)/([^/]+?)(?:/)?$",
       "routeKeys": {
