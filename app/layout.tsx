@@ -3,6 +3,7 @@ import React, { ReactNode } from 'react';
 import { Metadata } from 'next';
 import Script from 'next/script';
 import ErrorBoundary from '../components/ErrorBoundary';
+import MaintenancePage from '../components/MaintenancePage';
 import { AppProvider } from '../lib/context/AppContext';
 import { WebVitals } from '../components/WebVitals';
 import { AdsterraSocialBar, AdsterraGlobalScript } from '../components/Adsterra';
@@ -71,6 +72,8 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+
   return (
     <html lang="en" className="scroll-smooth">
       <head>
@@ -86,7 +89,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <ErrorBoundary>
           <AppProvider>
             <WebVitals />
-            {children}
+            {isMaintenanceMode ? <MaintenancePage /> : children}
             <AdsterraSocialBar />
             <AdsterraGlobalScript />
           </AppProvider>
