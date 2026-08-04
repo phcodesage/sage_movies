@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wrench, RefreshCw, Download, ShieldCheck, Server, Radio, ArrowRight } from 'lucide-react';
+import { Wrench, RefreshCw, Download, ShieldCheck, Server, Radio, ArrowRight, AlertOctagon, Check } from 'lucide-react';
 import DownloadAppModal from './DownloadAppModal';
 
 export default function MaintenancePage() {
@@ -41,125 +41,127 @@ export default function MaintenancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between items-center px-4 py-10 selection:bg-red-500 selection:text-white">
-      {/* Background Glow */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-950/30 via-zinc-950 to-zinc-950 pointer-events-none" />
-
-      {/* Header Bar */}
-      <header className="relative z-10 w-full max-w-5xl flex items-center justify-between py-4 border-b border-zinc-800/80">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-netflix-red flex items-center justify-center font-black text-white text-xl shadow-lg shadow-red-900/50">
+    <div className="min-h-screen bg-[#FFE600] text-black flex flex-col justify-between items-center px-4 py-8 font-sans selection:bg-black selection:text-[#FFE600]">
+      
+      {/* Header Bar - Neo Brutalism */}
+      <header className="w-full max-w-5xl flex items-center justify-between py-4 border-b-4 border-black">
+        <div className="flex items-center space-x-3">
+          <div className="w-11 h-11 bg-black text-[#FFE600] border-3 border-black flex items-center justify-center font-black text-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             S
           </div>
-          <span className="text-2xl font-black tracking-tight text-white">
-            Sage<span className="text-netflix-red">Movies</span>
+          <span className="text-2xl font-black tracking-tighter uppercase text-black">
+            Sage<span className="bg-black text-[#FFE600] px-1.5 py-0.5 ml-1">Movies</span>
           </span>
         </div>
 
-        <div className="flex items-center space-x-2.5 bg-amber-500/15 border border-amber-500/30 px-4 py-2 rounded-full">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
-          </span>
-          <span className="text-xs sm:text-sm font-extrabold text-amber-400 uppercase tracking-wider">
-            Scheduled Maintenance
-          </span>
+        {/* Neo Brutalist Status Pill */}
+        <div className="bg-black text-[#FFE600] font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-2 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center space-x-2">
+          <span className="w-3 h-3 bg-red-500 border-2 border-black inline-block animate-ping" />
+          <span>MAINTENANCE MODE</span>
         </div>
       </header>
 
-      {/* Material Design 3 Solid Card */}
-      <main className="relative z-10 w-full max-w-3xl my-auto py-10">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 sm:p-12 shadow-2xl space-y-10">
+      {/* Main Neo-Brutalist Content Card */}
+      <main className="w-full max-w-3xl my-auto py-8">
+        <div className="bg-white border-4 border-black rounded-none p-6 sm:p-10 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] space-y-8">
           
-          {/* Header Icon & Typography */}
+          {/* Header Badge & Title */}
           <div className="text-center space-y-5">
-            <div className="mx-auto w-20 h-20 rounded-2xl bg-zinc-800/90 border border-zinc-700/70 flex items-center justify-center text-netflix-red shadow-lg">
-              <Wrench className="w-10 h-10 animate-pulse" />
+            <div className="inline-flex items-center justify-center bg-[#FF3366] text-white p-5 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <Wrench className="w-10 h-10 stroke-[3]" />
             </div>
-            
-            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-              We&apos;re Upgrading Our Streaming Nodes
-            </h1>
 
-            <p className="text-base sm:text-lg text-zinc-300 font-medium leading-relaxed max-w-xl mx-auto">
-              SageMovies servers are currently undergoing scheduled maintenance to upgrade streaming speed and load capacity. Web streaming will return shortly.
+            <div className="space-y-3">
+              <span className="inline-block bg-[#00E5FF] text-black font-black text-xs sm:text-sm uppercase tracking-widest px-3.5 py-1.5 border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                SYSTEM UPGRADE IN PROGRESS
+              </span>
+              
+              <h1 className="text-4xl sm:text-6xl font-black uppercase text-black tracking-tight leading-none pt-1">
+                SERVERS UNDER MAINTENANCE
+              </h1>
+            </div>
+
+            <p className="text-base sm:text-xl font-bold text-black max-w-xl mx-auto leading-snug bg-yellow-100 border-3 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              We&apos;re currently upgrading our high-speed streaming infrastructure. Web streaming will be back online shortly!
             </p>
           </div>
 
-          {/* Infrastructure Status Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-              <div className="flex items-center space-x-3">
-                <Server className="w-5 h-5 text-amber-400" />
-                <span className="text-sm font-bold text-zinc-200">Web Player</span>
+          {/* Infrastructure Neo-Brutalist Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="bg-[#FFE600] border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Server className="w-5 h-5 stroke-[3] text-black" />
+                <span className="text-sm font-black uppercase tracking-wider text-black">Web Player</span>
               </div>
-              <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 uppercase tracking-wide">
-                Upgrading
+              <span className="text-xs font-black bg-black text-[#FFE600] px-2.5 py-1 border-2 border-black uppercase">
+                UPGRADING
               </span>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-              <div className="flex items-center space-x-3">
-                <Radio className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-bold text-zinc-200">CDN Nodes</span>
+            <div className="bg-[#00FF66] border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Radio className="w-5 h-5 stroke-[3] text-black" />
+                <span className="text-sm font-black uppercase tracking-wider text-black">CDN Nodes</span>
               </div>
-              <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 uppercase tracking-wide">
-                Online
+              <span className="text-xs font-black bg-black text-[#00FF66] px-2.5 py-1 border-2 border-black uppercase">
+                ONLINE
               </span>
             </div>
 
-            <div className="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-              <div className="flex items-center space-x-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-bold text-zinc-200">Android App</span>
+            <div className="bg-[#00E5FF] border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <ShieldCheck className="w-5 h-5 stroke-[3] text-black" />
+                <span className="text-sm font-black uppercase tracking-wider text-black">Android App</span>
               </div>
-              <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 uppercase tracking-wide">
-                Active
+              <span className="text-xs font-black bg-black text-[#00E5FF] px-2.5 py-1 border-2 border-black uppercase">
+                ACTIVE
               </span>
             </div>
           </div>
 
-          {/* Action Cards */}
-          <div className="space-y-4">
-            {/* Mobile App CTA Card */}
-            <div className="bg-gradient-to-r from-red-950/40 via-zinc-900 to-zinc-900 border border-netflix-red/40 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-lg">
+          {/* Action CTAs - Neo Brutalism */}
+          <div className="space-y-4 pt-2">
+            {/* Mobile App Card */}
+            <div className="bg-[#FF3366] text-white border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row items-center justify-between gap-5">
               <div className="flex items-center space-x-4 text-left">
-                <div className="w-12 h-12 rounded-xl bg-netflix-red/20 border border-netflix-red/50 flex items-center justify-center shrink-0">
-                  <Download className="w-6 h-6 text-netflix-red" />
+                <div className="w-14 h-14 bg-black text-[#FFE600] border-3 border-black flex items-center justify-center shrink-0 shadow-[3px_3px_0px_0px_rgba(255,255,255,1)]">
+                  <Download className="w-7 h-7 stroke-[3]" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-base sm:text-lg font-bold text-white">Watch via SageMovies Mobile App</h3>
-                  <p className="text-xs sm:text-sm text-zinc-300 leading-normal">
-                    The Android app streams directly and is unaffected by web maintenance.
+                  <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+                    WATCH VIA SAGEMOVIES ANDROID APP
+                  </h3>
+                  <p className="text-xs sm:text-sm font-bold text-yellow-200">
+                    The Android APK streams directly & is unaffected by web maintenance.
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsDownloadModalOpen(true)}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-netflix-red hover:bg-red-700 text-white text-sm font-extrabold transition-all shadow-xl shadow-red-950/50 hover:scale-[1.02] flex items-center justify-center space-x-2.5 shrink-0"
+                className="w-full sm:w-auto px-7 py-4 bg-black hover:bg-yellow-400 hover:text-black text-[#FFE600] font-black text-sm uppercase tracking-wider border-3 border-black shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center space-x-2 shrink-0"
               >
-                <span>Download App</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>DOWNLOAD APK</span>
+                <ArrowRight className="w-5 h-5 stroke-[3]" />
               </button>
             </div>
 
             {/* Check Status Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-zinc-300 bg-zinc-950/80 border border-zinc-800 rounded-2xl p-4">
-              <div className="flex items-center space-x-2.5">
-                <RefreshCw className={`w-4 h-4 text-zinc-400 ${isChecking ? 'animate-spin' : ''}`} />
-                <span>Auto-refreshing in <strong className="text-white font-bold">{autoCheckCountdown}s</strong></span>
+            <div className="bg-white border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs sm:text-sm">
+              <div className="flex items-center space-x-3 font-bold">
+                <RefreshCw className={`w-5 h-5 text-black stroke-[3] ${isChecking ? 'animate-spin' : ''}`} />
+                <span>AUTO-REFRESH IN <strong className="bg-black text-[#FFE600] px-2 py-0.5 font-black">{autoCheckCountdown}S</strong></span>
                 {lastChecked && (
-                  <span className="text-zinc-500 hidden sm:inline">• Checked at {lastChecked}</span>
+                  <span className="text-zinc-600 hidden sm:inline">• CHECKED: {lastChecked}</span>
                 )}
               </div>
 
               <button
                 onClick={handleCheckStatus}
                 disabled={isChecking}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs sm:text-sm font-bold transition-all disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-2.5 bg-[#00E5FF] hover:bg-black hover:text-[#00E5FF] text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all disabled:opacity-50"
               >
-                {isChecking ? 'Checking System...' : 'Refresh Status'}
+                {isChecking ? 'CHECKING...' : 'REFRESH STATUS'}
               </button>
             </div>
           </div>
@@ -168,8 +170,8 @@ export default function MaintenancePage() {
       </main>
 
       {/* Footer Info */}
-      <footer className="relative z-10 w-full max-w-5xl py-4 text-center text-xs sm:text-sm text-zinc-500 border-t border-zinc-800/80">
-        <p>© {new Date().getFullYear()} SageMovies. Thank you for your patience while we improve our platform.</p>
+      <footer className="w-full max-w-5xl py-4 text-center text-xs font-black uppercase tracking-wider text-black border-t-4 border-black">
+        <p>© {new Date().getFullYear()} SAGEMOVIES • NEO-BRUTALIST MAINTENANCE MODE</p>
       </footer>
 
       {/* APK Download Modal */}
