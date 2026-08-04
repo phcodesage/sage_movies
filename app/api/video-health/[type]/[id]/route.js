@@ -31,7 +31,8 @@ async function probe(url, serverId, type, id, season, episode) {
         const vidsrcLower = vidsrcText.toLowerCase();
         if (
           vidsrcLower.includes('404 - not found') ||
-          vidsrcLower.includes('error-code">404')
+          vidsrcLower.includes('error-code">404') ||
+          vidsrcLower.includes('content not found')
         ) {
           return 'down';
         }
@@ -86,6 +87,7 @@ async function probe(url, serverId, type, id, season, episode) {
       lower.includes('searched through our providers') ||
       lower.includes('not host the media') ||
       lower.includes('content unavailable') ||
+      lower.includes('content not found') ||
       lower.includes('video not found') ||
       lower.includes('something went wrong') ||
       lower.includes('file not found') ||

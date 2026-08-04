@@ -390,7 +390,24 @@ export default function MovieDetailPage() {
       <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
         {/* Left/Top Section: Steam Deck Video Player Stage */}
         <div className="relative bg-black h-[45vh] md:h-full flex-1 md:min-w-0 border-b-4 md:border-b-0 md:border-r-4 border-black">
-          {isPlaying ? (
+          {allServersDown ? (
+            <div className="absolute inset-0 bg-[#0F1015]/95 border-4 border-black p-6 flex flex-col items-center justify-center text-center z-30 font-sans">
+              <h3 className="text-base md:text-xl font-black uppercase text-white tracking-tight mb-2 bg-[#FF3366] text-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                ⚠️ TITLE NOT AVAILABLE YET ON STREAM SERVERS
+              </h3>
+              <p className="text-xs md:text-sm font-bold text-zinc-200 max-w-md bg-black p-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-4 leading-relaxed">
+                {releaseDate
+                  ? `"${title}" has an official air/release date of ${releaseDate}. Digital stream files have not been uploaded to provider servers yet.`
+                  : `Streaming servers are currently indexing "${title}". Please try selecting another title or check back shortly!`}
+              </p>
+              <button
+                onClick={() => router.push('/')}
+                className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs uppercase tracking-wider transition-all hover:-translate-y-0.5"
+              >
+                🎮 BROWSE OTHER WORKING MOVIES
+              </button>
+            </div>
+          ) : isPlaying ? (
             <>
               {isLoading && (
                 <div className="absolute inset-0 z-10 bg-[#0F1015]/95 flex flex-col items-center justify-center border-4 border-black p-6">
@@ -453,25 +470,7 @@ export default function MovieDetailPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0F1015] via-black/40 to-transparent" />
 
-              {allServersDown ? (
-                <div className="absolute inset-0 bg-[#0F1015]/95 border-4 border-black p-6 flex flex-col items-center justify-center text-center z-30 font-sans">
-                  <h3 className="text-base md:text-xl font-black uppercase text-white tracking-tight mb-2 bg-[#FF3366] text-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                    ⚠️ TITLE NOT AVAILABLE YET ON STREAM SERVERS
-                  </h3>
-                  <p className="text-xs md:text-sm font-bold text-zinc-200 max-w-md bg-black p-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-4 leading-relaxed">
-                    {releaseDate
-                      ? `"${title}" has an official air/release date of ${releaseDate}. Servers have indexed the listing, but digital stream files have not been uploaded by providers yet.`
-                      : `Streaming servers are currently indexing "${title}". Please try selecting another title or check back shortly!`}
-                  </p>
-                  <button
-                    onClick={() => router.push('/')}
-                    className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs uppercase tracking-wider transition-all hover:-translate-y-0.5"
-                  >
-                    🎮 BROWSE OTHER WORKING MOVIES
-                  </button>
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
                   <button
                     onClick={() => handlePlay()}
                     className="group flex flex-col items-center gap-3 active:scale-95 transition-transform"
@@ -484,7 +483,6 @@ export default function MovieDetailPage() {
                     </span>
                   </button>
                 </div>
-              )}
             </div>
           )}
         </div>
