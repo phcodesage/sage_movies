@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { VIDEO_SERVERS, DEFAULT_LANG } from '../../../../../lib/videoServers';
 
-// Health is time-sensitive — never cache. We probe each provider's actual embed URL
-// server-side and report reachability. This catches the common failure mode (provider
-// host down / 522 / blocked / redirected away), which is most of what users hit.
-//
-// It CANNOT confirm the specific title is in a provider's catalog: providers render the
-// "we couldn't find that" verdict in the browser after an internal lookup, so the initial
-// HTML is a 200 player shell whether or not the title exists. Reachability is the honest
-// signal we can get from the server, and it's enough to steer users off dead providers.
 export const revalidate = 0;
 
 const PROBE_TIMEOUT_MS = 6000;
@@ -26,11 +18,28 @@ async function probe(url) {
       signal: controller.signal,
       headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
     });
-    // 2xx = reachable and serving. Cloudflare 522s, 5xx, 4xx and hard redirects to an
-    // error/ad host all fall through to 'down'.
-    return res.ok ? 'up' : 'down';
+
+    if (!res.ok) return 'down';
+
+    const text = await res.text();
+    const lower = text.toLowerCase();
+
+    // Catch catalog missing signatures inside 200 OK provider shells
+    if (
+      lower.includes("couldn't find") ||
+      lower.includes("could not find") ||
+      lower.includes("content unavailable") ||
+      lower.includes("video not found") ||
+      lower.includes("something went wrong") ||
+      lower.includes("file not found") ||
+      lower.includes("media not found") ||
+      lower.includes("not available")
+    ) {
+      return 'down';
+    }
+
+    return 'up';
   } catch {
-    // DNS failure, connection refused, or our own abort/timeout.
     return 'down';
   } finally {
     clearTimeout(timer);

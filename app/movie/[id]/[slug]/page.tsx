@@ -201,6 +201,9 @@ export default function MovieDetailPage() {
   }, [movie?.id]);
 
   const isCheckingHealth = Object.values(serverHealth).some((v) => v === 'checking');
+  const allServersDown =
+    Object.keys(serverHealth).length > 0 &&
+    Object.values(serverHealth).every((status) => status === 'down');
 
   const loadVideoSource = async (
     selectedServer: string,
@@ -422,19 +425,38 @@ export default function MovieDetailPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#0F1015] via-black/40 to-transparent" />
 
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
-                <button
-                  onClick={() => handlePlay()}
-                  className="group flex flex-col items-center gap-3 active:scale-95 transition-transform"
-                >
-                  <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A9FFF] text-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center group-hover:bg-[#FFE600] group-hover:-translate-y-1 transition-all duration-200">
-                    <Play className="w-10 h-10 md:w-12 md:h-12 fill-current ml-1" />
-                  </div>
-                  <span className="bg-black text-[#1A9FFF] font-black text-sm md:text-lg tracking-wider px-4 py-1.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:text-[#FFE600] transition-colors uppercase">
-                    [A] LAUNCH STEAM STREAM
-                  </span>
-                </button>
-              </div>
+              {allServersDown ? (
+                <div className="absolute inset-0 bg-[#0F1015]/95 border-4 border-black p-6 flex flex-col items-center justify-center text-center z-30 font-sans">
+                  <h3 className="text-base md:text-xl font-black uppercase text-white tracking-tight mb-2 bg-[#FF3366] text-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                    ⚠️ TITLE NOT AVAILABLE YET ON STREAM DRIVES
+                  </h3>
+                  <p className="text-xs md:text-sm font-bold text-zinc-200 max-w-md bg-black p-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-4 leading-relaxed">
+                    {releaseDate
+                      ? `"${title}" has an official air/release date of ${releaseDate}. Servers have indexed the listing, but digital stream files have not been uploaded by providers yet.`
+                      : `Streaming drives are currently indexing "${title}". Please try selecting another title or check back shortly!`}
+                  </p>
+                  <button
+                    onClick={() => router.push('/')}
+                    className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs uppercase tracking-wider transition-all hover:-translate-y-0.5"
+                  >
+                    🎮 BROWSE OTHER WORKING MOVIES
+                  </button>
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
+                  <button
+                    onClick={() => handlePlay()}
+                    className="group flex flex-col items-center gap-3 active:scale-95 transition-transform"
+                  >
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A9FFF] text-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center group-hover:bg-[#FFE600] group-hover:-translate-y-1 transition-all duration-200">
+                      <Play className="w-10 h-10 md:w-12 md:h-12 fill-current ml-1" />
+                    </div>
+                    <span className="bg-black text-[#1A9FFF] font-black text-sm md:text-lg tracking-wider px-4 py-1.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:text-[#FFE600] transition-colors uppercase">
+                      [A] LAUNCH STEAM STREAM
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
