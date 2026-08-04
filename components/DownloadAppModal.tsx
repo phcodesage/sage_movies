@@ -49,9 +49,9 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
   const [hasStartedDownload, setHasStartedDownload] = useState(false);
   const [showcaseMovie, setShowcaseMovie] = useState(FEATURED_SHOWCASE_MOVIES[0]);
 
+  // Prefer same-origin public/ APK — Cloudflare R2 (r2.dev) is currently unreachable.
   const downloadUrl =
-    process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
-    'https://pub-bd093e291a8941608e8a6fe70c3aca53.r2.dev/sagemovies-v1.4.7.apk';
+    process.env.NEXT_PUBLIC_ANDROID_APK_URL || '/sagemovies-latest.apk';
 
   useEffect(() => {
     if (isOpen) {

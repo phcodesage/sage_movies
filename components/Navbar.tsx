@@ -147,11 +147,11 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                 ? 'bg-emerald-600/90 hover:bg-emerald-600 border border-emerald-400/30 text-white'
                 : 'bg-netflix-red hover:bg-red-700 hover:shadow-netflix-red/30'
             )}
-            title={hasDownloadedApp ? 'Ad-Free Active • App Installed' : 'Download Android APK App (1.2k+ Downloads)'}
+            title={hasDownloadedApp ? 'Ad-Free Active • APK download claimed' : 'Download Android APK App (1.2k+ Downloads)'}
           >
             <Smartphone className="w-3.5 h-3.5 text-white" />
             {hasDownloadedApp ? (
-              <span>Ad-Free <span className="text-[10px] text-emerald-200 font-bold ml-0.5">(App Installed)</span></span>
+              <span>Ad-Free <span className="text-[10px] text-emerald-200 font-bold ml-0.5">(Active)</span></span>
             ) : (
               <span>Get App <span className="text-[10px] text-white/80 font-bold ml-0.5">(1.2k+ downloads)</span></span>
             )}
