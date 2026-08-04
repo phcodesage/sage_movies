@@ -163,6 +163,7 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
         <PreviewCard
           movie={hoveredMovie}
           position={previewPos}
+          isVisible={Boolean(hoveredMovie)}
           onClose={() => setHoveredMovie(null)}
           onPlay={() => handleMovieClick(hoveredMovie)}
         />
