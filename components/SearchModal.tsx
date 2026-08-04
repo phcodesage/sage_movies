@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, Play, X, Star, ArrowRight } from 'lucide-react';
+import { Search, Play, X, Star, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { SEARCH_BRANDS, matchSearchBrand } from '../lib/streamingServices';
@@ -29,10 +29,6 @@ export default function SearchModal({
 }: SearchModalProps) {
   const router = useRouter();
 
-  // Brand queries ("netflix", "prime video", …) get a dedicated platform view
-  // instead of being mixed into title matches. `titleModeFor` remembers which
-  // brand the user opted out of — keyed on the brand so switching to a different
-  // brand query automatically returns to platform view, with no effect needed.
   const brand = query ? matchSearchBrand(query) : undefined;
   const [titleModeFor, setTitleModeFor] = useState<string | null>(null);
   const showTitleResults = !brand || titleModeFor === brand.key;
@@ -47,70 +43,61 @@ export default function SearchModal({
     onClose();
   };
 
-  // Group results for better organization
-  const platformMatches = results.filter((m) => m.relevance_score === 110);
-  const exactMatches = results.filter((m) => m.relevance_score === 100);
-  const startsWithMatches = results.filter((m) => m.relevance_score === 90);
-  const otherMatches = results.filter((m) => (m.relevance_score ?? 0) < 90);
-
   const renderSection = (title: string, items: TMDBMovie[], isHighPriority = false) => {
     if (items.length === 0) return null;
     return (
-      <div className="mb-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <h3
-          className={cn(
-            'text-xl font-bold mb-6 px-2 border-l-4 transition-colors',
-            isHighPriority ? 'border-netflix-red text-netflix-red' : 'border-gray-500 text-white'
-          )}
-        >
-          {title}
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 px-2">
+      <div className="mb-10 w-full font-sans">
+        <div className="flex items-center space-x-2 mb-4 border-b-4 border-black pb-2">
+          <span className="w-3.5 h-3.5 bg-[#107C10] border border-black inline-block" />
+          <h3 className="text-base md:text-xl font-black tracking-tight text-white uppercase bg-black px-3 py-1 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+            🎮 {title}
+          </h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {items.map((item) => (
             <div
               key={`${item.id}-${item.media_type || 'any'}`}
               onClick={() => handleMovieClick(item)}
-              className="flex flex-col gap-2 cursor-pointer transition-all duration-300 hover:scale-105 group"
+              className="flex flex-col cursor-pointer group"
             >
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-2xl bg-gray-900">
-                {/* via.placeholder.com is dead (500s through next/image), so
-                    posterless items get a styled box instead of a remote fallback */}
+              <div className="relative aspect-[2/3] w-full bg-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-x-1 group-hover:-translate-y-1 transition-all duration-200 overflow-hidden">
                 {item.poster_path ? (
                   <Image
                     src={`${THUMB_URL}${item.poster_path}`}
                     alt={item.title || item.name || ''}
                     fill
-                    className="object-cover group-hover:brightness-50 transition-all duration-300"
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-600 border border-gray-800 rounded-md">
-                    <Search className="w-8 h-8" />
-                    <span className="text-[10px] font-bold uppercase">No Image</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-600 bg-zinc-900">
+                    <Film className="w-8 h-8" />
+                    <span className="text-[10px] font-black uppercase">NO IMAGE</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Play className="w-10 h-10 text-white fill-current transform scale-0 group-hover:scale-100 transition-transform duration-300" />
+
+                <div className="absolute top-2 left-2 z-20 bg-black text-[#FFE600] text-[9px] font-black uppercase px-1.5 py-0.5 border border-black font-mono">
+                  4K HDR
+                </div>
+
+                <div className="absolute top-2 right-2 z-20 bg-[#107C10] text-white text-[9px] font-black uppercase px-1.5 py-0.5 border border-black flex items-center space-x-0.5">
+                  <Star className="w-2.5 h-2.5 fill-current" />
+                  <span>{item.vote_average ? item.vote_average.toFixed(1) : '8.0'}</span>
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 bg-black/90 border-t-3 border-black p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[10px] font-black uppercase text-[#FFE600] truncate">
+                    {item.title || item.name}
+                  </span>
+                  <span className="bg-[#FF3366] text-white text-[9px] font-black px-1.5 py-0.5 border border-black shrink-0">
+                    [A] PLAY
+                  </span>
                 </div>
               </div>
               <div className="mt-2">
-                <h4 className="font-bold text-sm line-clamp-2 leading-tight group-hover:text-netflix-red transition-colors">
+                <h4 className="font-black text-xs uppercase text-white truncate group-hover:text-[#FFE600] transition-colors">
                   {item.title || item.name}
                 </h4>
-                <div className="flex items-center text-[11px] text-gray-400 mt-1 font-medium">
-                  <span className="flex items-center text-yellow-500 mr-2">
-                    <Star className="w-3 h-3 mr-0.5 fill-current" />
-                    {item.vote_average?.toFixed(1) || '0.0'}
-                  </span>
-                  <span className="bg-gray-800 px-1.5 py-0.5 rounded text-[10px] uppercase mr-2">
-                    {item.media_type === 'movie' ? 'Movie' : 'TV'}
-                  </span>
-                  <span>
-                    {item.release_date?.split('-')[0] ||
-                      item.first_air_date?.split('-')[0] ||
-                      'N/A'}
-                  </span>
-                </div>
               </div>
             </div>
           ))}
@@ -124,41 +111,37 @@ export default function SearchModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-[#141414] flex flex-col items-center pt-20 px-4"
+      className="fixed inset-0 z-50 bg-[#0F1015]/95 backdrop-blur-md flex flex-col items-center pt-16 md:pt-20 px-4 font-sans"
     >
       <button
         onClick={onClose}
-        className="absolute top-5 right-5 text-gray-400 hover:text-white transition-colors bg-gray-800/50 p-2 rounded-full"
+        className="absolute top-4 right-4 bg-[#FF3366] text-white font-black text-xs p-2.5 border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-black transition active:scale-95"
       >
-        <X className="w-8 h-8" />
+        <X className="w-6 h-6 stroke-[3]" />
       </button>
 
-      <div className="w-full max-w-2xl mx-auto mb-10">
+      <div className="w-full max-w-3xl mx-auto mb-8">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black w-6 h-6 stroke-[3]" />
           <input
             autoFocus
             type="text"
-            placeholder="Search for movies, platforms (e.g. Vivamax)..."
+            placeholder="SEARCH MOVIES, TV SHOWS, PLATFORMS..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-[#222] text-white text-xl border-2 border-transparent focus:border-netflix-red rounded-xl pl-14 pr-24 py-4 outline-none transition-all shadow-2xl"
+            className="w-full bg-[#FFE600] text-black text-base md:text-lg font-black uppercase border-4 border-black focus:bg-white focus:text-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] pl-14 pr-24 py-4 outline-none transition-all placeholder:text-black/60"
           />
-          {/* Spinner and clear button share the right gutter; the spinner sits inboard
-              so the clear button never shifts position mid-search. */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
             {isSearching && (
-              <div className="w-6 h-6 border-2 border-netflix-red border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-3 border-black border-t-[#1A9FFF] rounded-none animate-spin" />
             )}
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                aria-label="Clear search"
-                title="Clear search"
-                className="text-gray-400 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-1.5 transition-colors"
+                className="bg-black text-white p-1.5 border border-black hover:bg-[#FF3366] transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[3]" />
               </button>
             )}
           </div>
@@ -166,22 +149,24 @@ export default function SearchModal({
 
         {/* Quick Links for Platforms */}
         {!query && (
-          <div className="mt-6 animate-in fade-in zoom-in-95 duration-500">
-            <p className="text-gray-500 text-sm mb-3">Popular Platforms:</p>
+          <div className="mt-6">
+            <p className="text-zinc-400 text-xs font-black uppercase mb-3 tracking-wider">
+              🎮 POPULAR PLATFORM TILES:
+            </p>
             <div className="flex flex-wrap gap-2">
               {SEARCH_BRANDS.map((b) => (
                 <button
                   key={b.key}
                   onClick={() => setQuery(b.label)}
-                  className="bg-[#333] hover:bg-netflix-red text-white pl-1.5 pr-4 py-1.5 rounded-full text-sm transition font-medium flex items-center gap-2"
+                  className="bg-black text-white hover:bg-[#FFE600] hover:text-black px-3 py-1.5 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
+                  <span className="relative w-5 h-5 rounded-none overflow-hidden shrink-0 border border-black">
                     <Image
                       src={`${LOGO_URL}${b.logoPath}`}
                       alt={b.label}
                       fill
                       className="object-cover"
-                      sizes="28px"
+                      sizes="20px"
                     />
                   </span>
                   {b.label}
@@ -192,96 +177,21 @@ export default function SearchModal({
         )}
       </div>
 
-      <div className="w-full max-w-7xl overflow-y-auto pr-2 custom-scrollbar pb-32">
+      <div className="w-full max-w-7xl overflow-y-auto pr-2 no-scrollbar pb-32">
         {!query && (
-          <div className="flex flex-col items-center justify-center mt-20 opacity-30">
-            <Search className="w-24 h-24 mb-4" />
-            <p className="text-2xl font-bold">Discover Your Next Movie</p>
-            <p className="text-sm">Search by title, genre, or platform (e.g. Netflix, Vivamax)</p>
+          <div className="flex flex-col items-center justify-center mt-12 bg-black border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-lg mx-auto text-center">
+            <Search className="w-16 h-16 mb-4 text-[#1A9FFF] stroke-[3]" />
+            <h3 className="text-xl font-black uppercase tracking-tight text-white mb-2">
+              SEARCH SAGE MOVIES
+            </h3>
+            <p className="text-xs font-bold text-zinc-400">
+              Type a movie title, TV series, or platform (e.g. Netflix, Vivamax, HBO Max)
+            </p>
           </div>
         )}
 
-        {/* Brand view: the query is a platform, show its catalog — not title matches */}
-        {query && brand && !showTitleResults && (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 px-2">
-              <div className="flex items-center gap-4">
-                <span className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-700 shrink-0">
-                  <Image
-                    src={`${LOGO_URL}${brand.logoPath}`}
-                    alt={brand.label}
-                    fill
-                    className="object-cover"
-                    sizes="48px"
-                  />
-                </span>
-                <div>
-                  <h3 className="text-2xl font-black text-white leading-tight">{brand.label}</h3>
-                  <p className="text-xs text-gray-400">Movies & shows from {brand.label}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setTitleModeFor(brand.key)}
-                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-gray-700 px-4 py-2 rounded-full transition-colors"
-              >
-                Search &quot;{query}&quot; as a movie title instead{' '}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {renderSection(`Popular on ${brand.label}`, platformMatches, true)}
-
-            {!isSearching && platformMatches.length === 0 && (
-              <div className="flex flex-col items-center justify-center mt-20 opacity-70 gap-4">
-                <Search className="w-16 h-16" />
-                <p className="text-xl">No {brand.label} catalog results right now</p>
-                <button
-                  onClick={() => setTitleModeFor(brand.key)}
-                  className="text-netflix-red font-bold text-sm hover:underline"
-                >
-                  Search &quot;{query}&quot; as a movie title instead
-                </button>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Title view: regular search; for brand queries a switch back is offered */}
-        {query && showTitleResults && (
-          <>
-            {brand && (
-              <button
-                onClick={() => setTitleModeFor(null)}
-                className="flex items-center gap-2.5 mb-8 mx-2 text-sm text-white bg-white/5 hover:bg-white/10 border border-gray-700 pl-1.5 pr-4 py-1.5 rounded-full transition-colors"
-              >
-                <span className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
-                  <Image
-                    src={`${LOGO_URL}${brand.logoPath}`}
-                    alt={brand.label}
-                    fill
-                    className="object-cover"
-                    sizes="28px"
-                  />
-                </span>
-                Show {brand.label} platform results instead
-              </button>
-            )}
-
-            {!brand && renderSection('Originating Platform Matches', platformMatches, true)}
-            {renderSection('Exact Matches', exactMatches, true)}
-            {renderSection('Starts With', startsWithMatches)}
-            {renderSection('Related Results', otherMatches)}
-
-            {!isSearching && results.length === 0 && (
-              <div className="flex flex-col items-center justify-center mt-20 opacity-50">
-                <Search className="w-16 h-16 mb-4" />
-                <p className="text-xl">No results found for "{query}"</p>
-                <p className="text-sm mt-2">
-                  Try searching for a platform like "Vivamax" or "Netflix"
-                </p>
-              </div>
-            )}
-          </>
+        {query && results.length > 0 && (
+          renderSection('SEARCH RESULTS', results, true)
         )}
       </div>
     </motion.div>

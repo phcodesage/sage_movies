@@ -301,7 +301,7 @@ export default function Home() {
                 </button>
 
                 <button
-                  onClick={() => setSelectedMovie(bannerMovie)}
+                  onClick={() => handlePlayClick(bannerMovie)}
                   className="bg-white hover:bg-[#00E5FF] text-black px-6 md:px-8 py-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm font-black uppercase tracking-wider flex items-center space-x-2 hover:-translate-y-0.5 transition-all"
                 >
                   <span className="bg-black text-white text-[10px] px-1.5 py-0.5 font-mono border border-black">X</span>
