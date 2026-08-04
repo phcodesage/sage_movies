@@ -57,17 +57,17 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
               <Gamepad2 className="w-6 h-6 stroke-[3]" />
             </div>
             <h1 className="text-white text-xl md:text-2xl font-black tracking-tighter uppercase">
-              XBOX<span className="bg-[#FFE600] text-black px-1.5 py-0.5 ml-1 border-2 border-black">STREAM</span>
+              SAGE<span className="bg-[#FFE600] text-black px-1.5 py-0.5 ml-1 border-2 border-black">MOVIES</span>
             </h1>
           </div>
 
-          {/* Desktop Xbox Tab Links */}
+          {/* Desktop Tab Links */}
           <div className="hidden lg:flex items-center space-x-3">
             <button
               onClick={() => router.push('/')}
               className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-[#107C10] text-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
             >
-              DASHBOARD
+              HOME
             </button>
 
             {SECTIONS.map((s) => (

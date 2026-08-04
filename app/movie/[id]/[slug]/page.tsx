@@ -327,7 +327,7 @@ export default function MovieDetailPage() {
 
           <div className="flex items-center space-x-2">
             <span className="bg-black text-[#66C0F4] font-black text-xs px-2.5 py-1 border-2 border-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              🎮 STEAM DECK PLAYER
+              🎮 SAGE HD PLAYER
             </span>
             <span className="hidden md:inline-block bg-[#107C10] text-white font-black text-[10px] px-2 py-0.5 border border-black uppercase font-mono">
               60 FPS • 1080P
@@ -353,7 +353,7 @@ export default function MovieDetailPage() {
             onClick={() => router.push('/')}
             className="px-2.5 py-1 bg-white text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF3366] hover:text-white transition-all text-[10px] uppercase"
           >
-            STEAM DECK HOME
+            SAGE HOME
           </button>
         </div>
       </div>
@@ -368,7 +368,7 @@ export default function MovieDetailPage() {
                 <div className="absolute inset-0 z-10 bg-[#0F1015]/95 flex flex-col items-center justify-center border-4 border-black p-6">
                   <div className="w-12 h-12 border-4 border-black border-t-[#1A9FFF] rounded-none animate-spin mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" />
                   <p className="font-black text-xs uppercase tracking-widest text-[#1A9FFF] bg-black px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    CONNECTING STEAM DRIVE...
+                    CONNECTING STREAM SERVER...
                   </p>
                 </div>
               )}
@@ -385,7 +385,7 @@ export default function MovieDetailPage() {
                     }}
                     className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-2.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition text-xs uppercase"
                   >
-                    SELECT ANOTHER DRIVE
+                    SELECT ANOTHER SERVER
                   </button>
                 </div>
               )}
@@ -428,12 +428,12 @@ export default function MovieDetailPage() {
               {allServersDown ? (
                 <div className="absolute inset-0 bg-[#0F1015]/95 border-4 border-black p-6 flex flex-col items-center justify-center text-center z-30 font-sans">
                   <h3 className="text-base md:text-xl font-black uppercase text-white tracking-tight mb-2 bg-[#FF3366] text-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                    ⚠️ TITLE NOT AVAILABLE YET ON STREAM DRIVES
+                    ⚠️ TITLE NOT AVAILABLE YET ON STREAM SERVERS
                   </h3>
                   <p className="text-xs md:text-sm font-bold text-zinc-200 max-w-md bg-black p-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-4 leading-relaxed">
                     {releaseDate
                       ? `"${title}" has an official air/release date of ${releaseDate}. Servers have indexed the listing, but digital stream files have not been uploaded by providers yet.`
-                      : `Streaming drives are currently indexing "${title}". Please try selecting another title or check back shortly!`}
+                      : `Streaming servers are currently indexing "${title}". Please try selecting another title or check back shortly!`}
                   </p>
                   <button
                     onClick={() => router.push('/')}
@@ -452,7 +452,7 @@ export default function MovieDetailPage() {
                       <Play className="w-10 h-10 md:w-12 md:h-12 fill-current ml-1" />
                     </div>
                     <span className="bg-black text-[#1A9FFF] font-black text-sm md:text-lg tracking-wider px-4 py-1.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:text-[#FFE600] transition-colors uppercase">
-                      [A] LAUNCH STEAM STREAM
+                      [A] LAUNCH STREAM
                     </span>
                   </button>
                 </div>
@@ -516,7 +516,7 @@ export default function MovieDetailPage() {
                 <div className="flex items-center justify-between border-b-2 border-zinc-800 pb-2">
                   <span className="text-xs font-black uppercase text-[#66C0F4] tracking-wider flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 bg-[#107C10] border border-black inline-block" />
-                    STEAM DRIVES / SERVERS
+                    STREAMING SERVERS
                   </span>
                   <button
                     type="button"
