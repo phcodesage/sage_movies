@@ -12,6 +12,32 @@ async function probe(url, serverId, type, id, season, episode) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
+    // VidSrc deep check via nextgencloudfabric
+    if (serverId === 'vidsrc.xyz' || serverId === 'vidsrc.pm' || serverId === 'vidsrc.icu') {
+      const vidsrcUrl =
+        type === 'tv'
+          ? `https://nextgencloudfabric.com/embed/tv/${id}/${season}/${episode}`
+          : `https://nextgencloudfabric.com/embed/movie/${id}`;
+
+      const vidsrcRes = await fetch(vidsrcUrl, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
+      });
+
+      if (vidsrcRes.ok) {
+        const vidsrcText = await vidsrcRes.text();
+        const vidsrcLower = vidsrcText.toLowerCase();
+        if (
+          vidsrcLower.includes('404 - not found') ||
+          vidsrcLower.includes('error-code">404')
+        ) {
+          return 'down';
+        }
+      }
+    }
+
     // 2Embed specific deep probe
     if (serverId === '2embed') {
       const innerUrl =
@@ -29,7 +55,6 @@ async function probe(url, serverId, type, id, season, episode) {
       if (innerRes.ok) {
         const innerText = await innerRes.text();
         const innerLower = innerText.toLowerCase();
-        // If 2embed streamsrcs redirects to fallback home page or contains missing text, it's DOWN!
         if (
           innerLower.includes('2embed - stream movies') ||
           innerLower.includes('movie embed code') ||
@@ -66,7 +91,9 @@ async function probe(url, serverId, type, id, season, episode) {
       lower.includes('file not found') ||
       lower.includes('media not found') ||
       lower.includes('not available') ||
-      lower.includes('2embed - stream movies')
+      lower.includes('2embed - stream movies') ||
+      lower.includes('404 - not found') ||
+      lower.includes('error-code">404')
     ) {
       return 'down';
     }
