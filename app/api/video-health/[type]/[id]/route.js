@@ -93,7 +93,10 @@ async function probe(url, serverId, type, id, season, episode) {
       lower.includes('not available') ||
       lower.includes('2embed - stream movies') ||
       lower.includes('404 - not found') ||
-      lower.includes('error-code">404')
+      lower.includes('error-code">404') ||
+      lower.includes('/lander') ||
+      lower.includes('location.href="/lander"') ||
+      lower.includes('window.location.href="/lander"')
     ) {
       return 'down';
     }
