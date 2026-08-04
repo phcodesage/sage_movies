@@ -254,6 +254,16 @@ export default function MovieDetailPage() {
     }
   };
 
+  const handleNextServer = () => {
+    const currentIndex = VIDEO_SERVERS.findIndex((s) => s.id === server);
+    const nextIndex = (currentIndex + 1) % VIDEO_SERVERS.length;
+    const nextServer = VIDEO_SERVERS[nextIndex].id;
+    setServer(nextServer);
+    if (isPlaying) {
+      loadVideoSource(nextServer, lang);
+    }
+  };
+
   const handleLangChange = (newLang: string) => {
     setLang(newLang);
     if (isPlaying) {
@@ -337,16 +347,29 @@ export default function MovieDetailPage() {
 
         <div className="flex items-center space-x-2">
           {isPlaying && (
-            <button
-              onClick={() => {
-                registerPlaybackAdInteraction();
-                loadVideoSource(server, lang);
-              }}
-              className="px-2.5 py-1 bg-[#FFE600] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#FFE600] transition-all flex items-center space-x-1"
-            >
-              <span className="bg-black text-[#FFE600] text-[10px] px-1 py-0.5 font-mono">A</span>
-              <span className="text-[10px] uppercase">REFRESH</span>
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  registerPlaybackAdInteraction();
+                  loadVideoSource(server, lang);
+                }}
+                className="px-2.5 py-1 bg-[#FFE600] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#FFE600] transition-all flex items-center space-x-1"
+              >
+                <span className="bg-black text-[#FFE600] text-[10px] px-1 py-0.5 font-mono">A</span>
+                <span className="text-[10px] uppercase">REFRESH</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  registerPlaybackAdInteraction();
+                  handleNextServer();
+                }}
+                className="px-2.5 py-1 bg-[#1A9FFF] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#1A9FFF] transition-all flex items-center space-x-1"
+              >
+                <span className="bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">X</span>
+                <span className="text-[10px] uppercase">NEXT SERVER</span>
+              </button>
+            </>
           )}
 
           <button

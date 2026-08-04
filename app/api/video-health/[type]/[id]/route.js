@@ -25,9 +25,14 @@ async function probe(url) {
     const lower = text.toLowerCase();
 
     // Catch catalog missing signatures inside 200 OK provider shells
+    // (including 2embed's "couldnt find", "cannot find", "searched through our providers")
     if (
       lower.includes("couldn't find") ||
+      lower.includes("couldnt find") ||
       lower.includes("could not find") ||
+      lower.includes("cannot find") ||
+      lower.includes("searched through our providers") ||
+      lower.includes("not host the media") ||
       lower.includes("content unavailable") ||
       lower.includes("video not found") ||
       lower.includes("something went wrong") ||
