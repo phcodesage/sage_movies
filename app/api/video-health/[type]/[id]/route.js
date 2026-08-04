@@ -8,10 +8,38 @@ const PROBE_TIMEOUT_MS = 6000;
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-async function probe(url) {
+async function probe(url, serverId, type, id, season, episode) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
+    // 2Embed specific deep probe
+    if (serverId === '2embed') {
+      const innerUrl =
+        type === 'tv'
+          ? `https://streamsrcs.2embed.cc/${id}/${season}/${episode}`
+          : `https://streamsrcs.2embed.cc/${id}`;
+
+      const innerRes = await fetch(innerUrl, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
+      });
+
+      if (innerRes.ok) {
+        const innerText = await innerRes.text();
+        const innerLower = innerText.toLowerCase();
+        // If 2embed streamsrcs redirects to fallback home page or contains missing text, it's DOWN!
+        if (
+          innerLower.includes('2embed - stream movies') ||
+          innerLower.includes('movie embed code') ||
+          innerLower.includes('biggest library to embed')
+        ) {
+          return 'down';
+        }
+      }
+    }
+
     const res = await fetch(url, {
       method: 'GET',
       redirect: 'follow',
@@ -25,20 +53,20 @@ async function probe(url) {
     const lower = text.toLowerCase();
 
     // Catch catalog missing signatures inside 200 OK provider shells
-    // (including 2embed's "couldnt find", "cannot find", "searched through our providers")
     if (
       lower.includes("couldn't find") ||
-      lower.includes("couldnt find") ||
-      lower.includes("could not find") ||
-      lower.includes("cannot find") ||
-      lower.includes("searched through our providers") ||
-      lower.includes("not host the media") ||
-      lower.includes("content unavailable") ||
-      lower.includes("video not found") ||
-      lower.includes("something went wrong") ||
-      lower.includes("file not found") ||
-      lower.includes("media not found") ||
-      lower.includes("not available")
+      lower.includes('couldnt find') ||
+      lower.includes('could not find') ||
+      lower.includes('cannot find') ||
+      lower.includes('searched through our providers') ||
+      lower.includes('not host the media') ||
+      lower.includes('content unavailable') ||
+      lower.includes('video not found') ||
+      lower.includes('something went wrong') ||
+      lower.includes('file not found') ||
+      lower.includes('media not found') ||
+      lower.includes('not available') ||
+      lower.includes('2embed - stream movies')
     ) {
       return 'down';
     }
@@ -69,7 +97,7 @@ export async function GET(request, { params }) {
         season,
         episode,
       });
-      return [s.id, await probe(url)];
+      return [s.id, await probe(url, s.id, type, id, season, episode)];
     })
   );
 
