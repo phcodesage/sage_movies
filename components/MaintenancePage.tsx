@@ -171,7 +171,7 @@ export default function MaintenancePage() {
 
       {/* Footer Info */}
       <footer className="w-full max-w-5xl py-4 text-center text-xs font-black uppercase tracking-wider text-black border-t-4 border-black">
-        <p>© {new Date().getFullYear()} SAGEMOVIES • NEO-BRUTALIST MAINTENANCE MODE</p>
+        <p>© {new Date().getFullYear()} SAGEMOVIES</p>
       </footer>
 
       {/* APK Download Modal */}
