@@ -19,23 +19,28 @@ async function probe(url, serverId, type, id, season, episode) {
           ? `https://nextgencloudfabric.com/embed/tv/${id}/${season}/${episode}`
           : `https://nextgencloudfabric.com/embed/movie/${id}`;
 
-      const vidsrcRes = await fetch(vidsrcUrl, {
-        method: 'GET',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
-      });
+      try {
+        const vidsrcRes = await fetch(vidsrcUrl, {
+          method: 'GET',
+          redirect: 'follow',
+          signal: controller.signal,
+          headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
+        });
 
-      if (vidsrcRes.ok) {
-        const vidsrcText = await vidsrcRes.text();
-        const vidsrcLower = vidsrcText.toLowerCase();
-        if (
-          vidsrcLower.includes('404 - not found') ||
-          vidsrcLower.includes('error-code">404') ||
-          vidsrcLower.includes('content not found')
-        ) {
-          return 'down';
+        if (vidsrcRes.ok) {
+          const vidsrcText = await vidsrcRes.text();
+          const vidsrcLower = vidsrcText.toLowerCase();
+          if (
+            vidsrcLower.includes('not found') ||
+            vidsrcLower.includes('404') ||
+            vidsrcLower.includes('error-code') ||
+            vidsrcLower.includes('content not found')
+          ) {
+            return 'down';
+          }
         }
+      } catch {
+        return 'down';
       }
     }
 
@@ -46,23 +51,27 @@ async function probe(url, serverId, type, id, season, episode) {
           ? `https://streamsrcs.2embed.cc/${id}/${season}/${episode}`
           : `https://streamsrcs.2embed.cc/${id}`;
 
-      const innerRes = await fetch(innerUrl, {
-        method: 'GET',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
-      });
+      try {
+        const innerRes = await fetch(innerUrl, {
+          method: 'GET',
+          redirect: 'follow',
+          signal: controller.signal,
+          headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*' },
+        });
 
-      if (innerRes.ok) {
-        const innerText = await innerRes.text();
-        const innerLower = innerText.toLowerCase();
-        if (
-          innerLower.includes('2embed - stream movies') ||
-          innerLower.includes('movie embed code') ||
-          innerLower.includes('biggest library to embed')
-        ) {
-          return 'down';
+        if (innerRes.ok) {
+          const innerText = await innerRes.text();
+          const innerLower = innerText.toLowerCase();
+          if (
+            innerLower.includes('2embed - stream movies') ||
+            innerLower.includes('movie embed code') ||
+            innerLower.includes('biggest library to embed')
+          ) {
+            return 'down';
+          }
         }
+      } catch {
+        return 'down';
       }
     }
 
@@ -94,8 +103,9 @@ async function probe(url, serverId, type, id, season, episode) {
       lower.includes('media not found') ||
       lower.includes('not available') ||
       lower.includes('2embed - stream movies') ||
-      lower.includes('404 - not found') ||
-      lower.includes('error-code">404') ||
+      lower.includes('not found') ||
+      lower.includes('404') ||
+      lower.includes('error-code') ||
       lower.includes('/lander') ||
       lower.includes('location.href="/lander"') ||
       lower.includes('window.location.href="/lander"')
