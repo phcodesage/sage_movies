@@ -1,0 +1,21 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/anime/collection/route": "app/api/anime/collection/route.js",
+  "/api/app-version/route": "app/api/app-version/route.js",
+  "/api/check-servers/route": "app/api/check-servers/route.js",
+  "/api/genres/route": "app/api/genres/route.js",
+  "/api/movie/[id]/route": "app/api/movie/[id]/route.js",
+  "/api/movies/collection/route": "app/api/movies/collection/route.js",
+  "/api/movies/genre/[id]/route": "app/api/movies/genre/[id]/route.js",
+  "/api/movies/provider/[id]/route": "app/api/movies/provider/[id]/route.js",
+  "/api/movies/studio/[id]/route": "app/api/movies/studio/[id]/route.js",
+  "/api/search/route": "app/api/search/route.js",
+  "/api/trending/[type]/route": "app/api/trending/[type]/route.js",
+  "/api/tv/collection/route": "app/api/tv/collection/route.js",
+  "/api/video-health/[type]/[id]/route": "app/api/video-health/[type]/[id]/route.js",
+  "/api/video-sources/[type]/[id]/route": "app/api/video-sources/[type]/[id]/route.js",
+  "/genre/[id]/page": "app/genre/[id]/page.js",
+  "/movie/[id]/[slug]/page": "app/movie/[id]/[slug]/page.js",
+  "/page": "app/page.js"
+}
