@@ -251,42 +251,64 @@ export default function Home() {
       {/* Navbar */}
       <Navbar onSearchClick={() => setIsSearchOpen(true)} />
 
-      {/* Hero Banner */}
+      {/* Hero Banner (Xbox Game Pass Stage + Neo-Brutalism) */}
       {isLoading ? (
         <BannerSkeleton />
       ) : bannerMovie ? (
-        <div className="relative h-[60vh] md:h-[70vh] w-full">
-          <div className="absolute inset-0">
-            <Image
-              src={`${IMG_URL}${bannerMovie.backdrop_path}`}
-              alt={bannerMovie.title || bannerMovie.name || ''}
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 banner-gradient" />
-          </div>
-          <div className="absolute inset-x-0 bottom-0 px-3 md:px-8 py-6 md:py-10 z-10">
-            <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 max-w-2xl">
-              {bannerMovie.title || bannerMovie.name}
-            </h1>
-            <p className="text-sm md:text-base text-gray-200 max-w-xl mb-3 md:mb-4 line-clamp-2 md:line-clamp-3">
-              {bannerMovie.overview}
-            </p>
-            <div className="flex flex-wrap gap-2 md:gap-3">
-              <button
-                onClick={() => handlePlayClick(bannerMovie)}
-                className="bg-white text-black hover:bg-opacity-80 px-4 md:px-6 py-2 md:py-3 rounded text-sm md:text-base font-bold flex items-center transition"
-              >
-                <Play className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 fill-current" /> Play
-              </button>
-              <button
-                onClick={() => setSelectedMovie(bannerMovie)}
-                className="bg-gray-500/60 hover:bg-gray-600/80 text-white px-4 md:px-6 py-2 md:py-3 rounded text-sm md:text-base font-bold flex items-center transition"
-              >
-                <Info className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" /> More Info
-              </button>
+        <div className="relative pt-20 md:pt-24 pb-4 px-4 md:px-8 w-full max-w-7xl mx-auto font-sans">
+          <div className="relative bg-black border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+            {/* Backdrop Image */}
+            <div className="relative h-[60vh] md:h-[68vh] w-full">
+              <Image
+                src={`${IMG_URL}${bannerMovie.backdrop_path}`}
+                alt={bannerMovie.title || bannerMovie.name || ''}
+                fill
+                className="object-cover opacity-85"
+                priority
+                sizes="100vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+            </div>
+
+            {/* Xbox Console Banner Details Overlay */}
+            <div className="absolute inset-x-0 bottom-0 p-5 md:p-10 z-10 space-y-4">
+              <div className="flex items-center space-x-2">
+                <span className="bg-[#107C10] text-white font-black text-xs uppercase tracking-wider px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  🎮 FEATURED TITLE
+                </span>
+                <span className="bg-[#FFE600] text-black font-black text-xs uppercase tracking-wider px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  4K ULTRA HD
+                </span>
+              </div>
+
+              <h1 className="text-3xl md:text-6xl font-black uppercase text-white tracking-tighter max-w-3xl drop-shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                {bannerMovie.title || bannerMovie.name}
+              </h1>
+
+              <p className="text-xs md:text-base font-bold text-zinc-200 max-w-2xl line-clamp-3 bg-black/80 p-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                {bannerMovie.overview}
+              </p>
+
+              {/* Xbox Action Buttons */}
+              <div className="flex flex-wrap gap-3 pt-1">
+                <button
+                  onClick={() => handlePlayClick(bannerMovie)}
+                  className="bg-[#107C10] hover:bg-[#FFE600] hover:text-black text-white px-6 md:px-8 py-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm font-black uppercase tracking-wider flex items-center space-x-2 hover:-translate-y-0.5 transition-all"
+                >
+                  <span className="bg-black text-[#FFE600] text-[10px] px-1.5 py-0.5 font-mono border border-black">A</span>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>START STREAM</span>
+                </button>
+
+                <button
+                  onClick={() => setSelectedMovie(bannerMovie)}
+                  className="bg-white hover:bg-[#00E5FF] text-black px-6 md:px-8 py-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm font-black uppercase tracking-wider flex items-center space-x-2 hover:-translate-y-0.5 transition-all"
+                >
+                  <span className="bg-black text-white text-[10px] px-1.5 py-0.5 font-mono border border-black">X</span>
+                  <Info className="w-4 h-4" />
+                  <span>DETAILS</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
