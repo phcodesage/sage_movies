@@ -60,6 +60,36 @@ export const VIDEO_SERVERS: VideoServer[] = [
     },
   },
   {
+    id: 'autoembed',
+    label: 'AutoEmbed HD',
+    supportsLang: false,
+    sandboxTolerant: false,
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
+        : `https://player.autoembed.cc/embed/movie/${id}`,
+  },
+  {
+    id: 'vidsrc.in',
+    label: 'VidSrc Direct',
+    supportsLang: false,
+    sandboxTolerant: false,
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://vidsrc.in/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`
+        : `https://vidsrc.in/embed/movie?tmdb=${id}`,
+  },
+  {
+    id: 'vidsrc.net',
+    label: 'VidSrc Net',
+    supportsLang: false,
+    sandboxTolerant: false,
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://vidsrc.net/embed/tv/${id}/${season}/${episode}`
+        : `https://vidsrc.net/embed/movie/${id}`,
+  },
+  {
     id: 'vidsrc.icu',
     label: 'VidSrc ICU (Multi-Server)',
     supportsLang: true,
@@ -98,10 +128,6 @@ export const VIDEO_SERVERS: VideoServer[] = [
   },
 ];
 
-export function getServer(id?: string | null): VideoServer {
-  return (
-    VIDEO_SERVERS.find((s) => s.id === id) ??
-    VIDEO_SERVERS.find((s) => s.id === DEFAULT_SERVER) ??
-    VIDEO_SERVERS[0]
-  );
+export function getServer(id?: string): VideoServer {
+  return VIDEO_SERVERS.find((s) => s.id === id) || VIDEO_SERVERS[0];
 }

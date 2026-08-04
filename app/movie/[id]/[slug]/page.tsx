@@ -183,15 +183,20 @@ export default function MovieDetailPage() {
         // If the current pick is dead, silently switch to the first reachable server so
         // the default the user lands on actually plays. Never overrides a manual pick
         // mid-playback — the probe resolves before anyone hits play.
-        if (!isPlaying && data.servers[server] === 'down') {
+        if (data.servers[server] === 'down') {
           const firstUp = VIDEO_SERVERS.find((s) => data.servers[s.id] === 'up');
-          if (firstUp) setServer(firstUp.id);
+          if (firstUp) {
+            setServer(firstUp.id);
+            if (isPlaying) {
+              loadVideoSource(firstUp.id, lang);
+            }
+          }
         }
       })
       .catch(() => {
         if (reqId === healthReqId.current) setServerHealth({});
       });
-  }, [movie, selectedSeason, selectedEpisode, isPlaying, server]);
+  }, [movie, selectedSeason, selectedEpisode, isPlaying, server, lang]);
 
   useEffect(() => {
     // Auto-probe once per title; manual re-checks go through the button in Stream Settings.
