@@ -146,7 +146,7 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
                       GET SAGEMOVIES APK
                     </h3>
                     <p className="text-[11px] font-bold text-zinc-400">
-                      Official Android App • v1.4.7
+                      Official Android App • v1.5.0
                     </p>
                   </div>
                 </div>
