@@ -21,8 +21,9 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
   const rowRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [hoveredMovie, setHoveredMovie] = useState<TMDBMovie | null>(null);
-  const [cardPosition, setCardPosition] = useState({ top: 0, left: 0 });
+  const [cardPosition, setCardPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const hoverTimer = useRef<NodeJS.Timeout | null>(null);
+  const leaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleMovieClick = (movie: TMDBMovie) => {
     const slug = (movie.title || movie.name || '')
@@ -34,12 +35,16 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
   };
 
   const handleMouseEnter = (movie: TMDBMovie, event: React.MouseEvent<HTMLDivElement>) => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    
     const target = event.currentTarget;
     hoverTimer.current = setTimeout(() => {
       const rect = target.getBoundingClientRect();
       setCardPosition({
         top: rect.top,
         left: rect.left,
+        width: rect.width,
+        height: rect.height,
       });
       setHoveredMovie(movie);
     }, 500);
@@ -49,6 +54,9 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
     if (hoverTimer.current) {
       clearTimeout(hoverTimer.current);
     }
+    leaveTimer.current = setTimeout(() => {
+      setHoveredMovie(null);
+    }, 300);
   };
 
   const scroll = (direction: 'left' | 'right') => {
@@ -59,7 +67,10 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
     }
   };
 
-  const previewPos = { x: cardPosition.left + 70, y: cardPosition.top };
+  const previewPos = { 
+    x: cardPosition.left + (cardPosition.width || 170) / 2, 
+    y: cardPosition.top + (cardPosition.height || 250) / 2 
+  };
 
   return (
     <section id={id} className="relative my-8 px-4 md:px-8 group font-sans">
@@ -166,6 +177,9 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
           isVisible={Boolean(hoveredMovie)}
           onClose={() => setHoveredMovie(null)}
           onPlay={() => handleMovieClick(hoveredMovie)}
+          onMouseEnter={() => {
+            if (leaveTimer.current) clearTimeout(leaveTimer.current);
+          }}
         />
       )}
     </section>

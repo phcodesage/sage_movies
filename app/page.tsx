@@ -43,6 +43,12 @@ export default function Home() {
   const [trendingTV, setTrendingTV] = useState<TMDBMovie[]>([]);
   const [anime, setAnime] = useState<TMDBMovie[]>([]);
   const [actionMovies, setActionMovies] = useState<TMDBMovie[]>([]);
+  const [latestMovies, setLatestMovies] = useState<TMDBMovie[]>([]);
+  const [topRatedMovies, setTopRatedMovies] = useState<TMDBMovie[]>([]);
+  const [bannerTrailerKey, setBannerTrailerKey] = useState<string | null>(null);
+  const bannerTrailerKeyRef = useRef<string | null>(null);
+  const [isHoveringBanner, setIsHoveringBanner] = useState(false);
+  const isHoveringBannerRef = useRef(false);
   const [serviceRows, setServiceRows] = useState<Record<number, TMDBMovie[]>>({});
   const [bannerMovie, setBannerMovie] = useState<TMDBMovie | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
@@ -72,6 +78,34 @@ export default function Home() {
   const { history: watchHistory } = useWatchHistory();
   const { genres } = useAppContext();
   const router = useRouter();
+
+  useEffect(() => {
+    isHoveringBannerRef.current = isHoveringBanner;
+  }, [isHoveringBanner]);
+
+  useEffect(() => {
+    bannerTrailerKeyRef.current = bannerTrailerKey;
+  }, [bannerTrailerKey]);
+
+  useEffect(() => {
+    if (bannerMovie) {
+      setBannerTrailerKey(null);
+      const type = bannerMovie.first_air_date ? 'tv' : 'movie';
+      fetch(`/api/movie/${bannerMovie.id}?type=${type}&v=2`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.videos && data.videos.results) {
+            const trailer = data.videos.results.find(
+              (v: any) => v.type === 'Trailer' && v.site === 'YouTube'
+            );
+            if (trailer) {
+              setBannerTrailerKey(trailer.key);
+            }
+          }
+        })
+        .catch(console.error);
+    }
+  }, [bannerMovie]);
 
   // Compute recommendations
   useEffect(() => {
@@ -103,11 +137,13 @@ export default function Home() {
       try {
         setIsLoading(true);
 
-        const [movieRes, tvRes, animeRes, actionRes, ...serviceRes] = await Promise.all([
+        const [movieRes, tvRes, animeRes, actionRes, latestRes, topRatedRes, ...serviceRes] = await Promise.all([
           fetch('/api/movies/collection').then((res) => res.json()),
           fetch('/api/tv/collection').then((res) => res.json()),
           fetch('/api/anime/collection').then((res) => res.json()),
           fetch('/api/movies/genre/28').then((res) => res.json()),
+          fetch('/api/movies/latest').then((res) => res.json()),
+          fetch('/api/movies/top-rated').then((res) => res.json()),
           ...STREAMING_SERVICES.map((s) =>
             s.isCompany
               ? fetch(`/api/movies/studio/${s.id}`)
@@ -124,6 +160,8 @@ export default function Home() {
         setTrendingTV((tvRes as any).results || []);
         setAnime((animeRes as any).results || []);
         setActionMovies((actionRes as any).results || []);
+        setLatestMovies((latestRes as any).results || []);
+        setTopRatedMovies((topRatedRes as any).results || []);
 
         const services: Record<string | number, TMDBMovie[]> = {};
         STREAMING_SERVICES.forEach((s, i) => {
@@ -137,6 +175,8 @@ export default function Home() {
           ...((tvRes as any).results || []),
           ...((animeRes as any).results || []),
           ...((actionRes as any).results || []),
+          ...((latestRes as any).results || []),
+          ...((topRatedRes as any).results || []),
           ...Object.values(services).flat(),
         ];
         const unique = Array.from(new Map(all.map((item) => [item.id, item])).values());
@@ -148,9 +188,11 @@ export default function Home() {
           // Start banner rotation
           let index = 0;
           bannerIntervalRef.current = setInterval(() => {
+            // If hovering, pause rotation
+            if (isHoveringBannerRef.current) return;
             index = (index + 1) % Math.min(movies.length, 10);
             setBannerMovie(movies[index]);
-          }, 5000);
+          }, 6000);
         }
       } catch (error) {
         console.error('Error initializing app:', error);
@@ -256,9 +298,13 @@ export default function Home() {
         <BannerSkeleton />
       ) : bannerMovie ? (
         <div className="relative pt-20 md:pt-24 pb-4 px-4 md:px-8 w-full max-w-7xl mx-auto font-sans">
-          <div className="relative bg-black border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+          <div 
+            className="relative bg-black border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
+            onMouseEnter={() => setIsHoveringBanner(true)}
+            onMouseLeave={() => setIsHoveringBanner(false)}
+          >
             {/* Backdrop Image */}
-            <div className="relative h-[60vh] md:h-[68vh] w-full">
+            <div className={`relative h-[60vh] md:h-[68vh] w-full transition-opacity duration-1000 ${bannerTrailerKey ? 'opacity-0' : 'opacity-100'}`}>
               <Image
                 src={`${IMG_URL}${bannerMovie.backdrop_path}`}
                 alt={bannerMovie.title || bannerMovie.name || ''}
@@ -269,6 +315,18 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             </div>
+
+            {/* Trailer Video */}
+            {bannerTrailerKey && (
+              <div className="absolute inset-0 z-0 pointer-events-none w-full h-[60vh] md:h-[68vh] overflow-hidden">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${bannerTrailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&start=4`}
+                  allow="autoplay; encrypted-media"
+                  className="w-full h-full border-none transform scale-[1.35] origin-center opacity-85"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              </div>
+            )}
 
             {/* Xbox Console Banner Details Overlay */}
             <div className="absolute inset-x-0 bottom-0 p-5 md:p-10 z-10 space-y-4">
@@ -367,6 +425,20 @@ export default function Home() {
                 }
               />
             )}
+            {latestMovies.length > 0 && (
+              <MovieRow
+                title="Latest Releases"
+                items={latestMovies}
+                id="latest"
+                onSeeAll={() =>
+                  setSeeAllData({
+                    title: 'Latest Releases',
+                    items: latestMovies,
+                    category: 'latest',
+                  })
+                }
+              />
+            )}
             <MovieRow
               title={
                 selectedGenre
@@ -393,6 +465,20 @@ export default function Home() {
                 setSeeAllData({ title: 'Action Movies', items: actionMovies, category: '28' })
               }
             />
+            {topRatedMovies.length > 0 && (
+              <MovieRow
+                title="Top Rated Movies"
+                items={topRatedMovies}
+                id="top-rated"
+                onSeeAll={() =>
+                  setSeeAllData({
+                    title: 'Top Rated Movies',
+                    items: topRatedMovies,
+                    category: 'top_rated',
+                  })
+                }
+              />
+            )}
             {/* Native banner sits between rows so it reads as another content shelf
                 rather than an interruption. Move it if it underperforms here. */}
             <AdsterraNativeBanner />

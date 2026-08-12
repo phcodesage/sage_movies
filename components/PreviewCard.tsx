@@ -15,30 +15,29 @@ interface PreviewCardProps {
   position: { x: number; y: number };
   onClose: () => void;
   onPlay: (movie: TMDBMovie) => void;
+  onMouseEnter?: () => void;
 }
 
-export default function PreviewCard({ movie, isVisible, position, onClose, onPlay }: PreviewCardProps) {
+export default function PreviewCard({ movie, isVisible, position, onClose, onPlay, onMouseEnter }: PreviewCardProps) {
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
-  const [embedUrl, setEmbedUrl] = useState('');
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (isVisible && movie) {
-      // Small delay before loading the preview to save bandwidth
-      const timer = setTimeout(() => {
-        const type = movie.first_air_date ? 'tv' : 'movie';
-        // Use a fast server for preview
-        setEmbedUrl(`https://vidsrc.to/embed/${type}/${movie.id}?autoplay=1&mute=1`);
-      }, 500);
-
-      const readyTimer = setTimeout(() => setIsReady(true), 1500);
-      
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(readyTimer);
-        setEmbedUrl('');
-        setIsReady(false);
-      };
+      const type = movie.first_air_date ? 'tv' : 'movie';
+      fetch(`/api/movie/${movie.id}?type=${type}&v=2`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.videos && data.videos.results) {
+            const trailer = data.videos.results.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube');
+            if (trailer) {
+              setTrailerKey(trailer.key);
+            }
+          }
+        })
+        .catch(console.error);
+    } else {
+      setTrailerKey(null);
     }
   }, [isVisible, movie]);
 
@@ -54,47 +53,44 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
           className="fixed z-[100] w-[300px] md:w-[350px] bg-netflix-dark rounded-lg shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden border border-gray-800"
           style={{ 
             left: Math.min(Math.max(20, position.x - 175), window.innerWidth - 370), 
-            top: Math.min(Math.max(20, position.y - 200), window.innerHeight - 450)
+            top: Math.min(Math.max(20, position.y - 175), window.innerHeight - 450)
           }}
+          onMouseEnter={onMouseEnter}
           onMouseLeave={onClose}
         >
           {/* Preview Area */}
-          <div className="relative aspect-video bg-black">
-            {embedUrl && (
-              <iframe
-                src={embedUrl}
-                className={cn(
-                  "w-full h-full border-none transition-opacity duration-500",
-                  isReady ? "opacity-100" : "opacity-0"
-                )}
-                allow="autoplay"
-              />
-            )}
+          <div className="relative aspect-video bg-black overflow-hidden">
             
-            {/* Fallback/Loading Backdrop */}
-            <div className={cn(
-              "absolute inset-0 transition-opacity duration-500",
-              isReady ? "opacity-0 pointer-events-none" : "opacity-100"
-            )}>
+            {/* Backdrop Fallback */}
+            <div className={cn("absolute inset-0 transition-opacity duration-500", trailerKey ? "opacity-0" : "opacity-100")}>
               <Image 
                 src={`${IMG_URL}${movie.backdrop_path || movie.poster_path}`}
                 alt={movie.title || movie.name || ''}
                 fill
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                <div className="w-10 h-10 border-2 border-netflix-red border-t-transparent rounded-full animate-spin" />
-              </div>
             </div>
 
-            <div className="absolute top-2 right-2 flex gap-2">
-              <button 
-                onClick={() => setIsMuted(!isMuted)}
-                className="p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-            </div>
+            {trailerKey && (
+              <div className="absolute inset-0 z-10 pointer-events-none w-full h-full">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&modestbranding=1&rel=0&playsinline=1&start=4`}
+                  allow="autoplay; encrypted-media"
+                  className="w-full h-full border-none transform scale-[1.35] origin-center"
+                />
+              </div>
+            )}
+
+            {trailerKey && (
+              <div className="absolute top-2 right-2 flex gap-2 z-20">
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
+                >
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Info Area */}
