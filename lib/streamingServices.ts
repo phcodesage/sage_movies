@@ -102,11 +102,12 @@ export function matchSearchBrand(query: string): SearchBrand | undefined {
 
 export const STREAMING_SERVICES: StreamingService[] = [
   {
-    id: 'vivamax',
+    id: 149142,
     name: 'Vivamax',
     shortName: 'Vivamax',
     rowId: 'vivamax',
     logoPath: 'https://image.tmdb.org/t/p/w92/25oYoXHsfWYlddAzJSBReajN3BM.png',
+    isCompany: true,
   },
   {
     id: 8,
@@ -158,7 +159,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     logoPath: 'https://image.tmdb.org/t/p/w92/bxBlRPEPpMVDc4jMhSrTf2339DW.jpg',
   },
   {
-    id: 'warner',
+    id: 174,
     name: 'Warner Bros',
     shortName: 'Warner Bros',
     rowId: 'warner',
@@ -166,7 +167,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     isCompany: true,
   },
   {
-    id: 'marvel',
+    id: 420,
     name: 'Marvel',
     shortName: 'Marvel',
     rowId: 'marvel',
@@ -174,7 +175,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     isCompany: true,
   },
   {
-    id: 'universal',
+    id: 33,
     name: 'Universal Pictures',
     shortName: 'Universal',
     rowId: 'universal',
@@ -182,7 +183,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     isCompany: true,
   },
   {
-    id: 'sony',
+    id: 34,
     name: 'Sony Pictures',
     shortName: 'Sony',
     rowId: 'sony',
@@ -190,7 +191,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     isCompany: true,
   },
   {
-    id: 'a24',
+    id: 41077,
     name: 'A24',
     shortName: 'A24',
     rowId: 'a24',

@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  // Serve the APK from this deployment (public/sagemovies-latest.apk).
-  // Cloudflare R2 (*.r2.dev) previously used here is currently unreachable.
-  const origin = request.nextUrl.origin;
-  const apkUrl = `${origin}/sagemovies-latest.apk`;
+export async function GET() {
+  // Cloudflare R2 serves the APK through a Worker, keeping it out of Netlify.
+  const defaultApkUrl =
+    'https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-latest.apk';
+  const configuredApkUrl = process.env.NEXT_PUBLIC_ANDROID_APK_URL?.trim();
+  const apkUrl = configuredApkUrl?.startsWith('https://')
+    ? configuredApkUrl
+    : defaultApkUrl;
 
   return NextResponse.json({
     latest_version: '1.5.0',

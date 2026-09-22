@@ -1,5 +1,36 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    const downloadsOrigin = 'https://sagemovies-downloads.rechceltoledo.workers.dev';
+
+    return [
+      {
+        source: '/sagemovies-latest.apk',
+        destination: `${downloadsOrigin}/sagemovies-latest.apk`,
+        permanent: true,
+      },
+      {
+        source: '/sagemovies-v1.4.7.apk',
+        destination: `${downloadsOrigin}/sagemovies-v1.4.7.apk`,
+        permanent: true,
+      },
+      {
+        source: '/sagemovies-v1.5.0.apk',
+        destination: `${downloadsOrigin}/sagemovies-v1.5.0.apk`,
+        permanent: true,
+      },
+      {
+        source: '/downloads/sagemovies-v1.4.8.apk',
+        destination: `${downloadsOrigin}/sagemovies-v1.4.8.apk`,
+        permanent: true,
+      },
+      {
+        source: '/downloads/sagemovies-v1.5.0.apk',
+        destination: `${downloadsOrigin}/sagemovies-v1.5.0.apk`,
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -32,7 +63,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
-  allowedDevOrigins: ['192.168.0.100']
+  allowedDevOrigins: ['192.168.0.100'],
 };
 
 export default nextConfig;

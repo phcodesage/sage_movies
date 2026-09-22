@@ -50,7 +50,8 @@ export default function DownloadAppModal({ isOpen, onClose }: DownloadAppModalPr
   const [showcaseMovie, setShowcaseMovie] = useState(FEATURED_SHOWCASE_MOVIES[0]);
 
   const downloadUrl =
-    process.env.NEXT_PUBLIC_ANDROID_APK_URL || '/sagemovies-latest.apk';
+    process.env.NEXT_PUBLIC_ANDROID_APK_URL ||
+    'https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-latest.apk';
 
   useEffect(() => {
     if (isOpen) {

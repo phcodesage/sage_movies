@@ -121,14 +121,20 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
               >
                 {/* Xbox Game Tile Box (Neo-Brutalism) */}
                 <div className="relative h-[180px] md:h-[250px] bg-black border-4 border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] group-hover/poster:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group-hover/poster:-translate-x-1 group-hover/poster:-translate-y-1 transition-all duration-200 overflow-hidden">
-                  <Image
-                    src={`${THUMB_URL}${item.poster_path}`}
-                    alt={item.title || item.name || ''}
-                    fill
-                    className="object-cover"
-                    loading="lazy"
-                    sizes="(max-width: 768px) 120px, 170px"
-                  />
+                  {item.poster_path ? (
+                    <Image
+                      src={`${THUMB_URL}${item.poster_path}`}
+                      alt={item.title || item.name || ''}
+                      fill
+                      className="object-cover"
+                      loading="lazy"
+                      sizes="(max-width: 768px) 120px, 170px"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-zinc-900 px-3 text-center text-[10px] font-black uppercase text-zinc-400">
+                      Poster unavailable
+                    </div>
+                  )}
 
                   {/* Top Xbox Tag Badge */}
                   <div className="absolute top-2 left-2 z-20 bg-black text-[#FFE600] text-[9px] font-black uppercase px-2 py-0.5 border border-black font-mono">

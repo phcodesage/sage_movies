@@ -68,6 +68,7 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
                 alt={movie.title || movie.name || ''}
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 300px, 350px"
               />
             </div>
 

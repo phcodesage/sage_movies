@@ -1,0 +1,8 @@
+name = "sagemovies-downloads"
+main = "download-worker.mjs"
+compatibility_date = "2026-09-22"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "RELEASES"
+bucket_name = "sagemovies-releases"

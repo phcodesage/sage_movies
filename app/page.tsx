@@ -46,7 +46,6 @@ export default function Home() {
   const [latestMovies, setLatestMovies] = useState<TMDBMovie[]>([]);
   const [topRatedMovies, setTopRatedMovies] = useState<TMDBMovie[]>([]);
   const [bannerTrailerKey, setBannerTrailerKey] = useState<string | null>(null);
-  const bannerTrailerKeyRef = useRef<string | null>(null);
   const [isHoveringBanner, setIsHoveringBanner] = useState(false);
   const isHoveringBannerRef = useRef(false);
   const [serviceRows, setServiceRows] = useState<Record<number, TMDBMovie[]>>({});
@@ -84,28 +83,31 @@ export default function Home() {
   }, [isHoveringBanner]);
 
   useEffect(() => {
-    bannerTrailerKeyRef.current = bannerTrailerKey;
-  }, [bannerTrailerKey]);
+    // Trailer lookups and YouTube playback are expensive. Loading them only after a
+    // deliberate hover keeps the first paint focused on the poster artwork and stops
+    // the rotating banner from issuing a new detail request every six seconds.
+    if (!bannerMovie || !isHoveringBanner) return;
 
-  useEffect(() => {
-    if (bannerMovie) {
-      setBannerTrailerKey(null);
-      const type = bannerMovie.first_air_date ? 'tv' : 'movie';
-      fetch(`/api/movie/${bannerMovie.id}?type=${type}&v=2`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.videos && data.videos.results) {
-            const trailer = data.videos.results.find(
-              (v: any) => v.type === 'Trailer' && v.site === 'YouTube'
-            );
-            if (trailer) {
-              setBannerTrailerKey(trailer.key);
-            }
-          }
-        })
-        .catch(console.error);
-    }
-  }, [bannerMovie]);
+    let cancelled = false;
+    const type = bannerMovie.first_air_date ? 'tv' : 'movie';
+    fetch(`/api/movie/${bannerMovie.id}?type=${type}&v=2`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled || !data.videos?.results) return;
+        const trailer = data.videos.results.find(
+          (video: { type?: string; site?: string }) =>
+            video.type === 'Trailer' && video.site === 'YouTube'
+        );
+        setBannerTrailerKey(trailer?.key ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setBannerTrailerKey(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bannerMovie, isHoveringBanner]);
 
   // Compute recommendations
   useEffect(() => {
@@ -131,29 +133,55 @@ export default function Home() {
     router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
   };
 
-  // Fetch initial collections and services in parallel
+  // Fetch the shelves people see first, then defer provider shelves until the page is
+  // usable. The old request fan-out loaded 19 API routes (and about 32 TMDB requests)
+  // before removing the full-page loader.
   useEffect(() => {
+    let cancelled = false;
+    let serviceLoadTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const toUniqueMovies = (items: TMDBMovie[]) =>
+      Array.from(new Map(items.map((item) => [item.id, item])).values());
+
+    const loadServiceRows = async () => {
+      const serviceResults = await Promise.all(
+        STREAMING_SERVICES.map((service) => {
+          const endpoint = service.isCompany
+            ? `/api/movies/studio/${service.id}`
+            : `/api/movies/provider/${service.id}`;
+
+          return fetch(endpoint)
+            .then((res) => res.json())
+            .catch(() => ({ results: [] }));
+        })
+      );
+
+      if (cancelled) return;
+
+      const services: Record<string | number, TMDBMovie[]> = {};
+      STREAMING_SERVICES.forEach((service, index) => {
+        services[service.id] = serviceResults[index]?.results || [];
+      });
+      setServiceRows(services);
+      setAllFetchedData((current) =>
+        toUniqueMovies([...current, ...Object.values(services).flat()])
+      );
+    };
+
     async function loadData() {
       try {
         setIsLoading(true);
 
-        const [movieRes, tvRes, animeRes, actionRes, latestRes, topRatedRes, ...serviceRes] = await Promise.all([
+        const [movieRes, tvRes, animeRes, actionRes, latestRes, topRatedRes] = await Promise.all([
           fetch('/api/movies/collection').then((res) => res.json()),
           fetch('/api/tv/collection').then((res) => res.json()),
           fetch('/api/anime/collection').then((res) => res.json()),
           fetch('/api/movies/genre/28').then((res) => res.json()),
           fetch('/api/movies/latest').then((res) => res.json()),
           fetch('/api/movies/top-rated').then((res) => res.json()),
-          ...STREAMING_SERVICES.map((s) =>
-            s.isCompany
-              ? fetch(`/api/movies/studio/${s.id}`)
-                  .then((res) => res.json())
-                  .catch(() => ({ results: [] }))
-              : fetch(`/api/movies/provider/${s.id}`)
-                  .then((res) => res.json())
-                  .catch(() => ({ results: [] }))
-          ),
         ]);
+
+        if (cancelled) return;
 
         const movies = (movieRes as any).results || [];
         setTrendingMovies(movies);
@@ -163,12 +191,6 @@ export default function Home() {
         setLatestMovies((latestRes as any).results || []);
         setTopRatedMovies((topRatedRes as any).results || []);
 
-        const services: Record<string | number, TMDBMovie[]> = {};
-        STREAMING_SERVICES.forEach((s, i) => {
-          services[s.id] = (serviceRes[i] as any).results || [];
-        });
-        setServiceRows(services);
-
         // Flatten all for recommendation pool
         const all = [
           ...movies,
@@ -177,10 +199,8 @@ export default function Home() {
           ...((actionRes as any).results || []),
           ...((latestRes as any).results || []),
           ...((topRatedRes as any).results || []),
-          ...Object.values(services).flat(),
         ];
-        const unique = Array.from(new Map(all.map((item) => [item.id, item])).values());
-        setAllFetchedData(unique);
+        setAllFetchedData(toUniqueMovies(all));
 
         if (movies.length > 0) {
           setBannerMovie(movies[0]);
@@ -194,16 +214,23 @@ export default function Home() {
             setBannerMovie(movies[index]);
           }, 6000);
         }
+
+        // Let the browser paint and respond to input before loading the lower shelves.
+        serviceLoadTimer = setTimeout(() => {
+          void loadServiceRows();
+        }, 1200);
       } catch (error) {
-        console.error('Error initializing app:', error);
+        if (!cancelled) console.error('Error initializing app:', error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
     loadData();
 
     return () => {
+      cancelled = true;
       if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+      if (serviceLoadTimer) clearTimeout(serviceLoadTimer);
     };
   }, []);
 
@@ -301,12 +328,15 @@ export default function Home() {
           <div 
             className="relative bg-black border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
             onMouseEnter={() => setIsHoveringBanner(true)}
-            onMouseLeave={() => setIsHoveringBanner(false)}
+            onMouseLeave={() => {
+              setIsHoveringBanner(false);
+              setBannerTrailerKey(null);
+            }}
           >
             {/* Backdrop Image */}
             <div className={`relative h-[60vh] md:h-[68vh] w-full transition-opacity duration-1000 ${bannerTrailerKey ? 'opacity-0' : 'opacity-100'}`}>
               <Image
-                src={`${IMG_URL}${bannerMovie.backdrop_path}`}
+                src={`${IMG_URL}${bannerMovie.backdrop_path || bannerMovie.poster_path}`}
                 alt={bannerMovie.title || bannerMovie.name || ''}
                 fill
                 className="object-cover opacity-85"
