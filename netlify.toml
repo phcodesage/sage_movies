@@ -1,0 +1,10 @@
+[build]
+  edge_functions = "netlify/edge-functions"
+
+[[edge_functions]]
+  path = "/api/*"
+  function = "api-rate-limit"
+
+[[edge_functions]]
+  path = "/api/video-health/*"
+  function = "video-health-rate-limit"
