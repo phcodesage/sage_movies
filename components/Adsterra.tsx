@@ -35,7 +35,11 @@ const DIRECT_LINK = process.env.NEXT_PUBLIC_ADSTERRA_DIRECT_LINK ?? '';
  */
 function isAppDownloaded(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem('sagemovies_app_downloaded') === 'true';
+  try {
+    return localStorage.getItem('sagemovies_app_downloaded') === 'true';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -60,8 +64,7 @@ const NATIVE_BANNER_SRC =
   'https://pl30470198.effectivecpmnetwork.com/7abdf4c8f0cb2b40ae9d9f5fece86bd7/invoke.js';
 const NATIVE_BANNER_CONTAINER_ID = 'container-7abdf4c8f0cb2b40ae9d9f5fece86bd7';
 
-const GLOBAL_LAYOUT_AD_SRC =
-  'https://regaincocoa.com/0b/05/3c/0b053ca6d8fa77c3cd61797ebae4b7bb.js';
+const GLOBAL_LAYOUT_AD_SRC = 'https://regaincocoa.com/0b/05/3c/0b053ca6d8fa77c3cd61797ebae4b7bb.js';
 
 /** Append a vendor script once, and remove it on unmount. */
 function useAdScript(src: string, enabled: boolean, parent?: React.RefObject<HTMLElement | null>) {
@@ -92,7 +95,13 @@ export function AdsterraSocialBar() {
 
 export function AdsterraGlobalScript() {
   const { hasDownloadedApp } = useAppContext();
-  const active = ENABLED && !hasDownloadedApp && !isAppDownloaded();
+  // This popunder injects a full-page click layer which can cover player controls.
+  // Keep it explicitly opt-in; ordinary native banner units use the existing flag.
+  const active =
+    ENABLED &&
+    process.env.NEXT_PUBLIC_ADSTERRA_POPUNDER_ENABLED === 'true' &&
+    !hasDownloadedApp &&
+    !isAppDownloaded();
 
   useAdScript(GLOBAL_LAYOUT_AD_SRC, active);
   return null;

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { TMDBMovie } from '../types/tmdb';
 import { cn } from '../lib/utils';
 
-const IMG_URL = 'https://image.tmdb.org/t/p/original';
+const IMG_URL = 'https://image.tmdb.org/t/p/w780';
 const trailerCache = new Map<string, string | null>();
 
 interface PreviewCardProps {
@@ -19,7 +19,14 @@ interface PreviewCardProps {
   onMouseEnter?: () => void;
 }
 
-export default function PreviewCard({ movie, isVisible, position, onClose, onPlay, onMouseEnter }: PreviewCardProps) {
+export default function PreviewCard({
+  movie,
+  isVisible,
+  position,
+  onClose,
+  onPlay,
+  onMouseEnter,
+}: PreviewCardProps) {
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
 
@@ -29,14 +36,16 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
       const cacheKey = `${type}:${movie.id}`;
 
       if (trailerCache.has(cacheKey)) {
-        setTrailerKey(trailerCache.get(cacheKey) ?? null);
-        return;
+        const frame = requestAnimationFrame(() =>
+          setTrailerKey(trailerCache.get(cacheKey) ?? null)
+        );
+        return () => cancelAnimationFrame(frame);
       }
 
       let cancelled = false;
       fetch(`/api/movie/${movie.id}?type=${type}&v=2`)
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           const trailer = data.videos?.results?.find(
             (video: { type?: string; site?: string; key?: string }) =>
               video.type === 'Trailer' && video.site === 'YouTube'
@@ -54,7 +63,8 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
         cancelled = true;
       };
     } else {
-      setTrailerKey(null);
+      const frame = requestAnimationFrame(() => setTrailerKey(null));
+      return () => cancelAnimationFrame(frame);
     }
   }, [isVisible, movie]);
 
@@ -68,20 +78,28 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8 }}
           className="fixed z-[100] w-[300px] md:w-[350px] bg-netflix-dark rounded-lg shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden border border-gray-800"
-          style={{ 
-            left: Math.min(Math.max(20, position.x - 175), window.innerWidth - 370), 
-            top: Math.min(Math.max(20, position.y - 175), window.innerHeight - 450)
+          style={{
+            left: Math.min(Math.max(20, position.x - 175), window.innerWidth - 370),
+            top: Math.min(Math.max(20, position.y - 175), window.innerHeight - 450),
           }}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onClose}
         >
           {/* Preview Area */}
           <div className="relative aspect-video bg-black overflow-hidden">
-            
             {/* Backdrop Fallback */}
-            <div className={cn("absolute inset-0 transition-opacity duration-500", trailerKey ? "opacity-0" : "opacity-100")}>
-              <Image 
-                src={`${IMG_URL}${movie.backdrop_path || movie.poster_path}`}
+            <div
+              className={cn(
+                'absolute inset-0 transition-opacity duration-500',
+                trailerKey ? 'opacity-0' : 'opacity-100'
+              )}
+            >
+              <Image
+                src={
+                  movie.backdrop_path || movie.poster_path
+                    ? `${IMG_URL}${movie.backdrop_path || movie.poster_path}`
+                    : '/poster-placeholder.svg'
+                }
                 alt={movie.title || movie.name || ''}
                 fill
                 className="object-cover"
@@ -101,7 +119,7 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
 
             {trailerKey && (
               <div className="absolute top-2 right-2 flex gap-2 z-20">
-                <button 
+                <button
                   onClick={() => setIsMuted(!isMuted)}
                   className="p-1.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
                 >
@@ -114,7 +132,7 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
           {/* Info Area */}
           <div className="p-4 flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => onPlay(movie)}
                 className="w-10 h-10 bg-white hover:bg-gray-200 text-black rounded-full flex items-center justify-center transition-colors active:scale-90"
               >
@@ -131,11 +149,19 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
             </div>
 
             <div className="flex flex-col">
-              <h4 className="text-white font-black text-lg line-clamp-1">{movie.title || movie.name}</h4>
+              <h4 className="text-white font-black text-lg line-clamp-1">
+                {movie.title || movie.name}
+              </h4>
               <div className="flex items-center gap-2 mt-1 text-sm">
-                <span className="text-green-500 font-bold">{(movie.vote_average * 10).toFixed(0)}% Match</span>
-                <span className="text-gray-400 font-bold">{movie.release_date?.split('-')[0] || movie.first_air_date?.split('-')[0]}</span>
-                <span className="border border-gray-600 px-1 rounded text-[10px] text-gray-400 font-bold">HD</span>
+                <span className="text-green-500 font-bold">
+                  {(movie.vote_average * 10).toFixed(0)}% Match
+                </span>
+                <span className="text-gray-400 font-bold">
+                  {movie.release_date?.split('-')[0] || movie.first_air_date?.split('-')[0]}
+                </span>
+                <span className="border border-gray-600 px-1 rounded text-[10px] text-gray-400 font-bold">
+                  HD
+                </span>
               </div>
             </div>
 

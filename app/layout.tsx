@@ -1,7 +1,7 @@
 import './globals.css';
 import React, { ReactNode } from 'react';
-import { Metadata } from 'next';
-import Script from 'next/script';
+import { Metadata, Viewport } from 'next';
+import PWAProvider from '../components/PWAProvider';
 import ErrorBoundary from '../components/ErrorBoundary';
 import MaintenancePage from '../components/MaintenancePage';
 import { AppProvider } from '../lib/context/AppContext';
@@ -10,6 +10,14 @@ import { AdsterraSocialBar, AdsterraGlobalScript } from '../components/Adsterra'
 import { WebSiteStructuredData, OrganizationStructuredData } from '../components/StructuredData';
 
 export const metadata: Metadata = {
+  applicationName: 'Sage Movies',
+  manifest: '/manifest.json',
+  appleWebApp: { capable: true, title: 'Sage Movies', statusBarStyle: 'black-translucent' },
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   title: {
     default: 'Sage Movies - Free Movies, TV Shows & Anime Streaming',
     template: '%s | Sage Movies',
@@ -67,6 +75,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#0f1015',
+};
+
 interface RootLayoutProps {
   children: ReactNode;
 }
@@ -77,21 +92,19 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <link
-          rel="icon"
-          href="https://ui-avatars.com/api/?name=SM&background=e50914&color=fff&rounded=true&size=32"
-          type="image/png"
-        />
+        <link rel="preconnect" href="https://image.tmdb.org" />
         <WebSiteStructuredData />
         <OrganizationStructuredData />
       </head>
       <body className="bg-netflix-black text-white min-h-screen font-sans">
         <ErrorBoundary>
           <AppProvider>
-            <WebVitals />
-            {isMaintenanceMode ? <MaintenancePage /> : children}
-            <AdsterraSocialBar />
-            <AdsterraGlobalScript />
+            <PWAProvider>
+              <WebVitals />
+              {isMaintenanceMode ? <MaintenancePage /> : children}
+              <AdsterraSocialBar />
+              <AdsterraGlobalScript />
+            </PWAProvider>
           </AppProvider>
         </ErrorBoundary>
       </body>

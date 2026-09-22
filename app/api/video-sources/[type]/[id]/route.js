@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getServer, DEFAULT_LANG, SUBTITLE_LANGUAGES } from '../../../../../lib/videoServers';
+import {
+  getServer,
+  DEFAULT_LANG,
+  SUBTITLE_LANGUAGES,
+  parseEpisodeNumber,
+} from '../../../../../lib/videoServers';
 
 export async function GET(request, { params }) {
   const resolvedParams = await params;
@@ -10,15 +15,18 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
-  const server = getServer(searchParams.get('server'));
+  const server = getServer(searchParams.get('server'), type);
 
   const requestedLang = searchParams.get('lang') || DEFAULT_LANG;
   const lang = SUBTITLE_LANGUAGES.some((l) => l.code === requestedLang)
     ? requestedLang
     : DEFAULT_LANG;
 
-  const season = parseInt(searchParams.get('season') || '1', 10) || 1;
-  const episode = parseInt(searchParams.get('episode') || '1', 10) || 1;
+  const season = parseEpisodeNumber(searchParams.get('season'));
+  const episode = parseEpisodeNumber(searchParams.get('episode'));
+  if (season === null || episode === null) {
+    return NextResponse.json({ error: 'Invalid season or episode' }, { status: 400 });
+  }
 
   const embedURL = server.build(type, id, {
     lang: server.supportsLang ? lang : undefined,

@@ -20,6 +20,29 @@ body {
 }
 
 /* Custom Scrollbar */
+.safe-top {
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+}
+
+.player-shell {
+  height: 100vh;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+@media (display-mode: standalone) {
+  html {
+    scroll-padding-top: calc(6rem + env(safe-area-inset-top));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

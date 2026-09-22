@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { TMDBMovie } from '../../types/tmdb';
 import { getCachedRequest, setCachedRequest } from '../utils/requestCache';
+import { fetchJSON } from '../utils/fetchJSON';
 
 interface UseSearchReturn {
   query: string;
@@ -15,13 +16,8 @@ export function useSearch(debounceMs: number = 500): UseSearchReturn {
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    if (!query) {
-      setResults([]);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
+    if (!query.trim()) return;
+    const controller = new AbortController();
     const delayDebounce = setTimeout(async () => {
       try {
         const cacheKey = `search-${query}`;
@@ -33,20 +29,33 @@ export function useSearch(debounceMs: number = 500): UseSearchReturn {
           return;
         }
 
-        const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-        const data = await res.json();
+        const data = await fetchJSON<{ results?: TMDBMovie[] }>(
+          `/api/search?query=${encodeURIComponent(query.trim())}`,
+          { signal: controller.signal },
+          10000
+        );
+        if (controller.signal.aborted) return;
         const searchResults = data.results || [];
 
         setResults(searchResults);
         setCachedRequest(cacheKey, searchResults);
       } catch (error) {
-        console.error('Search error:', error);
+        if (!controller.signal.aborted) console.error('Search error:', error);
       } finally {
-        setIsSearching(false);
+        if (!controller.signal.aborted) setIsSearching(false);
       }
     }, debounceMs);
-    return () => clearTimeout(delayDebounce);
+    return () => {
+      clearTimeout(delayDebounce);
+      controller.abort();
+    };
   }, [query, debounceMs]);
 
-  return { query, setQuery, results, isSearching };
+  const updateQuery = (value: string) => {
+    if (value === query) return;
+    setQuery(value);
+    setResults([]);
+    setIsSearching(Boolean(value.trim()));
+  };
+  return { query, setQuery: updateQuery, results, isSearching };
 }

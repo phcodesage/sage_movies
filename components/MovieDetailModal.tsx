@@ -1,29 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Play, PlayCircle, Download, UserCheck } from 'lucide-react';
+import { ArrowLeft, Star, Play } from 'lucide-react';
 import Image from 'next/image';
 import type { TMDBMovie } from '../types/tmdb';
 
-const IMG_URL = 'https://image.tmdb.org/t/p/original';
-
-interface MovieDetailModalProps {
+export default function MovieDetailModal({
+  movie,
+  onClose,
+  genres,
+}: {
   movie: TMDBMovie;
   onClose: () => void;
   genres: Record<number, string>;
-}
-
-export default function MovieDetailModal({ movie, onClose, genres }: MovieDetailModalProps) {
+}) {
   const router = useRouter();
-  const [server, setServer] = useState('vidsrc.to');
-  const [embedUrl, setEmbedUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showOverlay, setShowOverlay] = useState(true);
-
+  const title = movie.title || movie.name || 'Untitled';
   const handlePlay = () => {
-    const slug = (movie.title || movie.name || '')
+    const slug = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
@@ -32,143 +27,54 @@ export default function MovieDetailModal({ movie, onClose, genres }: MovieDetail
     router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
   };
 
-  useEffect(() => {
-    const fetchSource = async () => {
-      setIsLoading(true);
-      try {
-        const type = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
-        const res = await fetch(`/api/video-sources/${type}/${movie.id}?server=${server}`);
-        if (!res.ok) throw new Error('Failed to fetch source');
-        const data = await res.json();
-        setEmbedUrl(data.embedURL || '');
-      } catch (err) {
-        console.error('Video source error:', err);
-        setEmbedUrl('');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchSource();
-  }, [movie, server]);
-
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/95 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/95 p-6"
     >
-      <button 
-        onClick={onClose}
-        className="fixed top-5 left-5 z-[60] bg-black/60 text-white rounded-full p-2 hover:bg-netflix-red transition"
-      >
-        <ArrowLeft className="w-6 h-6" />
+      <button onClick={onClose} aria-label="Close details" className="mb-6 rounded bg-zinc-800 p-3">
+        <ArrowLeft />
       </button>
-
-      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-16">
-        <div className="mb-6 text-center md:text-left">
-          <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
-            {movie.title || movie.name}
-          </h2>
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm md:text-base">
-            <span className="text-yellow-400 font-semibold flex items-center">
-              <Star className="w-4 h-4 mr-1 fill-current" /> {movie.vote_average?.toFixed(1)}
-            </span>
-            <span className="text-neutral-400">
-              {movie.genre_ids?.map(id => genres[id]).filter(Boolean).join(', ')}
-            </span>
-            <span className="text-neutral-400">
-              {movie.release_date || movie.first_air_date}
-            </span>
-          </div>
+      <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-[240px_1fr]">
+        <div className="relative mx-auto aspect-[2/3] w-full max-w-[240px] overflow-hidden rounded-lg">
+          <Image
+            src={
+              movie.poster_path
+                ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                : '/poster-placeholder.svg'
+            }
+            alt={title}
+            fill
+            sizes="240px"
+            className="object-cover"
+          />
         </div>
-
-        <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <div className="w-full md:w-[70%] aspect-video bg-black rounded-lg overflow-hidden shadow-2xl relative">
-            {isLoading && (
-              <div className="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center">
-                <div className="netflix-loader">
-                  <div className="netflix-logo"><div className="middle-bar" /></div>
-                </div>
-                <p className="mt-4 font-bold">Loading Player...</p>
-              </div>
-            )}
-            
-            {showOverlay && !isLoading && embedUrl && (
-              <div className="absolute inset-0 z-20 bg-black/90 flex flex-col items-center justify-center text-center p-6">
-                <h3 className="text-2xl font-bold mb-4">Verification Required</h3>
-                <p className="text-gray-400 mb-6 max-w-md">To unlock high-speed streaming and remove ads, please complete a quick verification.</p>
-                <div className="flex flex-col gap-4 w-full max-w-xs">
-                  <button 
-                    onClick={() => setShowOverlay(false)}
-                    className="bg-netflix-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition flex items-center justify-center"
-                  >
-                    <UserCheck className="w-5 h-5 mr-2" /> Verify You're Human
-                  </button>
-                  <button onClick={() => setShowOverlay(false)} className="text-sm text-gray-500 hover:text-white underline">
-                    Continue to Player (with ads)
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!isLoading && !embedUrl && (
-              <div className="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center text-center p-6">
-                <p className="text-xl font-bold text-gray-300">Video Source Not Available</p>
-                <p className="text-gray-500 mt-2">Please try selecting a different server from the dropdown menu.</p>
-              </div>
-            )}
-
-            {embedUrl && <iframe src={embedUrl} className="w-full h-full border-none" allow="autoplay; fullscreen *" allowFullScreen />}
-          </div>
-
-          <div className="w-full md:w-[30%] flex flex-col gap-6">
-            <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl">
-              <Image src={`${IMG_URL}${movie.poster_path || ''}`} alt={movie.title || movie.name || 'Movie Poster'} fill className="object-cover" sizes="(max-width: 768px) 100vw, 30vw" />
-            </div>
-
-            {/* Play Now Button */}
-            <button
-              onClick={handlePlay}
-              className="w-full bg-netflix-red hover:bg-red-700 text-white font-bold py-3 rounded flex items-center justify-center transition transform hover:scale-[1.02]"
-            >
-              <Play className="w-5 h-5 mr-2 fill-current" /> PLAY NOW
-            </button>
-
-            <div className="flex flex-col gap-3">
-              <a href="#" target="_blank" className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-3 rounded flex items-center justify-center transition">
-                <PlayCircle className="w-5 h-5 mr-2" /> WATCH IN FULL HD
-              </a>
-              <a href="#" target="_blank" className="w-full bg-netflix-dark hover:bg-gray-800 text-white font-bold py-3 rounded border border-gray-700 flex items-center justify-center transition">
-                <Download className="w-5 h-5 mr-2" /> DOWNLOAD MOVIE
-              </a>
-            </div>
-
-            <div className="bg-netflix-dark p-4 rounded-lg">
-              <label className="block text-neutral-300 mb-2 font-medium">Change Server:</label>
-              <select
-                value={server}
-                onChange={(e) => setServer(e.target.value)}
-                className="w-full bg-black text-white border border-gray-700 rounded px-3 py-2 focus:ring-1 focus:ring-netflix-red"
-              >
-                <option value="vidsrc.to">Vidsrc.to (Primary)</option>
-                <option value="vidsrc.su">Vidsrc.su (Stable)</option>
-                <option value="vidsrc.me">Vidsrc.me (Backup)</option>
-                <option value="embedsu">Embedsu (Mirror)</option>
-                <option value="superembed">SuperEmbed (Multi)</option>
-                <option value="player.videasy.net">Videasy (Alternative)</option>
-                <option value="vidsrc.pro">Vidsrc.pro (Global)</option>
-                <option value="vidsrc.cc">Vidsrc.cc (Legacy)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-netflix-dark/50 p-8 rounded-xl">
-          <h3 className="text-2xl font-bold mb-4">Overview</h3>
-          <p className="text-lg text-neutral-300 leading-relaxed max-w-4xl">
-            {movie.overview}
+        <div>
+          <h2 className="mb-4 text-3xl font-black">{title}</h2>
+          <p className="mb-4 flex items-center gap-2 text-yellow-400">
+            <Star size={18} />
+            {movie.vote_average?.toFixed(1) || 'Unrated'}
           </p>
+          <p className="mb-4 text-zinc-400">
+            {movie.genre_ids
+              ?.map((id) => genres[id])
+              .filter(Boolean)
+              .join(', ')}
+          </p>
+          <p className="mb-6 leading-relaxed text-zinc-200">
+            {movie.overview || 'No description available.'}
+          </p>
+          <button
+            onClick={handlePlay}
+            className="flex items-center gap-2 rounded bg-netflix-red px-6 py-3 font-bold"
+          >
+            <Play size={20} /> Watch now
+          </button>
         </div>
       </div>
     </motion.div>

@@ -6,6 +6,10 @@ export async function GET(request, { params }) {
   const mediaType = searchParams.get('type') || 'movie';
   const apiKey = process.env.TMDB_API_KEY;
 
+  if (!/^\d+$/.test(id) || !['movie', 'tv'].includes(mediaType)) {
+    return NextResponse.json({ error: 'Invalid title' }, { status: 400 });
+  }
+
   if (!apiKey) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
   }
@@ -13,7 +17,7 @@ export async function GET(request, { params }) {
   try {
     const response = await fetch(
       `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${apiKey}&append_to_response=production_companies,videos`,
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) }
     );
     const data = await response.json();
 

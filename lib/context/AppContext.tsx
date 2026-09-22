@@ -24,23 +24,28 @@ export function AppProvider({ children }: AppProviderProps) {
   const [hasDownloadedApp, setHasDownloadedApp] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    try {
       const downloaded = localStorage.getItem('sagemovies_app_downloaded') === 'true';
       if (downloaded) {
+        // Hydrate the persisted browser preference after SSR.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHasDownloadedApp(true);
       }
+    } catch {
+      /* Storage can be disabled by the browser. */
     }
   }, []);
 
   const markAppDownloaded = () => {
-    if (typeof window !== 'undefined') {
+    try {
       localStorage.setItem('sagemovies_app_downloaded', 'true');
+    } catch {
+      /* Keep the in-memory preference when storage is unavailable. */
     }
     setHasDownloadedApp(true);
   };
 
   const fetchGenres = async () => {
-    setIsLoadingGenres(true);
     try {
       const res = await fetch('/api/genres');
       const data = await res.json();
@@ -60,10 +65,13 @@ export function AppProvider({ children }: AppProviderProps) {
   };
 
   useEffect(() => {
+    // Initialize the external genre catalog once after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGenres();
   }, []);
 
   const refreshGenres = async () => {
+    setIsLoadingGenres(true);
     await fetchGenres();
   };
 

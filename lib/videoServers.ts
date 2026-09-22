@@ -50,59 +50,19 @@ export const VIDEO_SERVERS: VideoServer[] = [
     },
   },
   {
-    id: 'vidsrc.xyz',
-    label: 'VidSrc (Fast 1080p)',
-    supportsLang: true,
-    sandboxTolerant: false,
-    build: (type, id, { season = 1, episode = 1, lang }) => {
-      const path = type === 'tv' ? `tv/${id}/${season}/${episode}` : `movie/${id}`;
-      return `https://vidsrc.xyz/embed/${path}${lang ? `?ds_lang=${lang}` : ''}`;
-    },
-  },
-  {
-    id: 'autoembed',
-    label: 'AutoEmbed HD',
-    supportsLang: false,
-    sandboxTolerant: false,
-    build: (type, id, { season = 1, episode = 1 }) =>
-      type === 'tv'
-        ? `https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`
-        : `https://player.autoembed.cc/embed/movie/${id}`,
-  },
-  {
     id: 'vidsrc.in',
     label: 'VidSrc Direct',
     supportsLang: false,
     sandboxTolerant: false,
     build: (type, id, { season = 1, episode = 1 }) =>
       type === 'tv'
-        ? `https://vidsrc.in/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`
-        : `https://vidsrc.in/embed/movie?tmdb=${id}`,
-  },
-  {
-    id: 'vidsrc.net',
-    label: 'VidSrc Net',
-    supportsLang: false,
-    sandboxTolerant: false,
-    build: (type, id, { season = 1, episode = 1 }) =>
-      type === 'tv'
-        ? `https://vidsrc.net/embed/tv/${id}/${season}/${episode}`
-        : `https://vidsrc.net/embed/movie/${id}`,
-  },
-  {
-    id: 'vidsrc.icu',
-    label: 'VidSrc ICU (Multi-Server)',
-    supportsLang: true,
-    sandboxTolerant: false,
-    build: (type, id, { season = 1, episode = 1 }) =>
-      type === 'tv'
-        ? `https://vidsrc.icu/embed/tv/${id}/${season}/${episode}`
-        : `https://vidsrc.icu/embed/movie/${id}`,
+        ? `https://vidsrc.in/embed/tv/${id}/${season}/${episode}`
+        : `https://vidsrc.in/embed/movie/${id}`,
   },
   {
     id: 'vidsrc.pm',
     label: 'VidSrc VIP (HD)',
-    supportsLang: true,
+    supportsLang: false,
     sandboxTolerant: false,
     build: (type, id, { season = 1, episode = 1 }) =>
       type === 'tv'
@@ -124,10 +84,24 @@ export const VIDEO_SERVERS: VideoServer[] = [
     label: 'SuperEmbed (Backup)',
     supportsLang: false,
     sandboxTolerant: false,
+    movieOnly: true,
     build: (type, id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
   },
 ];
 
-export function getServer(id?: string): VideoServer {
-  return VIDEO_SERVERS.find((s) => s.id === id) || VIDEO_SERVERS[0];
+export function getServers(type: MediaType): VideoServer[] {
+  return VIDEO_SERVERS.filter((server) => type === 'movie' || !server.movieOnly);
+}
+
+export function getServer(id?: string, type: MediaType = 'movie'): VideoServer {
+  return getServers(type).find((s) => s.id === id) || VIDEO_SERVERS[0];
+}
+
+export function parseEpisodeNumber(value: string | null): number | null {
+  if (value === null) return 1;
+  return /^[1-9]\d{0,3}$/.test(value) ? Number(value) : null;
+}
+
+export function mediaTypeFromSlug(slug: string): MediaType {
+  return slug.startsWith('tv-') ? 'tv' : 'movie';
 }

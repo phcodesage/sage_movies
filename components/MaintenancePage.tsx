@@ -11,6 +11,8 @@ export default function MaintenancePage() {
   const [autoCheckCountdown, setAutoCheckCountdown] = useState(30);
 
   useEffect(() => {
+    // Initialize the client-local clock after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLastChecked(new Date().toLocaleTimeString());
     const interval = setInterval(() => {
       setAutoCheckCountdown((prev) => {

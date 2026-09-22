@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { Play, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,12 +13,14 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Navbar from '../components/Navbar';
 import MovieRow from '../components/MovieRow';
+import ServiceShelf from '../components/ServiceShelf';
 import { MovieRowSkeleton, BannerSkeleton } from '../components/LoadingSkeleton';
 import { AdsterraNativeBanner } from '../components/Adsterra';
 import ServiceBottomNav from '../components/ServiceBottomNav';
 import { STREAMING_SERVICES } from '../lib/streamingServices';
 import { scrollToSection } from '../lib/utils/scrollToSection';
 import type { TMDBMovie } from '../types/tmdb';
+import { fetchJSON } from '../lib/utils/fetchJSON';
 
 const SeeAllModal = dynamic(() => import('../components/SeeAllModal'), {
   loading: () => <div className="fixed inset-0 bg-netflix-black z-[100]" />,
@@ -36,7 +38,7 @@ const MovieDetailModal = dynamic(() => import('../components/MovieDetailModal'),
   ssr: false,
 });
 
-const IMG_URL = 'https://image.tmdb.org/t/p/original';
+const IMG_URL = 'https://image.tmdb.org/t/p/w1280';
 const bannerTrailerCache = new Map<string, string | null>();
 
 export default function Home() {
@@ -49,21 +51,16 @@ export default function Home() {
   const [bannerTrailerKey, setBannerTrailerKey] = useState<string | null>(null);
   const [isHoveringBanner, setIsHoveringBanner] = useState(false);
   const isHoveringBannerRef = useRef(false);
-  const [serviceRows, setServiceRows] = useState<Record<number, TMDBMovie[]>>({});
   const [bannerMovie, setBannerMovie] = useState<TMDBMovie | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [seeAllData, setSeeAllData] = useState<{
     title: string;
     items: TMDBMovie[];
     category: string;
-  } | null>(null);
-  const [recommended, setRecommended] = useState<TMDBMovie[]>([]);
-  const [lastWatchedSimilar, setLastWatchedSimilar] = useState<{
-    movie: TMDBMovie;
-    similar: TMDBMovie[];
   } | null>(null);
   const [allFetchedData, setAllFetchedData] = useState<TMDBMovie[]>([]);
   const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,8 +90,10 @@ export default function Home() {
     const cacheKey = `${type}:${bannerMovie.id}`;
 
     if (bannerTrailerCache.has(cacheKey)) {
-      setBannerTrailerKey(bannerTrailerCache.get(cacheKey) ?? null);
-      return;
+      const frame = requestAnimationFrame(() =>
+        setBannerTrailerKey(bannerTrailerCache.get(cacheKey) ?? null)
+      );
+      return () => cancelAnimationFrame(frame);
     }
 
     let cancelled = false;
@@ -120,20 +119,27 @@ export default function Home() {
     };
   }, [bannerMovie, isHoveringBanner]);
 
-  // Compute recommendations
-  useEffect(() => {
-    if (watchHistory.length > 0 && allFetchedData.length > 0) {
-      const recommendations = getRecommendedMovies(watchHistory, allFetchedData, 20);
-      setRecommended(recommendations);
-
-      // Also compute "Because you watched [Last Movie]"
-      const lastMovie = watchHistory[0];
-      const similarToLast = getSimilarMovies(lastMovie, allFetchedData, 15);
-      if (similarToLast.length > 0) {
-        setLastWatchedSimilar({ movie: lastMovie, similar: similarToLast });
-      }
-    }
+  const recommended = useMemo(
+    () => getRecommendedMovies(watchHistory, allFetchedData, 20),
+    [watchHistory, allFetchedData]
+  );
+  const lastWatchedSimilar = useMemo(() => {
+    if (!watchHistory.length) return null;
+    const similar = getSimilarMovies(watchHistory[0], allFetchedData, 15);
+    return similar.length ? { movie: watchHistory[0], similar } : null;
   }, [watchHistory, allFetchedData]);
+  const addToPool = useCallback((items: TMDBMovie[]) => {
+    setAllFetchedData((current) =>
+      Array.from(
+        new Map(
+          [...current, ...items].map((item) => [
+            `${item.media_type || (item.first_air_date ? 'tv' : 'movie')}:${item.id}`,
+            item,
+          ])
+        ).values()
+      )
+    );
+  }, []);
 
   const handlePlayClick = (movie: TMDBMovie) => {
     const slug = (movie.title || movie.name || '')
@@ -144,106 +150,50 @@ export default function Home() {
     router.push(`/movie/${movie.id}/${mediaType}-${slug}`);
   };
 
-  // Fetch the shelves people see first, then defer provider shelves until the page is
-  // usable. The old request fan-out loaded 19 API routes (and about 32 TMDB requests)
-  // before removing the full-page loader.
+  // Show the hero as soon as the movie collection arrives. Other shelves load
+  // independently; studio/provider requests wait until their shelf is near view.
   useEffect(() => {
-    let cancelled = false;
-    let serviceLoadTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const toUniqueMovies = (items: TMDBMovie[]) =>
-      Array.from(new Map(items.map((item) => [item.id, item])).values());
-
-    const loadServiceRows = async () => {
-      const serviceResults = await Promise.all(
-        STREAMING_SERVICES.map((service) => {
-          const endpoint = service.isCompany
-            ? `/api/movies/studio/${service.id}`
-            : `/api/movies/provider/${service.id}`;
-
-          return fetch(endpoint)
-            .then((res) => res.json())
-            .catch(() => ({ results: [] }));
-        })
-      );
-
-      if (cancelled) return;
-
-      const services: Record<string | number, TMDBMovie[]> = {};
-      STREAMING_SERVICES.forEach((service, index) => {
-        services[service.id] = serviceResults[index]?.results || [];
-      });
-      setServiceRows(services);
-      setAllFetchedData((current) =>
-        toUniqueMovies([...current, ...Object.values(services).flat()])
-      );
-    };
-
-    async function loadData() {
+    const controller = new AbortController();
+    const loadShelf = async (url: string, setter: (items: TMDBMovie[]) => void, hero = false) => {
       try {
-        setIsLoading(true);
-
-        const [movieRes, tvRes, animeRes, actionRes, latestRes, topRatedRes] = await Promise.all([
-          fetch('/api/movies/collection').then((res) => res.json()),
-          fetch('/api/tv/collection').then((res) => res.json()),
-          fetch('/api/anime/collection').then((res) => res.json()),
-          fetch('/api/movies/genre/28').then((res) => res.json()),
-          fetch('/api/movies/latest').then((res) => res.json()),
-          fetch('/api/movies/top-rated').then((res) => res.json()),
-        ]);
-
-        if (cancelled) return;
-
-        const movies = (movieRes as any).results || [];
-        setTrendingMovies(movies);
-        setTrendingTV((tvRes as any).results || []);
-        setAnime((animeRes as any).results || []);
-        setActionMovies((actionRes as any).results || []);
-        setLatestMovies((latestRes as any).results || []);
-        setTopRatedMovies((topRatedRes as any).results || []);
-
-        // Flatten all for recommendation pool
-        const all = [
-          ...movies,
-          ...((tvRes as any).results || []),
-          ...((animeRes as any).results || []),
-          ...((actionRes as any).results || []),
-          ...((latestRes as any).results || []),
-          ...((topRatedRes as any).results || []),
-        ];
-        setAllFetchedData(toUniqueMovies(all));
-
-        if (movies.length > 0) {
+        const data = await fetchJSON<{ results?: TMDBMovie[] }>(url, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        const movies: TMDBMovie[] = data.results || [];
+        setter(movies);
+        addToPool(movies);
+        if (hero && movies.length) {
           setBannerMovie(movies[0]);
-
-          // Start banner rotation
           let index = 0;
           bannerIntervalRef.current = setInterval(() => {
-            // If hovering, pause rotation
-            if (isHoveringBannerRef.current) return;
+            if (
+              isHoveringBannerRef.current ||
+              document.hidden ||
+              !window.matchMedia('(hover: hover)').matches ||
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            )
+              return;
             index = (index + 1) % Math.min(movies.length, 10);
             setBannerMovie(movies[index]);
           }, 6000);
         }
-
-        // Let the browser paint and respond to input before loading the lower shelves.
-        serviceLoadTimer = setTimeout(() => {
-          void loadServiceRows();
-        }, 1200);
-      } catch (error) {
-        if (!cancelled) console.error('Error initializing app:', error);
+        if (hero && !movies.length) setLoadError(true);
+      } catch {
+        if (hero && !controller.signal.aborted) setLoadError(true);
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (hero && !controller.signal.aborted) setIsLoading(false);
       }
-    }
-    loadData();
-
-    return () => {
-      cancelled = true;
-      if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
-      if (serviceLoadTimer) clearTimeout(serviceLoadTimer);
     };
-  }, []);
+    void loadShelf('/api/movies/collection', setTrendingMovies, true);
+    void loadShelf('/api/tv/collection', setTrendingTV);
+    void loadShelf('/api/anime/collection', setAnime);
+    void loadShelf('/api/movies/genre/28', setActionMovies);
+    void loadShelf('/api/movies/latest', setLatestMovies);
+    void loadShelf('/api/movies/top-rated', setTopRatedMovies);
+    return () => {
+      controller.abort();
+      if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+    };
+  }, [addToPool]);
 
   // Honour a #section hash once the rows exist. Arriving at /#tv from another page
   // renders an empty shell first — the sections only mount after the fetches resolve,
@@ -260,10 +210,6 @@ export default function Home() {
   // Genre filtering logic
   useEffect(() => {
     if (!selectedGenre) {
-      // Re-fetch trending movies if genre is cleared
-      fetch('/api/movies/collection')
-        .then((res) => res.json())
-        .then((data) => setTrendingMovies(data.results || []));
       return;
     }
 
@@ -330,13 +276,24 @@ export default function Home() {
 
       {/* Navbar */}
       <Navbar onSearchClick={() => setIsSearchOpen(true)} />
+      {loadError && (
+        <div role="alert" className="px-6 pb-8 pt-28 text-center">
+          <p>Couldn’t load featured movies. Check your connection and try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-3 rounded bg-zinc-800 px-4 py-2"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Hero Banner (Xbox Game Pass Stage + Neo-Brutalism) */}
       {isLoading ? (
         <BannerSkeleton />
       ) : bannerMovie ? (
         <div className="relative pt-20 md:pt-24 pb-4 px-4 md:px-8 w-full max-w-7xl mx-auto font-sans">
-          <div 
+          <div
             className="relative bg-black border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
             onMouseEnter={() => setIsHoveringBanner(true)}
             onMouseLeave={() => {
@@ -345,9 +302,15 @@ export default function Home() {
             }}
           >
             {/* Backdrop Image */}
-            <div className={`relative h-[60vh] md:h-[68vh] w-full transition-opacity duration-1000 ${bannerTrailerKey ? 'opacity-0' : 'opacity-100'}`}>
+            <div
+              className={`relative h-[60vh] md:h-[68vh] w-full transition-opacity duration-1000 ${bannerTrailerKey ? 'opacity-0' : 'opacity-100'}`}
+            >
               <Image
-                src={`${IMG_URL}${bannerMovie.backdrop_path || bannerMovie.poster_path}`}
+                src={
+                  bannerMovie.backdrop_path || bannerMovie.poster_path
+                    ? `${IMG_URL}${bannerMovie.backdrop_path || bannerMovie.poster_path}`
+                    : '/poster-placeholder.svg'
+                }
                 alt={bannerMovie.title || bannerMovie.name || ''}
                 fill
                 className="object-cover opacity-85"
@@ -394,7 +357,9 @@ export default function Home() {
                   onClick={() => handlePlayClick(bannerMovie)}
                   className="bg-[#107C10] hover:bg-[#FFE600] hover:text-black text-white px-6 md:px-8 py-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm font-black uppercase tracking-wider flex items-center space-x-2 hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="bg-black text-[#FFE600] text-[10px] px-1.5 py-0.5 font-mono border border-black">A</span>
+                  <span className="bg-black text-[#FFE600] text-[10px] px-1.5 py-0.5 font-mono border border-black">
+                    A
+                  </span>
                   <Play className="w-4 h-4 fill-current" />
                   <span>START STREAM</span>
                 </button>
@@ -403,7 +368,9 @@ export default function Home() {
                   onClick={() => handlePlayClick(bannerMovie)}
                   className="bg-white hover:bg-[#00E5FF] text-black px-6 md:px-8 py-3.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm font-black uppercase tracking-wider flex items-center space-x-2 hover:-translate-y-0.5 transition-all"
                 >
-                  <span className="bg-black text-white text-[10px] px-1.5 py-0.5 font-mono border border-black">X</span>
+                  <span className="bg-black text-white text-[10px] px-1.5 py-0.5 font-mono border border-black">
+                    X
+                  </span>
                   <Info className="w-4 h-4" />
                   <span>DETAILS</span>
                 </button>
@@ -535,24 +502,20 @@ export default function Home() {
                 })
               }
             />
-            {STREAMING_SERVICES.map(
-              (s) =>
-                (serviceRows[s.id as any]?.length ?? 0) > 0 && (
-                  <MovieRow
-                    key={s.id}
-                    title={`${s.name} Movies`}
-                    items={serviceRows[s.id as any]}
-                    id={s.rowId}
-                    onSeeAll={() =>
-                      setSeeAllData({
-                        title: `${s.name} Movies`,
-                        items: serviceRows[s.id as any],
-                        category: `provider_${s.id}`,
-                      })
-                    }
-                  />
-                )
-            )}
+            {STREAMING_SERVICES.map((s) => (
+              <ServiceShelf
+                key={s.id}
+                service={s}
+                onLoaded={addToPool}
+                onSeeAll={(items) =>
+                  setSeeAllData({
+                    title: `${s.name} Movies`,
+                    items,
+                    category: `${s.isCompany ? 'studio' : 'provider'}_${s.id}`,
+                  })
+                }
+              />
+            ))}
             <MovieRow
               title="Anime Collection"
               items={anime}

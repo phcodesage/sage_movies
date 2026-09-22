@@ -8,23 +8,41 @@ export function useWatchHistory() {
   const [history, setHistory] = useState<TMDBMovie[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setHistory(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse watch history', e);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Hydrate the device's history after SSR.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setHistory(
+            parsed.filter((item) => item && typeof item.id === 'number').slice(0, MAX_HISTORY)
+          );
+        }
       }
+    } catch {
+      /* Private browsing can deny access to storage. */
     }
   }, []);
+
+  const persist = (items: TMDBMovie[]) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      /* Playback must work even when storage is full or disabled. */
+    }
+  };
 
   const addToHistory = (movie: TMDBMovie) => {
     setHistory((prev) => {
       // Remove existing entry if it exists
-      const filtered = prev.filter((m) => m.id !== movie.id);
+      const type = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
+      const filtered = prev.filter(
+        (m) => m.id !== movie.id || (m.media_type || (m.first_air_date ? 'tv' : 'movie')) !== type
+      );
       // Add new entry to the beginning
       const updated = [movie, ...filtered].slice(0, MAX_HISTORY);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      persist(updated);
       return updated;
     });
   };
@@ -32,13 +50,17 @@ export function useWatchHistory() {
   const removeFromHistory = (movieId: number) => {
     setHistory((prev) => {
       const updated = prev.filter((m) => m.id !== movieId);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      persist(updated);
       return updated;
     });
   };
 
   const clearHistory = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* Clear in memory regardless. */
+    }
     setHistory([]);
   };
 

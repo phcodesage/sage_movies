@@ -13,7 +13,8 @@ import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
 import { AdsterraNativeBanner, openAdsterraDirectLink } from '../../../../components/Adsterra';
 import {
-  VIDEO_SERVERS,
+  getServers,
+  mediaTypeFromSlug,
   SUBTITLE_LANGUAGES,
   DEFAULT_SERVER,
   DEFAULT_LANG,
@@ -28,7 +29,7 @@ import {
 const PLAYER_SANDBOX =
   'allow-scripts allow-same-origin allow-presentation allow-forms allow-fullscreen';
 
-const IMG_URL = 'https://image.tmdb.org/t/p/original';
+const IMG_URL = 'https://image.tmdb.org/t/p/w1280';
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
 
 export default function MovieDetailPage() {
@@ -36,6 +37,8 @@ export default function MovieDetailPage() {
   const router = useRouter();
   const id = params?.id as string;
   const slug = params?.slug as string;
+  const mediaType = mediaTypeFromSlug(slug || '');
+  const servers = React.useMemo(() => getServers(mediaType), [mediaType]);
   const { genres } = useAppContext();
   const { addToHistory } = useWatchHistory();
   const { isWatched, markWatched, toggleWatched } = useWatchedEpisodes();
@@ -71,20 +74,38 @@ export default function MovieDetailPage() {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [similarMovies, setSimilarMovies] = useState<TMDBMovie[]>([]);
   const [showUpNext, setShowUpNext] = useState(false);
+  const [playerAttempt, setPlayerAttempt] = useState(0);
+  const [playerSlow, setPlayerSlow] = useState(false);
 
   // Live per-server reachability, keyed by server id. 'checking' while a probe is in
   // flight; 'up'/'down' once /api/video-health reports back. Empty until the movie loads.
-  type ServerStatus = 'up' | 'down' | 'checking';
+  type ServerStatus = 'up' | 'down' | 'unknown' | 'checking';
   const [serverHealth, setServerHealth] = useState<Record<string, ServerStatus>>({});
-  const serverNumber = (sid: string) => VIDEO_SERVERS.findIndex((s) => s.id === sid) + 1;
+  const serverNumber = (sid: string) => servers.findIndex((s) => s.id === sid) + 1;
 
   // Fetch movie details from our API
   useEffect(() => {
+    const controller = new AbortController();
     const fetchMovieDetails = async () => {
+      await Promise.resolve();
+      if (controller.signal.aborted) return;
+      setMovie(null);
+      setIsLoading(true);
+      setIsPlaying(false);
+      setEmbedUrl('');
+      setError(null);
+      setSelectedSeason(1);
+      setSelectedEpisode(1);
+      setServer(DEFAULT_SERVER);
+      setSimilarMovies([]);
+      setServerHealth({});
       try {
-        const mediaType = slug?.includes('tv') ? 'tv' : 'movie';
-        const res = await fetch(`/api/movie/${id}?type=${mediaType}`);
+        const res = await fetch(`/api/movie/${id}?type=${mediaType}`, {
+          signal: controller.signal,
+        });
         const data = await res.json();
+        if (controller.signal.aborted) return;
+        if (!res.ok) throw new Error(data.error || 'Failed to load title');
 
         if (data.error) {
           setError(data.error);
@@ -107,18 +128,22 @@ export default function MovieDetailPage() {
           );
           const studioId = vivamax ? vivamax.id : data.production_companies?.[0]?.id;
 
-          let endpoint = slug?.includes('tv') ? '/api/tv/collection' : '/api/movies/collection';
+          const endpoint = mediaType === 'tv' ? '/api/tv/collection' : '/api/movies/collection';
 
           const fetchPool = async () => {
             try {
               // Parallel fetch: general + same genre + same studio
               const [generalRes, genreRes, studioRes] = await Promise.all([
-                fetch(endpoint).then((res) => res.json()),
+                fetch(endpoint, { signal: controller.signal }).then((res) => res.json()),
                 currentGenre
-                  ? fetch(`/api/movies/genre/${currentGenre}`).then((res) => res.json())
+                  ? fetch(`/api/movies/genre/${currentGenre}`, { signal: controller.signal }).then(
+                      (res) => res.json()
+                    )
                   : Promise.resolve({ results: [] }),
                 studioId
-                  ? fetch(`/api/movies/studio/${studioId}`).then((res) => res.json())
+                  ? fetch(`/api/movies/studio/${studioId}`, { signal: controller.signal }).then(
+                      (res) => res.json()
+                    )
                   : Promise.resolve({ results: [] }),
               ]);
 
@@ -137,11 +162,13 @@ export default function MovieDetailPage() {
               ];
 
               const uniquePool = Array.from(
-                new Map(combinedResults.map((item) => [item.id, item])).values()
+                new Map(
+                  combinedResults.map((item) => [`${item.media_type || 'movie'}:${item.id}`, item])
+                ).values()
               );
 
               const similar = getSimilarMovies(normalizedMovie, uniquePool, 12);
-              setSimilarMovies(similar);
+              if (!controller.signal.aborted) setSimilarMovies(similar);
             } catch (err) {
               console.error('Pool fetch error:', err);
             }
@@ -150,16 +177,18 @@ export default function MovieDetailPage() {
           fetchPool();
         }
       } catch (err) {
-        setError('Failed to load movie details');
+        if (!controller.signal.aborted)
+          setError('Failed to load movie details. Check your connection and try again.');
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
     if (id) {
       fetchMovieDetails();
     }
-  }, [id, slug]);
+    return () => controller.abort();
+  }, [id, mediaType]);
 
   // Probe every provider once the movie is known, so the server picker can mark dead
   // servers and default to a working one. Host-level reachability barely moves with
@@ -167,50 +196,41 @@ export default function MovieDetailPage() {
   const healthReqId = React.useRef(0);
   const runHealthCheck = React.useCallback(() => {
     if (!movie) return;
-    const type = movie.first_air_date ? 'tv' : 'movie';
+    const type = mediaType;
     const reqId = ++healthReqId.current;
 
-    setServerHealth(Object.fromEntries(VIDEO_SERVERS.map((s) => [s.id, 'checking'])));
+    setServerHealth(Object.fromEntries(servers.map((s) => [s.id, 'checking'])));
 
     fetch(
       `/api/video-health/${type}/${movie.id}?season=${selectedSeason}&episode=${selectedEpisode}`
     )
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error('Check unavailable');
+        return r.json();
+      })
       .then((data) => {
         // Ignore a stale probe that a newer re-check has superseded.
         if (reqId !== healthReqId.current || !data?.servers) return;
         setServerHealth(data.servers);
-        // If the current pick is dead, silently switch to the first reachable server so
-        // the default the user lands on actually plays. Never overrides a manual pick
-        // mid-playback — the probe resolves before anyone hits play.
-        if (data.servers[server] === 'down') {
-          const firstUp = VIDEO_SERVERS.find((s) => data.servers[s.id] === 'up');
-          if (firstUp) {
-            setServer(firstUp.id);
-            if (isPlaying) {
-              loadVideoSource(firstUp.id, lang);
-            }
-          }
-        }
+        // A probe never interrupts playback or overrides a manually selected server.
       })
       .catch(() => {
         if (reqId === healthReqId.current) setServerHealth({});
       });
-  }, [movie, selectedSeason, selectedEpisode, isPlaying, server, lang]);
+  }, [movie, mediaType, servers, selectedSeason, selectedEpisode]);
 
   useEffect(() => {
     // Auto-probe once per title; manual re-checks go through the button in Stream Settings.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     runHealthCheck();
+    return () => {
+      healthReqId.current += 1;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movie?.id]);
 
   const isCheckingHealth = Object.values(serverHealth).some((v) => v === 'checking');
-  const allServersDown =
-    Object.keys(serverHealth).length > 0 &&
-    Object.values(serverHealth).every((status) => status === 'down');
-
-  const loadVideoSource = async (
+  const loadVideoSource = (
     selectedServer: string,
     selectedLang: string = lang,
     sNum: number = selectedSeason,
@@ -219,32 +239,31 @@ export default function MovieDetailPage() {
     if (!movie) return;
     setIsLoading(true);
     setError(null);
-
-    try {
-      const type = movie.first_air_date ? 'tv' : 'movie';
-      const res = await fetch(
-        `/api/video-sources/${type}/${movie.id}?server=${selectedServer}&lang=${selectedLang}&season=${sNum}&episode=${eNum}`
-      );
-      if (!res.ok) throw new Error('Failed to fetch video source');
-      const data = await res.json();
-
-      if (data.embedURL) {
-        setEmbedUrl(data.embedURL);
-        addToHistory(movie);
-        // Playing an episode counts as watching it. Movies have no episode grid, so
-        // this only applies to TV. Idempotent, so re-loads (server/lang change) are fine.
-        if (type === 'tv') markWatched(movie.id, sNum, eNum);
-      } else {
-        setError('Video source not available for this server. Try another server.');
-        if (!isPlaying) setIsPlaying(false);
-      }
-    } catch (err) {
-      setError('Failed to load video. Please try a different server.');
-      if (!isPlaying) setIsPlaying(false);
-    } finally {
-      setIsLoading(false);
-    }
+    setPlayerSlow(false);
+    const provider = getServer(selectedServer, mediaType);
+    setServer(provider.id);
+    setEmbedUrl(
+      provider.build(mediaType, String(movie.id), {
+        lang: provider.supportsLang ? selectedLang : undefined,
+        season: sNum,
+        episode: eNum,
+      })
+    );
+    // Remount even when refreshing the same URL. No network request can race a
+    // newer server/episode selection or be blocked by the site's API rate limit.
+    setPlayerAttempt((attempt) => attempt + 1);
+    addToHistory({ ...movie, media_type: mediaType });
+    if (mediaType === 'tv') markWatched(movie.id, sNum, eNum);
   };
+
+  useEffect(() => {
+    if (!isPlaying || !embedUrl) return;
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      setPlayerSlow(true);
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [isPlaying, embedUrl, playerAttempt]);
 
   // Fetch video source when user clicks play
   const handlePlay = (sNum: number = selectedSeason, eNum: number = selectedEpisode) => {
@@ -260,9 +279,9 @@ export default function MovieDetailPage() {
   };
 
   const handleNextServer = () => {
-    const currentIndex = VIDEO_SERVERS.findIndex((s) => s.id === server);
-    const nextIndex = (currentIndex + 1) % VIDEO_SERVERS.length;
-    const nextServer = VIDEO_SERVERS[nextIndex].id;
+    const currentIndex = servers.findIndex((s) => s.id === server);
+    const candidates = [...servers.slice(currentIndex + 1), ...servers.slice(0, currentIndex)];
+    const nextServer = (candidates.find((s) => serverHealth[s.id] !== 'down') || candidates[0]).id;
     setServer(nextServer);
     if (isPlaying) {
       loadVideoSource(nextServer, lang);
@@ -279,6 +298,7 @@ export default function MovieDetailPage() {
   const handleClosePlayer = () => {
     setIsPlaying(false);
     setEmbedUrl('');
+    setIsLoading(false);
     setShowUpNext(false);
   };
 
@@ -303,6 +323,7 @@ export default function MovieDetailPage() {
           <p className="text-xl text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.back()}
+            aria-label="Back"
             className="bg-netflix-red hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition"
           >
             Go Back
@@ -326,13 +347,14 @@ export default function MovieDetailPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-screen w-screen bg-[#0F1015] overflow-hidden flex flex-col font-sans"
+      className="player-shell w-full bg-[#0F1015] overflow-hidden flex flex-col font-sans"
     >
       {/* Steam Deck Top Header Bar */}
       <div className="bg-[#12141A] border-b-4 border-black px-3 md:px-6 py-2.5 flex items-center justify-between z-50 shrink-0 shadow-[0_4px_0_0_rgba(0,0,0,1)]">
         <div className="flex items-center space-x-3">
           <button
             onClick={() => router.back()}
+            aria-label="Back to previous page"
             className="px-3 py-1 bg-[#1A9FFF] text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:-translate-y-0.5 transition-all flex items-center space-x-1"
           >
             <span className="bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">B</span>
@@ -341,7 +363,7 @@ export default function MovieDetailPage() {
           </button>
 
           <div className="flex items-center space-x-2">
-            <span className="bg-black text-[#66C0F4] font-black text-xs px-2.5 py-1 border-2 border-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <span className="hidden sm:inline-block bg-black text-[#66C0F4] font-black text-xs px-2.5 py-1 border-2 border-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               🎮 SAGE HD PLAYER
             </span>
             <span className="hidden md:inline-block bg-[#107C10] text-white font-black text-[10px] px-2 py-0.5 border border-black uppercase font-mono">
@@ -360,7 +382,9 @@ export default function MovieDetailPage() {
                 }}
                 className="px-2.5 py-1 bg-[#FFE600] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#FFE600] transition-all flex items-center space-x-1"
               >
-                <span className="bg-black text-[#FFE600] text-[10px] px-1 py-0.5 font-mono">A</span>
+                <span className="hidden sm:inline bg-black text-[#FFE600] text-[10px] px-1 py-0.5 font-mono">
+                  A
+                </span>
                 <span className="text-[10px] uppercase">REFRESH</span>
               </button>
 
@@ -371,7 +395,9 @@ export default function MovieDetailPage() {
                 }}
                 className="px-2.5 py-1 bg-[#1A9FFF] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#1A9FFF] transition-all flex items-center space-x-1"
               >
-                <span className="bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">X</span>
+                <span className="hidden sm:inline bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">
+                  X
+                </span>
                 <span className="text-[10px] uppercase">NEXT SERVER</span>
               </button>
             </>
@@ -387,30 +413,13 @@ export default function MovieDetailPage() {
       </div>
 
       {/* Main Content: Player (Left/Top) + Details Sidebar (Right/Bottom) */}
-      <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* Left/Top Section: Steam Deck Video Player Stage */}
-        <div className="relative bg-black h-[45vh] md:h-full flex-1 md:min-w-0 border-b-4 md:border-b-0 md:border-r-4 border-black">
-          {allServersDown ? (
-            <div className="absolute inset-0 bg-[#0F1015]/95 border-4 border-black p-6 flex flex-col items-center justify-center text-center z-30 font-sans">
-              <h3 className="text-base md:text-xl font-black uppercase text-white tracking-tight mb-2 bg-[#FF3366] text-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                ⚠️ TITLE NOT AVAILABLE YET ON STREAM SERVERS
-              </h3>
-              <p className="text-xs md:text-sm font-bold text-zinc-200 max-w-md bg-black p-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-4 leading-relaxed">
-                {releaseDate
-                  ? `"${title}" has an official air/release date of ${releaseDate}. Digital stream files have not been uploaded to provider servers yet.`
-                  : `Streaming servers are currently indexing "${title}". Please try selecting another title or check back shortly!`}
-              </p>
-              <button
-                onClick={() => router.push('/')}
-                className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs uppercase tracking-wider transition-all hover:-translate-y-0.5"
-              >
-                🎮 BROWSE OTHER WORKING MOVIES
-              </button>
-            </div>
-          ) : isPlaying ? (
+        <div className="relative bg-black h-[40%] md:h-full shrink-0 md:flex-1 md:min-w-0 border-b-4 md:border-b-0 md:border-r-4 border-black">
+          {isPlaying ? (
             <>
               {isLoading && (
-                <div className="absolute inset-0 z-10 bg-[#0F1015]/95 flex flex-col items-center justify-center border-4 border-black p-6">
+                <div className="pointer-events-none absolute inset-0 z-10 bg-[#0F1015]/95 flex flex-col items-center justify-center border-4 border-black p-6">
                   <div className="w-12 h-12 border-4 border-black border-t-[#1A9FFF] rounded-none animate-spin mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" />
                   <p className="font-black text-xs uppercase tracking-widest text-[#1A9FFF] bg-black px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     CONNECTING STREAM SERVER...
@@ -424,31 +433,35 @@ export default function MovieDetailPage() {
                     {error}
                   </p>
                   <button
-                    onClick={() => {
-                      setError(null);
-                      setIsPlaying(false);
-                    }}
+                    onClick={handleNextServer}
                     className="bg-[#1A9FFF] hover:bg-[#FFE600] text-black font-black px-6 py-2.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition text-xs uppercase"
                   >
-                    SELECT ANOTHER SERVER
+                    TRY NEXT SERVER
                   </button>
                 </div>
               )}
 
               {embedUrl && (
                 <iframe
-                  key={`${embedUrl}|${sandboxed}`}
+                  key={`${embedUrl}|${sandboxed}|${playerAttempt}`}
+                  title={`${title} video player`}
                   src={embedUrl}
                   className="w-full h-full border-none"
                   allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
                   allowFullScreen
                   referrerPolicy="origin"
                   sandbox={sandboxed ? PLAYER_SANDBOX : undefined}
+                  onLoad={() => setIsLoading(false)}
+                  onError={() => {
+                    setIsLoading(false);
+                    setError('This player could not load. Try another server.');
+                  }}
                 />
               )}
 
               <button
                 onClick={handleClosePlayer}
+                aria-label="Close player"
                 className="absolute top-3 right-3 z-30 bg-[#FF3366] text-white font-black text-xs p-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-black transition active:scale-95"
               >
                 <X className="w-4 h-4 stroke-[3]" />
@@ -471,24 +484,24 @@ export default function MovieDetailPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0F1015] via-black/40 to-transparent" />
 
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
-                  <button
-                    onClick={() => handlePlay()}
-                    className="group flex flex-col items-center gap-3 active:scale-95 transition-transform"
-                  >
-                    <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A9FFF] text-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center group-hover:bg-[#FFE600] group-hover:-translate-y-1 transition-all duration-200">
-                      <Play className="w-10 h-10 md:w-12 md:h-12 fill-current ml-1" />
-                    </div>
-                    <span className="bg-black text-[#1A9FFF] font-black text-sm md:text-lg tracking-wider px-4 py-1.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:text-[#FFE600] transition-colors uppercase">
-                      [A] LAUNCH STREAM
-                    </span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => handlePlay()}
+                  className="group flex flex-col items-center gap-3 active:scale-95 transition-transform"
+                >
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A9FFF] text-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center group-hover:bg-[#FFE600] group-hover:-translate-y-1 transition-all duration-200">
+                    <Play className="w-10 h-10 md:w-12 md:h-12 fill-current ml-1" />
+                  </div>
+                  <span className="bg-black text-[#1A9FFF] font-black text-sm md:text-lg tracking-wider px-4 py-1.5 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:text-[#FFE600] transition-colors uppercase">
+                    [A] LAUNCH STREAM
+                  </span>
+                </button>
+              </div>
             </div>
           )}
         </div>
 
         {/* Right/Bottom Section: Steam Deck Mobile-First Control Panel */}
-        <div className="relative bg-[#0F1015] flex flex-col h-[55vh] md:h-full md:w-[420px] lg:w-[480px] xl:w-[520px] shrink-0 min-h-0">
+        <div className="relative bg-[#0F1015] flex flex-col flex-1 md:flex-none md:h-full md:w-[420px] lg:w-[480px] xl:w-[520px] min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
             <div className="p-4 md:p-6 flex flex-col gap-5">
               {/* Header Meta Info */}
@@ -555,7 +568,7 @@ export default function MovieDetailPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {VIDEO_SERVERS.map((s, i) => {
+                  {servers.map((s, i) => {
                     const st = serverHealth[s.id];
                     const isSelected = server === s.id;
 
@@ -582,10 +595,18 @@ export default function MovieDetailPage() {
                                 ? 'bg-red-600 text-white'
                                 : st === 'checking'
                                   ? 'bg-yellow-400 text-black'
-                                  : 'bg-[#107C10] text-white'
+                                  : st === 'up'
+                                    ? 'bg-[#107C10] text-white'
+                                    : 'bg-zinc-700 text-white'
                             )}
                           >
-                            {st === 'down' ? 'OFFLINE' : st === 'checking' ? 'PINGING' : 'ONLINE'}
+                            {st === 'down'
+                              ? 'UNREACHABLE'
+                              : st === 'checking'
+                                ? 'CHECKING'
+                                : st === 'up'
+                                  ? 'REACHABLE'
+                                  : 'UNCHECKED'}
                           </span>
                         </div>
                         <span className="truncate uppercase text-[11px]">{s.id}</span>
@@ -593,10 +614,28 @@ export default function MovieDetailPage() {
                     );
                   })}
                 </div>
+                <p className="text-xs text-zinc-400">
+                  Connection checks do not confirm title availability. If a video won’t start, try
+                  the next server.
+                </p>
+                {isPlaying && (
+                  <button
+                    onClick={handleNextServer}
+                    className="w-full bg-yellow-400 px-3 py-2 font-bold text-black"
+                  >
+                    Try next server
+                  </button>
+                )}
+                {isPlaying && playerSlow && (
+                  <p role="status" className="text-xs text-zinc-300">
+                    Playback still not starting? Try another server above. You may need to tap Play
+                    inside the video.
+                  </p>
+                )}
               </div>
 
               {/* TV Series Season & Episode Picker */}
-              {(movie.first_air_date || movie.number_of_seasons) && (
+              {mediaType === 'tv' && (
                 <div className="flex flex-col gap-3 p-4 bg-gray-900/60 rounded-2xl border border-gray-800/80 shadow-xl">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-black text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
@@ -641,7 +680,7 @@ export default function MovieDetailPage() {
                       {
                         length:
                           movie.seasons?.find((s: any) => s.season_number === selectedSeason)
-                            ?.episode_count || 24,
+                            ?.episode_count || 0,
                       },
                       (_, i) => i + 1
                     ).map((ep) => {
@@ -740,16 +779,16 @@ export default function MovieDetailPage() {
                       }}
                       className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
                     >
-                      {VIDEO_SERVERS.map((s, i) => {
+                      {servers.map((s, i) => {
                         const st = serverHealth[s.id];
                         const tag =
                           st === 'down'
-                            ? ' — Offline'
+                            ? ' — Unreachable'
                             : st === 'checking'
                               ? ' — Checking…'
                               : st === 'up'
-                                ? ' — Online'
-                                : '';
+                                ? ' — Reachable'
+                                : ' — Unchecked';
                         return (
                           <option key={s.id} value={s.id}>
                             Server {i + 1}

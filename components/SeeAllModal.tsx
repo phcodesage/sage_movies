@@ -52,6 +52,8 @@ export default function SeeAllModal({
       else if (category === 'anime') url = `/api/anime/collection?page=${nextPage}`;
       else if (category.startsWith('provider_'))
         url = `/api/movies/provider/${category.slice('provider_'.length)}?page=${nextPage}`;
+      else if (category.startsWith('studio_'))
+        url = `/api/movies/studio/${category.slice('studio_'.length)}?page=${nextPage}`;
       else if (!isNaN(parseInt(category))) url = `/api/movies/genre/${category}?page=${nextPage}`;
 
       if (!url) {
@@ -60,13 +62,18 @@ export default function SeeAllModal({
       }
 
       const res = await fetch(url);
+      if (!res.ok) throw new Error('Could not load more titles');
       const data = await res.json();
 
       if (data.results && data.results.length > 0) {
         setItems((prev) => {
           const newItems = [...prev, ...data.results];
           // Filter duplicates
-          return Array.from(new Map(newItems.map((item) => [item.id, item])).values());
+          return Array.from(
+            new Map(
+              newItems.map((item) => [`${item.media_type || 'movie'}:${item.id}`, item])
+            ).values()
+          );
         });
         setPage(nextPage);
         setHasMore(data.hasMore);
@@ -123,9 +130,7 @@ export default function SeeAllModal({
               <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <Image
                   src={
-                    item.poster_path
-                      ? `${THUMB_URL}${item.poster_path}`
-                      : 'https://via.placeholder.com/500x750?text=No+Image'
+                    item.poster_path ? `${THUMB_URL}${item.poster_path}` : '/poster-placeholder.svg'
                   }
                   alt={item.title || item.name || ''}
                   fill
@@ -174,7 +179,7 @@ export default function SeeAllModal({
           ) : (
             <div className="text-center animate-in fade-in duration-1000">
               <p className="text-lg font-bold text-gray-400">
-                You've reached the end of the collection.
+                You’ve reached the end of the collection.
               </p>
               <p className="mt-2 italic">New titles are added every day!</p>
             </div>

@@ -3,9 +3,10 @@
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { Play, ChevronLeft, ChevronRight, ArrowRight, Star } from 'lucide-react';
 import type { TMDBMovie } from '../types/tmdb';
-import PreviewCard from './PreviewCard';
+const PreviewCard = dynamic(() => import('./PreviewCard'), { ssr: false });
 import { getStudioInfo } from '../lib/studioLogos';
 
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
@@ -35,8 +36,9 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
   };
 
   const handleMouseEnter = (movie: TMDBMovie, event: React.MouseEvent<HTMLDivElement>) => {
+    if (!window.matchMedia('(hover: hover)').matches) return;
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
-    
+
     const target = event.currentTarget;
     hoverTimer.current = setTimeout(() => {
       const rect = target.getBoundingClientRect();
@@ -62,14 +64,15 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {
       const { scrollLeft, clientWidth } = rowRef.current;
-      const scrollAmount = direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth;
+      const scrollAmount =
+        direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth;
       rowRef.current.scrollTo({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
-  const previewPos = { 
-    x: cardPosition.left + (cardPosition.width || 170) / 2, 
-    y: cardPosition.top + (cardPosition.height || 250) / 2 
+  const previewPos = {
+    x: cardPosition.left + (cardPosition.width || 170) / 2,
+    y: cardPosition.top + (cardPosition.height || 250) / 2,
   };
 
   return (
@@ -113,11 +116,11 @@ export default function MovieRow({ title, items, id, onSeeAll }: MovieRowProps) 
 
             return (
               <div
-                key={item.id}
+                key={`${item.media_type || 'movie'}:${item.id}`}
                 onClick={() => handleMovieClick(item)}
                 onMouseEnter={(e) => handleMouseEnter(item, e)}
                 onMouseLeave={handleMouseLeave}
-                className="min-w-[120px] md:min-w-[170px] cursor-pointer group/poster shrink-0"
+                className="w-[120px] md:w-[170px] cursor-pointer group/poster shrink-0"
               >
                 {/* Xbox Game Tile Box (Neo-Brutalism) */}
                 <div className="relative h-[180px] md:h-[250px] bg-black border-4 border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] group-hover/poster:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group-hover/poster:-translate-x-1 group-hover/poster:-translate-y-1 transition-all duration-200 overflow-hidden">

@@ -159,7 +159,7 @@ export default function GenrePage({ params }: GenrePageProps) {
               NO TITLES FOUND
             </h3>
             <p className="text-xs font-bold text-zinc-400 max-w-md">
-              We couldn't find any titles for this category right now.
+              We couldn’t find any titles for this category right now.
             </p>
           </div>
         )}
