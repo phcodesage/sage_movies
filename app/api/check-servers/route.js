@@ -8,8 +8,8 @@ export async function GET(request) {
   const type = searchParams.get('type') || 'movie';
   const id = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID parameter required' }, { status: 400 });
+  if (!id || !/^\d+$/.test(id) || !['movie', 'tv'].includes(type)) {
+    return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
   const checks = await Promise.allSettled(
@@ -48,8 +48,17 @@ export async function GET(request) {
     }
   });
 
-  return NextResponse.json({
-    status: serverStatus,
-    bestServer: firstWorkingServer || VIDEO_SERVERS[0].id,
-  });
+  return NextResponse.json(
+    {
+      status: serverStatus,
+      bestServer: firstWorkingServer || VIDEO_SERVERS[0].id,
+    },
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=120',
+        'CDN-Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'Netlify-Vary': 'query',
+      },
+    }
+  );
 }

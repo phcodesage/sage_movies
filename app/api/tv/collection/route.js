@@ -43,7 +43,7 @@ export async function GET(request) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+          'Cache-Control': 'public, max-age=300, s-maxage=1800, stale-while-revalidate=3600',
           'CDN-Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
           // Netlify's CDN cache key ignores query strings unless told otherwise,
           // which served one ?page's response for every page. Netlify-Vary opts in.

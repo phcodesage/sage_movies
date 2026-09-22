@@ -13,7 +13,7 @@ export async function GET() {
     const data = await response.json();
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800',
         'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
       },
     });

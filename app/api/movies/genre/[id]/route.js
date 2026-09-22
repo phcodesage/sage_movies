@@ -41,7 +41,7 @@ export async function GET(request, { params }) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+          'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=7200',
           'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
           'Netlify-Vary': 'query',
         },

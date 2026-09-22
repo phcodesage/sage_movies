@@ -17,5 +17,10 @@ export async function GET() {
     release_notes:
       '• Upgraded to Gradle 8.14, AGP 8.11.1, and Kotlin 2.2.20\n• Updated webview_flutter_wkwebview to 3.26.0\n• Fixed broken APK download link & updated dependencies',
     force_update: false,
+  }, {
+    headers: {
+      'Cache-Control': 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=43200',
+      'CDN-Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=43200',
+    },
   });
 }

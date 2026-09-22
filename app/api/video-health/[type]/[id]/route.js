@@ -125,7 +125,7 @@ export async function GET(request, { params }) {
   const { type, id } = await params;
   const { searchParams } = new URL(request.url);
 
-  if (!type || !id || !['movie', 'tv'].includes(type)) {
+  if (!type || !id || !['movie', 'tv'].includes(type) || !/^\d+$/.test(id)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
@@ -145,6 +145,12 @@ export async function GET(request, { params }) {
 
   return NextResponse.json(
     { servers: Object.fromEntries(entries) },
-    { headers: { 'Cache-Control': 'no-store' } }
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=15, s-maxage=30, stale-while-revalidate=60',
+        'CDN-Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Netlify-Vary': 'query',
+      },
+    }
   );
 }

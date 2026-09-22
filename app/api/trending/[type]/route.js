@@ -7,6 +7,10 @@ export async function GET(request, { params }) {
   const page = parseInt(searchParams.get('page')) || 1;
   const apiKey = process.env.TMDB_API_KEY;
 
+  if (!['all', 'movie', 'tv'].includes(type) || page < 1 || page > 50) {
+    return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+  }
+
   try {
     const results = [];
     
@@ -49,7 +53,16 @@ export async function GET(request, { params }) {
     const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
     uniqueResults.sort((a, b) => b.popularity - a.popularity);
     
-    return NextResponse.json({ results: uniqueResults });
+    return NextResponse.json(
+      { results: uniqueResults },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=7200',
+          'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+          'Netlify-Vary': 'query',
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
   }

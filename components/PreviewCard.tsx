@@ -8,6 +8,7 @@ import type { TMDBMovie } from '../types/tmdb';
 import { cn } from '../lib/utils';
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
+const trailerCache = new Map<string, string | null>();
 
 interface PreviewCardProps {
   movie: TMDBMovie;
@@ -25,17 +26,33 @@ export default function PreviewCard({ movie, isVisible, position, onClose, onPla
   useEffect(() => {
     if (isVisible && movie) {
       const type = movie.first_air_date ? 'tv' : 'movie';
+      const cacheKey = `${type}:${movie.id}`;
+
+      if (trailerCache.has(cacheKey)) {
+        setTrailerKey(trailerCache.get(cacheKey) ?? null);
+        return;
+      }
+
+      let cancelled = false;
       fetch(`/api/movie/${movie.id}?type=${type}&v=2`)
         .then(res => res.json())
         .then(data => {
-          if (data.videos && data.videos.results) {
-            const trailer = data.videos.results.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube');
-            if (trailer) {
-              setTrailerKey(trailer.key);
-            }
-          }
+          const trailer = data.videos?.results?.find(
+            (video: { type?: string; site?: string; key?: string }) =>
+              video.type === 'Trailer' && video.site === 'YouTube'
+          );
+          const trailerKey = trailer?.key ?? null;
+          trailerCache.set(cacheKey, trailerKey);
+          if (!cancelled) setTrailerKey(trailerKey);
         })
-        .catch(console.error);
+        .catch(() => {
+          trailerCache.set(cacheKey, null);
+          if (!cancelled) setTrailerKey(null);
+        });
+
+      return () => {
+        cancelled = true;
+      };
     } else {
       setTrailerKey(null);
     }

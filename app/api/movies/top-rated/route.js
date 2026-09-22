@@ -15,7 +15,12 @@ export async function GET(request) {
       next: { revalidate: 3600 },
     });
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=7200',
+        'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch top rated movies' }, { status: 500 });
   }

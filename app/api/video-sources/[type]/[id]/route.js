@@ -6,7 +6,7 @@ export async function GET(request, { params }) {
   const { type, id } = resolvedParams;
   const { searchParams } = new URL(request.url);
 
-  if (!type || !id || !['movie', 'tv'].includes(type)) {
+  if (!type || !id || !['movie', 'tv'].includes(type) || !/^\d+$/.test(id)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 
@@ -26,11 +26,20 @@ export async function GET(request, { params }) {
     episode,
   });
 
-  return NextResponse.json({
-    embedURL,
-    server: server.id,
-    // The UI reads this to tell the user when the language picker has no effect
-    // on the provider they selected.
-    langApplied: server.supportsLang ? lang : null,
-  });
+  return NextResponse.json(
+    {
+      embedURL,
+      server: server.id,
+      // The UI reads this to tell the user when the language picker has no effect
+      // on the provider they selected.
+      langApplied: server.supportsLang ? lang : null,
+    },
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=172800',
+        'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
+        'Netlify-Vary': 'query',
+      },
+    }
+  );
 }

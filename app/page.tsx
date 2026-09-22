@@ -37,6 +37,7 @@ const MovieDetailModal = dynamic(() => import('../components/MovieDetailModal'),
 });
 
 const IMG_URL = 'https://image.tmdb.org/t/p/original';
+const bannerTrailerCache = new Map<string, string | null>();
 
 export default function Home() {
   const [trendingMovies, setTrendingMovies] = useState<TMDBMovie[]>([]);
@@ -88,19 +89,29 @@ export default function Home() {
     // the rotating banner from issuing a new detail request every six seconds.
     if (!bannerMovie || !isHoveringBanner) return;
 
-    let cancelled = false;
     const type = bannerMovie.first_air_date ? 'tv' : 'movie';
+    const cacheKey = `${type}:${bannerMovie.id}`;
+
+    if (bannerTrailerCache.has(cacheKey)) {
+      setBannerTrailerKey(bannerTrailerCache.get(cacheKey) ?? null);
+      return;
+    }
+
+    let cancelled = false;
     fetch(`/api/movie/${bannerMovie.id}?type=${type}&v=2`)
       .then((res) => res.json())
       .then((data) => {
-        if (cancelled || !data.videos?.results) return;
+        if (!data.videos?.results) return;
         const trailer = data.videos.results.find(
           (video: { type?: string; site?: string }) =>
             video.type === 'Trailer' && video.site === 'YouTube'
         );
-        setBannerTrailerKey(trailer?.key ?? null);
+        const trailerKey = trailer?.key ?? null;
+        bannerTrailerCache.set(cacheKey, trailerKey);
+        if (!cancelled) setBannerTrailerKey(trailerKey);
       })
       .catch(() => {
+        bannerTrailerCache.set(cacheKey, null);
         if (!cancelled) setBannerTrailerKey(null);
       });
 

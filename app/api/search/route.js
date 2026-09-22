@@ -134,7 +134,7 @@ export async function GET(request) {
       { results: uniqueResults },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
           'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
           // Netlify's CDN cache key ignores query strings unless told otherwise,
           // which served one query's results for every search. Netlify-Vary opts in.
