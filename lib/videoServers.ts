@@ -34,50 +34,59 @@ export const SUBTITLE_LANGUAGES = [
   { code: 'ar', label: 'Arabic' },
 ];
 
-export const DEFAULT_SERVER = 'player.videasy.to';
+export const DEFAULT_SERVER = 'vidlink.pro';
 export const DEFAULT_LANG = 'en';
 
 export const VIDEO_SERVERS: VideoServer[] = [
   {
-    id: 'player.videasy.to',
-    label: 'Videasy (Recommended)',
-    supportsLang: false,
-    sandboxTolerant: false,
-    build: (type, id, { season, episode }) => {
-      const path =
-        type === 'tv' && season && episode ? `tv/${id}/${season}/${episode}` : `${type}/${id}`;
-      return `https://player.videasy.to/${path}?ads_behavior=background&popup_mode=quiet`;
-    },
-  },
-  {
-    id: 'vidsrc.in',
-    label: 'VidSrc Direct',
+    id: 'vidlink.pro',
+    label: 'VidLink (Recommended)',
     supportsLang: false,
     sandboxTolerant: false,
     build: (type, id, { season = 1, episode = 1 }) =>
       type === 'tv'
-        ? `https://vidsrc.in/embed/tv/${id}/${season}/${episode}`
-        : `https://vidsrc.in/embed/movie/${id}`,
+        ? `https://vidlink.pro/tv/${id}/${season}/${episode}`
+        : `https://vidlink.pro/movie/${id}`,
   },
   {
-    id: 'vidsrc.pm',
-    label: 'VidSrc VIP (HD)',
+    id: 'embed.vidrift.net',
+    label: 'VidRift (HD)',
     supportsLang: false,
     sandboxTolerant: false,
     build: (type, id, { season = 1, episode = 1 }) =>
       type === 'tv'
-        ? `https://vidsrc.pm/embed/tv/${id}/${season}/${episode}`
-        : `https://vidsrc.pm/embed/movie/${id}`,
+        ? `https://embed.vidrift.net/embed/tv/${id}/${season}/${episode}`
+        : `https://embed.vidrift.net/embed/movie/${id}`,
   },
   {
-    id: '2embed',
-    label: '2Embed (Reliable)',
+    id: 'vidfast.pro',
+    label: 'VidFast (Fast)',
     supportsLang: false,
     sandboxTolerant: false,
     build: (type, id, { season = 1, episode = 1 }) =>
       type === 'tv'
-        ? `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`
-        : `https://www.2embed.cc/embed/${id}`,
+        ? `https://vidfast.pro/tv/${id}/${season}/${episode}`
+        : `https://vidfast.pro/movie/${id}`,
+  },
+  {
+    id: 'embedwave.cc',
+    label: 'EmbedWave (No Ads)',
+    supportsLang: false,
+    sandboxTolerant: false,
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://embedwave.cc/embed/tv/${id}/${season}/${episode}`
+        : `https://embedwave.cc/embed/movie/${id}`,
+  },
+  {
+    id: 'vidspark.to',
+    label: 'VidSpark',
+    supportsLang: false,
+    sandboxTolerant: false,
+    build: (type, id, { season = 1, episode = 1 }) =>
+      type === 'tv'
+        ? `https://vidspark.to/tv/${id}/${season}/${episode}`
+        : `https://vidspark.to/movie/${id}`,
   },
   {
     id: 'superembed',

@@ -567,49 +567,51 @@ export default function MovieDetailPage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {servers.map((s, i) => {
                     const st = serverHealth[s.id];
                     const isSelected = server === s.id;
+                    const statusText =
+                      st === 'down'
+                        ? 'Unreachable'
+                        : st === 'checking'
+                          ? 'Checking'
+                          : st === 'up'
+                            ? 'Reachable'
+                            : 'Unchecked';
 
                     return (
                       <button
                         key={s.id}
+                        type="button"
+                        aria-label={`Server ${i + 1}, ${statusText}`}
+                        aria-pressed={isSelected}
                         onClick={() => {
                           registerPlaybackAdInteraction();
                           handleServerChange(s.id);
                         }}
                         className={cn(
-                          'p-2 text-left border-2 border-black text-xs font-black transition-all flex flex-col justify-between',
+                          'min-h-[54px] px-2 py-2 border-2 border-black font-black transition-all flex flex-col items-center justify-center gap-1',
                           isSelected
                             ? 'bg-[#1A9FFF] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                             : 'bg-[#12141A] text-zinc-300 hover:bg-zinc-800 hover:text-white'
                         )}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-[10px]">DRIVE 0{i + 1}</span>
-                          <span
-                            className={cn(
-                              'text-[9px] font-mono px-1 py-0.2 border border-black',
-                              st === 'down'
-                                ? 'bg-red-600 text-white'
-                                : st === 'checking'
-                                  ? 'bg-yellow-400 text-black'
-                                  : st === 'up'
-                                    ? 'bg-[#107C10] text-white'
-                                    : 'bg-zinc-700 text-white'
-                            )}
-                          >
-                            {st === 'down'
-                              ? 'UNREACHABLE'
+                        <span className="text-sm leading-none">Server {i + 1}</span>
+                        <span
+                          className={cn(
+                            'text-[9px] font-mono px-1 py-0.2 border border-black leading-none',
+                            st === 'down'
+                              ? 'bg-red-600 text-white'
                               : st === 'checking'
-                                ? 'CHECKING'
+                                ? 'bg-yellow-400 text-black'
                                 : st === 'up'
-                                  ? 'REACHABLE'
-                                  : 'UNCHECKED'}
-                          </span>
-                        </div>
-                        <span className="truncate uppercase text-[11px]">{s.id}</span>
+                                  ? 'bg-[#107C10] text-white'
+                                  : 'bg-zinc-700 text-white'
+                          )}
+                        >
+                          {statusText.toUpperCase()}
+                        </span>
                       </button>
                     );
                   })}

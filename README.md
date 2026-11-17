@@ -25,9 +25,23 @@ localhost also supports service workers.
 
 Provider definitions are shared in `lib/videoServers.ts`. The client constructs
 embed URLs directly, so refresh/server/episode changes cannot race stale API
-responses. Retired provider IDs resolve to the default. VidSrc Direct uses the
-[provider's documented path endpoints](https://vidsrc.in/#api). SuperEmbed is
+responses. Retired provider IDs resolve to the default. SuperEmbed is
 offered only for movies until its episode addressing is verified.
+
+Current providers (probed live 2026-11-17 with TMDB 550 / 1399 S1E1; all
+returned HTTP 200 with no framing block): VidLink (`vidlink.pro`,
+default), VidRift (`embed.vidrift.net`), VidFast (`vidfast.pro`), EmbedWave
+(`embedwave.cc`), VidSpark (`vidspark.to`), and SuperEmbed
+(`multiembed.mov`, movies only). VidRift's player bot-walls server-side
+probes (403, reported `unknown`); browsers load it fine — health stays
+advisory for exactly this case. Retired in the same check: Videasy
+(`player.videasy.to`, DNS dead; `player.videasy.net` only redirects there),
+VidSrc Direct (`vidsrc.in`, NXDOMAIN), VidSrc VIP (`vidsrc.pm`, origin
+520 + `SAMEORIGIN`), and 2Embed (wrapper over another backend, retired in
+favour of direct players). Probed alive but not wired, as next rotation
+spares: AutoEmbed (`player.autoembed.me/embed/{movie,tv}/...`) and
+VidSrc buzz (`vidsrc.buzz/embed/{movie,tv}/...`). Re-run the probe before
+trusting any of this — embed domains rotate without notice.
 
 Health checks report reachability, not guaranteed playback. JavaScript error
 strings, anti-bot responses, and server-side timeouts no longer block the player.

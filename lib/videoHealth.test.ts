@@ -31,6 +31,12 @@ describe('advisory provider health', () => {
     Object.defineProperty(response, 'url', { value: 'https://provider.example/' });
     expect(classifyProviderResponse(response, url)).toBe('down');
   });
+  it('probes with a browser user agent so bot-walled providers can answer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('<html>player</html>'));
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await probeProvider(url)).toBe('up');
+    expect(fetchMock.mock.calls[0][1].headers['User-Agent']).toContain('Mozilla/5.0');
+  });
   it('does not turn a server-side connection failure into a playback block', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
     expect(await probeProvider(url)).toBe('unknown');

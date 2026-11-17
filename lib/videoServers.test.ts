@@ -14,17 +14,25 @@ describe('playback routing', () => {
     expect(mediaTypeFromSlug('tv-breaking-bad')).toBe('tv');
   });
 
-  it('replaces retired providers with the default', () => {
-    expect(getServer('vidsrc.to').id).toBe(DEFAULT_SERVER);
+  it.each([
+    'vidsrc.to',
+    'player.videasy.to',
+    'vidsrc.in',
+    'vidsrc.pm',
+    '2embed',
+  ])('replaces retired provider %s with the default', (id) => {
+    expect(getServer(id).id).toBe(DEFAULT_SERVER);
   });
 
-  it('builds VidSrc path URLs instead of redirecting query URLs', () => {
-    expect(getServer('vidsrc.in').build('movie', '550', {})).toBe(
-      'https://vidsrc.in/embed/movie/550'
-    );
-    expect(getServer('vidsrc.in').build('tv', '1399', { season: 2, episode: 3 })).toBe(
-      'https://vidsrc.in/embed/tv/1399/2/3'
-    );
+  it.each([
+    ['embed.vidrift.net', 'https://embed.vidrift.net/embed/movie/550', 'https://embed.vidrift.net/embed/tv/1399/2/3'],
+    ['vidlink.pro', 'https://vidlink.pro/movie/550', 'https://vidlink.pro/tv/1399/2/3'],
+    ['vidfast.pro', 'https://vidfast.pro/movie/550', 'https://vidfast.pro/tv/1399/2/3'],
+    ['embedwave.cc', 'https://embedwave.cc/embed/movie/550', 'https://embedwave.cc/embed/tv/1399/2/3'],
+    ['vidspark.to', 'https://vidspark.to/movie/550', 'https://vidspark.to/tv/1399/2/3'],
+  ])('builds %s embed URLs from the TMDB id', (id, movieUrl, tvUrl) => {
+    expect(getServer(id).build('movie', '550', {})).toBe(movieUrl);
+    expect(getServer(id).build('tv', '1399', { season: 2, episode: 3 })).toBe(tvUrl);
   });
 
   it('only offers episode-aware providers for TV', () => {

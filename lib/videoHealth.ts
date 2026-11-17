@@ -25,7 +25,13 @@ export async function probeProvider(url: string): Promise<ServerHealth> {
       redirect: 'follow',
       signal: controller.signal,
       cache: 'no-store',
-      headers: { Accept: 'text/html' },
+      headers: {
+        Accept: 'text/html',
+        // Several providers 403 non-browser agents; a browser UA keeps the
+        // advisory probe from reporting them 'unknown' when they are up.
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36',
+      },
     });
     const status = classifyProviderResponse(response, url);
     await response.body?.cancel();
