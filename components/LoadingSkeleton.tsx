@@ -18,8 +18,56 @@ export function MovieRowSkeleton() {
 
 export function MovieGridSkeleton() {
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {[...Array(12)].map((_, i) => (
+        <div key={i} className="flex flex-col gap-2">
+          <div className="aspect-[2/3] w-full bg-gray-800 rounded-md animate-pulse" />
+          <div className="h-3 w-full bg-gray-800 rounded animate-pulse" />
+          <div className="h-2 w-1/2 bg-gray-800 rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SearchResultsSkeleton() {
+  return (
+    <div className="mb-10 w-full" aria-hidden="true">
+      <div className="flex items-center space-x-2 mb-4 border-b-4 border-black pb-2">
+        <div className="h-6 w-40 bg-gray-800 rounded animate-pulse" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <div className="aspect-[2/3] w-full bg-gray-800 rounded-md animate-pulse" />
+            <div className="h-3 w-full bg-gray-800 rounded animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function SimilarTitlesSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3" aria-hidden="true">
+      {[...Array(4)].map((_, i) => (
+        <div key={i}>
+          <div className="aspect-[2/3] w-full bg-gray-800 rounded-md animate-pulse" />
+          <div className="h-2.5 w-3/4 bg-gray-800 rounded mt-1.5 animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function PosterGridSkeleton({ count = 7 }: { count?: number }) {
+  return (
+    <div
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6 w-full"
+      aria-hidden="true"
+    >
+      {[...Array(count)].map((_, i) => (
         <div key={i} className="flex flex-col gap-2">
           <div className="aspect-[2/3] w-full bg-gray-800 rounded-md animate-pulse" />
           <div className="h-3 w-full bg-gray-800 rounded animate-pulse" />

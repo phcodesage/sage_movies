@@ -5,6 +5,7 @@ import {
   getServers,
   mediaTypeFromSlug,
   parseEpisodeNumber,
+  storedServerOrDefault,
 } from './videoServers';
 import { GET as videoSource } from '../app/api/video-sources/[type]/[id]/route';
 
@@ -33,6 +34,13 @@ describe('playback routing', () => {
   ])('builds %s embed URLs from the TMDB id', (id, movieUrl, tvUrl) => {
     expect(getServer(id).build('movie', '550', {})).toBe(movieUrl);
     expect(getServer(id).build('tv', '1399', { season: 2, episode: 3 })).toBe(tvUrl);
+  });
+
+  it('resolves a stored server preference, falling back when retired', () => {
+    expect(storedServerOrDefault('vidfast.pro', 'movie')).toBe('vidfast.pro');
+    expect(storedServerOrDefault('vidsrc.in', 'movie')).toBe(DEFAULT_SERVER);
+    expect(storedServerOrDefault(null, 'movie')).toBe(DEFAULT_SERVER);
+    expect(storedServerOrDefault('superembed', 'tv')).toBe(DEFAULT_SERVER);
   });
 
   it('only offers episode-aware providers for TV', () => {

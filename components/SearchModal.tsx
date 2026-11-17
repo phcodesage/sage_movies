@@ -7,6 +7,7 @@ import { Search, Play, X, Star, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { SEARCH_BRANDS, matchSearchBrand } from '../lib/streamingServices';
+import { SearchResultsSkeleton } from './LoadingSkeleton';
 import type { TMDBMovie } from '../types/tmdb';
 
 const THUMB_URL = 'https://image.tmdb.org/t/p/w500';
@@ -190,6 +191,7 @@ export default function SearchModal({
           </div>
         )}
 
+        {query && isSearching && results.length === 0 && <SearchResultsSkeleton />}
         {query && results.length > 0 && (
           renderSection('SEARCH RESULTS', results, true)
         )}

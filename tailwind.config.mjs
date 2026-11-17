@@ -7,8 +7,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        netflix: {
-          red: '#e50914',
+        sage: {
+          accent: '#1A9FFF',
+          green: '#107C10',
+          yellow: '#FFE600',
           black: '#141414',
           dark: '#181818',
           gray: '#808080',

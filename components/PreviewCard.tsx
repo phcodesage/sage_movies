@@ -77,7 +77,7 @@ export default function PreviewCard({
           initial={{ opacity: 0, scale: 0.8, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8 }}
-          className="fixed z-[100] w-[300px] md:w-[350px] bg-netflix-dark rounded-lg shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden border border-gray-800"
+          className="fixed z-[100] w-[300px] md:w-[350px] bg-sage-dark rounded-lg shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden border border-gray-800"
           style={{
             left: Math.min(Math.max(20, position.x - 175), window.innerWidth - 370),
             top: Math.min(Math.max(20, position.y - 175), window.innerHeight - 450),

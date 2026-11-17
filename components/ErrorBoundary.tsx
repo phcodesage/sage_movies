@@ -29,16 +29,16 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-netflix-black flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-netflix-dark rounded-lg p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-netflix-red mx-auto mb-4" />
+        <div className="min-h-screen bg-sage-black flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-sage-dark rounded-lg p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-sage-accent mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
             <p className="text-gray-400 mb-6">
               We encountered an unexpected error. Please try refreshing the page.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-netflix-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition flex items-center justify-center mx-auto"
+              className="bg-sage-accent hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition flex items-center justify-center mx-auto"
             >
               <RefreshCw className="w-5 h-5 mr-2" />
               Refresh Page

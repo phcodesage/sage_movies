@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Play, Star, X, Loader2 } from 'lucide-react';
+import { Play, Star, X } from 'lucide-react';
+import { PosterGridSkeleton } from './LoadingSkeleton';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import type { TMDBMovie } from '../types/tmdb';
@@ -110,9 +111,9 @@ export default function SeeAllModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-netflix-black flex flex-col"
+      className="fixed inset-0 z-[100] bg-sage-black flex flex-col"
     >
-      <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-netflix-black/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
+      <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-sage-black/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
         <h2 className="text-xl md:text-3xl font-extrabold text-white">{title}</h2>
         <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full transition-colors">
           <X className="w-6 h-6 md:w-8 md:h-8" />
@@ -137,12 +138,12 @@ export default function SeeAllModal({
                   className="object-cover group-hover:brightness-50 transition-all duration-300"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 14vw"
                 />
-                <div className="absolute inset-0 bg-netflix-red/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-sage-accent/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Play className="w-8 h-8 md:w-10 md:h-10 text-white fill-current transform scale-0 group-hover:scale-100 transition-transform duration-300" />
                 </div>
               </div>
               <div className="mt-1">
-                <h4 className="font-bold text-xs md:text-sm line-clamp-2 leading-tight group-hover:text-netflix-red transition-colors">
+                <h4 className="font-bold text-xs md:text-sm line-clamp-2 leading-tight group-hover:text-sage-accent transition-colors">
                   {item.title || item.name}
                 </h4>
                 <div className="flex items-center text-[10px] md:text-xs text-gray-500 mt-1 font-medium">
@@ -170,9 +171,9 @@ export default function SeeAllModal({
           className="py-12 flex flex-col items-center justify-center text-gray-500"
         >
           {isLoadingMore ? (
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-netflix-red" />
-              <p className="text-sm font-medium animate-pulse">Loading more magic...</p>
+            <div className="flex w-full flex-col items-center gap-3">
+              <PosterGridSkeleton />
+              <p className="text-sm font-medium animate-pulse">Loading more...</p>
             </div>
           ) : hasMore && category && category !== 'history' ? (
             <div className="h-20" />

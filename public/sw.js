@@ -1,6 +1,6 @@
 /* Only app assets are cached. APIs, player frames and video streams stay on the network. */
 const CACHE_PREFIX = 'sage-pwa-';
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const OFFLINE_URL = '/offline.html';
 const APP_ASSETS = [OFFLINE_URL, '/icons/icon-192.png', '/icons/icon-512.png'];
 

@@ -96,7 +96,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <WebSiteStructuredData />
         <OrganizationStructuredData />
       </head>
-      <body className="bg-netflix-black text-white min-h-screen font-sans">
+      <body className="bg-sage-black text-white min-h-screen font-sans">
         <ErrorBoundary>
           <AppProvider>
             <PWAProvider>

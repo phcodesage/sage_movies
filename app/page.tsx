@@ -23,13 +23,13 @@ import type { TMDBMovie } from '../types/tmdb';
 import { fetchJSON } from '../lib/utils/fetchJSON';
 
 const SeeAllModal = dynamic(() => import('../components/SeeAllModal'), {
-  loading: () => <div className="fixed inset-0 bg-netflix-black z-[100]" />,
+  loading: () => <div className="fixed inset-0 bg-sage-black z-[100]" />,
   ssr: false,
 });
 
 // Lazy load modals for better initial load performance
 const SearchModal = dynamic(() => import('../components/SearchModal'), {
-  loading: () => <div className="fixed inset-0 bg-netflix-black z-50" />,
+  loading: () => <div className="fixed inset-0 bg-sage-black z-50" />,
   ssr: false,
 });
 
@@ -240,7 +240,7 @@ export default function Home() {
   return (
     // overflow-x-clip, not -hidden: `hidden` would make this a scroll container and
     // break programmatic scrolling (see the note in globals.css).
-    <div className="relative min-h-screen bg-netflix-black overflow-x-clip">
+    <div className="relative min-h-screen bg-sage-black overflow-x-clip">
       {/* Full Page Loader */}
       <AnimatePresence>
         {isLoading && (
@@ -255,12 +255,10 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             // Nothing here is interactive, so it must never intercept pointer events —
             // a stuck overlay would otherwise make the entire site unclickable.
-            className="fixed inset-0 z-[100] bg-netflix-black flex flex-col items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-[100] bg-sage-black flex flex-col items-center justify-center pointer-events-none"
           >
-            <div className="netflix-loader scale-150">
-              <div className="netflix-logo">
-                <div className="middle-bar"></div>
-              </div>
+            <div className="scale-150">
+              <img src="/icons/icon.svg" alt="Sage Movies" className="sage-loader-logo" />
             </div>
             <motion.p
               initial={{ opacity: 0 }}
@@ -421,12 +419,12 @@ export default function Home() {
             )}
             {watchHistory.length > 0 && (
               <MovieRow
-                title="Resume Watching"
+                title="Continue Watching"
                 items={watchHistory}
                 id="history"
                 onSeeAll={() =>
                   setSeeAllData({
-                    title: 'Resume Watching',
+                    title: 'Continue Watching',
                     items: watchHistory,
                     category: 'history',
                   })

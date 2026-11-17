@@ -7,16 +7,22 @@ import { ArrowLeft, Star, Play, X, ChevronDown, ChevronUp, Info, Check } from 'l
 import Image from 'next/image';
 import { useAppContext } from '../../../../lib/context/AppContext';
 import { useWatchHistory } from '../../../../lib/hooks/useWatchHistory';
-import { useWatchedEpisodes } from '../../../../lib/hooks/useWatchedEpisodes';
+import {
+  useWatchedEpisodes,
+  getLastEpisode,
+  recordLastEpisode,
+} from '../../../../lib/hooks/useWatchedEpisodes';
 import { getSimilarMovies } from '../../../../lib/recommendations';
+import { SimilarTitlesSkeleton } from '../../../../components/LoadingSkeleton';
 import type { TMDBMovie } from '../../../../types/tmdb';
 import { cn } from '../../../../lib/utils';
 import { AdsterraNativeBanner, openAdsterraDirectLink } from '../../../../components/Adsterra';
 import {
   getServers,
   mediaTypeFromSlug,
-  SUBTITLE_LANGUAGES,
   DEFAULT_SERVER,
+  SERVER_STORAGE_KEY,
+  storedServerOrDefault,
   DEFAULT_LANG,
   getServer,
 } from '../../../../lib/videoServers';
@@ -58,7 +64,6 @@ export default function MovieDetailPage() {
 
   const [movie, setMovie] = useState<TMDBMovie | any>(null);
   const [server, setServer] = useState(DEFAULT_SERVER);
-  const [lang, setLang] = useState(DEFAULT_LANG);
 
   // Popup-blocking is applied automatically per provider rather than exposed as a
   // toggle: users had no way to know what "Block provider popups" meant, and most
@@ -73,6 +78,7 @@ export default function MovieDetailPage() {
   const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [similarMovies, setSimilarMovies] = useState<TMDBMovie[]>([]);
+  const [isSimilarLoading, setIsSimilarLoading] = useState(true);
   const [showUpNext, setShowUpNext] = useState(false);
   const [playerAttempt, setPlayerAttempt] = useState(0);
   const [playerSlow, setPlayerSlow] = useState(false);
@@ -96,8 +102,18 @@ export default function MovieDetailPage() {
       setError(null);
       setSelectedSeason(1);
       setSelectedEpisode(1);
-      setServer(DEFAULT_SERVER);
+      // Restore the viewer's remembered server instead of resetting to the
+      // default on every visit; retired ids resolve to the default.
+      try {
+        setServer(
+          storedServerOrDefault(localStorage.getItem(SERVER_STORAGE_KEY), mediaType)
+        );
+      } catch {
+        setServer(DEFAULT_SERVER);
+      }
+      serverHydrated.current = true;
       setSimilarMovies([]);
+      setIsSimilarLoading(true);
       setServerHealth({});
       try {
         const res = await fetch(`/api/movie/${id}?type=${mediaType}`, {
@@ -113,6 +129,14 @@ export default function MovieDetailPage() {
         } else {
           setMovie(data);
           setError(null);
+          // Continue Watching: preselect the episode this show left off at.
+          if (mediaType === 'tv') {
+            const last = getLastEpisode(id);
+            if (last) {
+              setSelectedSeason(last.season);
+              setSelectedEpisode(last.episode);
+            }
+          }
 
           // Fetch similar movies pool
           // IMPORTANT: Normalize genres from API format [{id, name}] to genre_ids [id, id]
@@ -171,6 +195,8 @@ export default function MovieDetailPage() {
               if (!controller.signal.aborted) setSimilarMovies(similar);
             } catch (err) {
               console.error('Pool fetch error:', err);
+            } finally {
+              if (!controller.signal.aborted) setIsSimilarLoading(false);
             }
           };
 
@@ -193,6 +219,16 @@ export default function MovieDetailPage() {
   // Probe every provider once the movie is known, so the server picker can mark dead
   // servers and default to a working one. Host-level reachability barely moves with
   // season/episode, so we key on the movie id only and keep the outbound probes rare.
+  const serverHydrated = React.useRef(false);
+  useEffect(() => {
+    if (!serverHydrated.current) return;
+    try {
+      localStorage.setItem(SERVER_STORAGE_KEY, server);
+    } catch {
+      /* Storage denied: playback still works, the choice just won't stick. */
+    }
+  }, [server]);
+
   const healthReqId = React.useRef(0);
   const runHealthCheck = React.useCallback(() => {
     if (!movie) return;
@@ -232,7 +268,7 @@ export default function MovieDetailPage() {
   const isCheckingHealth = Object.values(serverHealth).some((v) => v === 'checking');
   const loadVideoSource = (
     selectedServer: string,
-    selectedLang: string = lang,
+    selectedLang: string = DEFAULT_LANG,
     sNum: number = selectedSeason,
     eNum: number = selectedEpisode
   ) => {
@@ -253,7 +289,10 @@ export default function MovieDetailPage() {
     // newer server/episode selection or be blocked by the site's API rate limit.
     setPlayerAttempt((attempt) => attempt + 1);
     addToHistory({ ...movie, media_type: mediaType });
-    if (mediaType === 'tv') markWatched(movie.id, sNum, eNum);
+    if (mediaType === 'tv') {
+      markWatched(movie.id, sNum, eNum);
+      recordLastEpisode(movie.id, sNum, eNum);
+    }
   };
 
   useEffect(() => {
@@ -268,13 +307,13 @@ export default function MovieDetailPage() {
   // Fetch video source when user clicks play
   const handlePlay = (sNum: number = selectedSeason, eNum: number = selectedEpisode) => {
     setIsPlaying(true);
-    loadVideoSource(server, lang, sNum, eNum);
+    loadVideoSource(server, DEFAULT_LANG, sNum, eNum);
   };
 
   const handleServerChange = (newServer: string) => {
     setServer(newServer);
     if (isPlaying) {
-      loadVideoSource(newServer, lang);
+      loadVideoSource(newServer);
     }
   };
 
@@ -284,14 +323,7 @@ export default function MovieDetailPage() {
     const nextServer = (candidates.find((s) => serverHealth[s.id] !== 'down') || candidates[0]).id;
     setServer(nextServer);
     if (isPlaying) {
-      loadVideoSource(nextServer, lang);
-    }
-  };
-
-  const handleLangChange = (newLang: string) => {
-    setLang(newLang);
-    if (isPlaying) {
-      loadVideoSource(server, newLang);
+      loadVideoSource(nextServer);
     }
   };
 
@@ -305,12 +337,8 @@ export default function MovieDetailPage() {
   // Loading state
   if (isLoading && !movie) {
     return (
-      <div className="min-h-screen bg-netflix-black flex items-center justify-center">
-        <div className="netflix-loader">
-          <div className="netflix-logo">
-            <div className="middle-bar" />
-          </div>
-        </div>
+      <div className="min-h-screen bg-sage-black flex items-center justify-center">
+        <img src="/icons/icon.svg" alt="Sage Movies" className="sage-loader-logo" />
       </div>
     );
   }
@@ -318,13 +346,13 @@ export default function MovieDetailPage() {
   // Error state
   if (error && !movie) {
     return (
-      <div className="min-h-screen bg-netflix-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-sage-black flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-xl text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.back()}
             aria-label="Back"
-            className="bg-netflix-red hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition"
+            className="bg-sage-accent hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition"
           >
             Go Back
           </button>
@@ -355,7 +383,7 @@ export default function MovieDetailPage() {
           <button
             onClick={() => router.back()}
             aria-label="Back to previous page"
-            className="px-3 py-1 bg-[#1A9FFF] text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:-translate-y-0.5 transition-all flex items-center space-x-1"
+            className="min-h-[44px] px-3 py-2 bg-[#1A9FFF] text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:-translate-y-0.5 transition-all flex items-center space-x-1"
           >
             <span className="bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">B</span>
             <ArrowLeft className="w-3.5 h-3.5 stroke-[3]" />
@@ -378,9 +406,9 @@ export default function MovieDetailPage() {
               <button
                 onClick={() => {
                   registerPlaybackAdInteraction();
-                  loadVideoSource(server, lang);
+                  loadVideoSource(server);
                 }}
-                className="px-2.5 py-1 bg-[#FFE600] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#FFE600] transition-all flex items-center space-x-1"
+                className="min-h-[44px] px-3 py-2 bg-[#FFE600] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#FFE600] transition-all flex items-center space-x-1"
               >
                 <span className="hidden sm:inline bg-black text-[#FFE600] text-[10px] px-1 py-0.5 font-mono">
                   A
@@ -393,7 +421,7 @@ export default function MovieDetailPage() {
                   registerPlaybackAdInteraction();
                   handleNextServer();
                 }}
-                className="px-2.5 py-1 bg-[#1A9FFF] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#1A9FFF] transition-all flex items-center space-x-1"
+                className="min-h-[44px] px-3 py-2 bg-[#1A9FFF] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-[#1A9FFF] transition-all flex items-center space-x-1"
               >
                 <span className="hidden sm:inline bg-black text-[#1A9FFF] text-[10px] px-1 py-0.5 font-mono">
                   X
@@ -405,7 +433,7 @@ export default function MovieDetailPage() {
 
           <button
             onClick={() => router.push('/')}
-            className="px-2.5 py-1 bg-white text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF3366] hover:text-white transition-all text-[10px] uppercase"
+            className="min-h-[44px] px-3 py-2 bg-white text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#1A9FFF] hover:text-black transition-all text-[10px] uppercase flex items-center"
           >
             SAGE HOME
           </button>
@@ -415,7 +443,7 @@ export default function MovieDetailPage() {
       {/* Main Content: Player (Left/Top) + Details Sidebar (Right/Bottom) */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* Left/Top Section: Steam Deck Video Player Stage */}
-        <div className="relative bg-black h-[40%] md:h-full shrink-0 md:flex-1 md:min-w-0 border-b-4 md:border-b-0 md:border-r-4 border-black">
+        <div className="relative bg-black w-full aspect-video md:aspect-auto md:h-full shrink-0 md:flex-1 md:min-w-0 border-b-4 md:border-b-0 md:border-r-4 border-black">
           {isPlaying ? (
             <>
               {isLoading && (
@@ -462,7 +490,7 @@ export default function MovieDetailPage() {
               <button
                 onClick={handleClosePlayer}
                 aria-label="Close player"
-                className="absolute top-3 right-3 z-30 bg-[#FF3366] text-white font-black text-xs p-2 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-black transition active:scale-95"
+                className="absolute top-3 right-3 z-30 w-11 h-11 flex items-center justify-center bg-[#FF3366] text-white font-black text-xs border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-black transition active:scale-95"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
@@ -638,13 +666,19 @@ export default function MovieDetailPage() {
 
               {/* TV Series Season & Episode Picker */}
               {mediaType === 'tv' && (
-                <div className="flex flex-col gap-3 p-4 bg-gray-900/60 rounded-2xl border border-gray-800/80 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-netflix-red animate-pulse" />
-                      EPISODE SELECTOR
+                <div className="flex flex-col gap-3 p-4 bg-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="flex items-center justify-between border-b-2 border-zinc-800 pb-2">
+                    <span className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-2">
+                      <img
+                        src="/icons/icon.svg"
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="w-7 h-7 border-2 border-black"
+                      />
+                      Episodes
                     </span>
-                    <span className="text-[11px] font-bold text-netflix-red">
+                    <span className="bg-[#FFE600] text-black text-[10px] font-black uppercase px-1.5 py-0.5 border border-black">
                       Season {selectedSeason} of{' '}
                       {movie.number_of_seasons || movie.seasons?.length || 1}
                     </span>
@@ -658,9 +692,9 @@ export default function MovieDetailPage() {
                         const s = parseInt(e.target.value, 10);
                         setSelectedSeason(s);
                         setSelectedEpisode(1);
-                        if (isPlaying) loadVideoSource(server, lang, s, 1);
+                        if (isPlaying) loadVideoSource(server, DEFAULT_LANG, s, 1);
                       }}
-                      className="w-full bg-netflix-black text-white text-xs font-bold border border-gray-700 rounded-xl px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
+                      className="w-full min-h-[44px] bg-[#0F1015] text-white text-xs font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] px-3 py-2.5 outline-none focus:border-[#FFE600] transition-all appearance-none cursor-pointer"
                     >
                       {Array.from(
                         { length: movie.number_of_seasons || movie.seasons?.length || 1 },
@@ -695,20 +729,21 @@ export default function MovieDetailPage() {
                             registerPlaybackAdInteraction();
                             setSelectedEpisode(ep);
                             if (isPlaying) {
-                              loadVideoSource(server, lang, selectedSeason, ep);
+                              loadVideoSource(server, DEFAULT_LANG, selectedSeason, ep);
                             } else {
                               handlePlay(selectedSeason, ep);
                             }
                           }}
                           className={cn(
-                            'px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 border flex items-center gap-1.5',
+                            'min-h-[44px] px-3.5 py-2 text-xs font-black transition-all shrink-0 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5',
                             selected
-                              ? 'bg-netflix-red text-white border-netflix-red shadow-lg shadow-red-900/40'
+                              ? 'bg-[#FFE600] text-black'
                               : watched
-                                ? 'bg-netflix-black text-gray-300 border-emerald-700/60 hover:border-emerald-500'
-                                : 'bg-netflix-black text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white'
+                                ? 'bg-[#107C10] text-white hover:bg-[#0E6B0E]'
+                                : 'bg-[#12141A] text-zinc-300 hover:bg-zinc-800 hover:text-white'
                           )}
                         >
+                          {selected && <Play className="w-3 h-3 fill-current shrink-0" />}
                           <span>E{ep}</span>
                           <span
                             role="button"
@@ -723,12 +758,12 @@ export default function MovieDetailPage() {
                               toggleWatched(movie.id, selectedSeason, ep);
                             }}
                             className={cn(
-                              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
                               watched
-                                ? 'border-emerald-400 bg-emerald-500 text-white'
+                                ? 'border-black bg-white text-black'
                                 : selected
-                                  ? 'border-white/60 text-transparent hover:text-white/80'
-                                  : 'border-gray-600 text-transparent hover:text-gray-300'
+                                  ? 'border-black/50 text-transparent hover:text-black/70'
+                                  : 'border-zinc-600 text-transparent hover:text-zinc-300'
                             )}
                           >
                             <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
@@ -779,7 +814,7 @@ export default function MovieDetailPage() {
                         registerPlaybackAdInteraction();
                         handleServerChange(e.target.value);
                       }}
-                      className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer"
+                      className="w-full bg-sage-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-sage-accent transition-all appearance-none cursor-pointer"
                     >
                       {servers.map((s, i) => {
                         const st = serverHealth[s.id];
@@ -802,24 +837,10 @@ export default function MovieDetailPage() {
                     <ChevronDown className="pointer-events-none absolute right-3 bottom-2.5 h-4 w-4 text-gray-500" />
                   </div>
 
-                  <div className="relative">
-                    <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">
-                      Subtitle Language
-                    </label>
-                    <select
-                      value={lang}
-                      onChange={(e) => handleLangChange(e.target.value)}
-                      disabled={!getServer(server).supportsLang}
-                      className="w-full bg-netflix-black text-white text-xs border border-gray-700 rounded-lg px-3 py-2 outline-none focus:border-netflix-red transition-all appearance-none cursor-pointer disabled:opacity-40"
-                    >
-                      {SUBTITLE_LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 bottom-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
-                  </div>
+                  <p className="text-[11px] leading-relaxed text-gray-500">
+                    Subtitles are chosen inside the player — use its CC / settings menu
+                    after the stream starts.
+                  </p>
                 </div>
               </details>
 
@@ -840,7 +861,7 @@ export default function MovieDetailPage() {
                   {/* Reveal toggle for mobile/small screens */}
                   <button
                     onClick={() => setIsDescExpanded(!isDescExpanded)}
-                    className="md:hidden text-netflix-red text-[10px] font-black uppercase tracking-tight"
+                    className="md:hidden text-sage-accent text-[10px] font-black uppercase tracking-tight"
                   >
                     {isDescExpanded ? 'Less' : 'More'}
                   </button>
@@ -857,7 +878,7 @@ export default function MovieDetailPage() {
 
                 {/* Similar Movies Section (Embedded below description) */}
                 <div className="mt-4 border-t border-gray-800 pt-6">
-                  <h4 className="text-[10px] font-black uppercase text-netflix-red mb-4 tracking-widest flex items-center gap-2">
+                  <h4 className="text-[10px] font-black uppercase text-sage-accent mb-4 tracking-widest flex items-center gap-2">
                     <Play className="w-3 h-3 fill-current" /> More From{' '}
                     {movie.production_companies?.[0]?.name || 'Similar Titles'}
                   </h4>
@@ -886,8 +907,8 @@ export default function MovieDetailPage() {
                               className={cn(
                                 'relative aspect-[2/3] rounded-md overflow-hidden border transition-all',
                                 isSameStudio
-                                  ? 'border-netflix-red/50 shadow-[0_0_10px_rgba(229,9,20,0.2)]'
-                                  : 'border-gray-800 group-hover:border-netflix-red'
+                                  ? 'border-sage-accent/50 shadow-[0_0_10px_rgba(26,159,255,0.25)]'
+                                  : 'border-gray-800 group-hover:border-sage-accent'
                               )}
                             >
                               <Image
@@ -901,7 +922,7 @@ export default function MovieDetailPage() {
                                 <Play className="w-6 h-6 text-white fill-current" />
                               </div>
                               {isSameStudio && (
-                                <div className="absolute top-1 right-1 bg-netflix-red text-[8px] font-black px-1 rounded shadow-lg">
+                                <div className="absolute top-1 right-1 bg-sage-accent text-[8px] font-black px-1 rounded shadow-lg">
                                   STUDIO
                                 </div>
                               )}
@@ -910,8 +931,8 @@ export default function MovieDetailPage() {
                               className={cn(
                                 'text-[10px] font-bold mt-1.5 line-clamp-1 transition-colors',
                                 isSameStudio
-                                  ? 'text-netflix-red'
-                                  : 'text-gray-300 group-hover:text-netflix-red'
+                                  ? 'text-sage-accent'
+                                  : 'text-gray-300 group-hover:text-sage-accent'
                               )}
                             >
                               {m.title || m.name}
@@ -920,8 +941,10 @@ export default function MovieDetailPage() {
                         );
                       })}
                     </div>
+                  ) : isSimilarLoading ? (
+                    <SimilarTitlesSkeleton />
                   ) : (
-                    <p className="text-xs text-gray-500 italic">Loading similar titles...</p>
+                    <p className="text-xs text-gray-500 italic">No similar titles found.</p>
                   )}
                 </div>
               </div>
@@ -964,7 +987,7 @@ export default function MovieDetailPage() {
                                 }}
                               />
                             ) : (
-                              <div className="w-2 h-2 rounded-full bg-netflix-red" />
+                              <div className="w-2 h-2 rounded-full bg-sage-accent" />
                             )}
                             <span className="text-xs text-gray-300 font-bold">{c.name}</span>
                           </div>
@@ -989,7 +1012,7 @@ export default function MovieDetailPage() {
             <button
               onClick={() => setShowUpNext(!showUpNext)}
               className={cn(
-                'absolute bottom-4 right-4 z-30 bg-black/60 hover:bg-netflix-red text-white text-[10px] font-black py-2 px-4 rounded-full transition-all border border-white/20 backdrop-blur-md flex items-center gap-2',
+                'absolute bottom-4 right-4 z-30 bg-black/60 hover:bg-sage-accent text-white text-[10px] font-black py-2 px-4 rounded-full transition-all border border-white/20 backdrop-blur-md flex items-center gap-2',
                 showUpNext
                   ? 'opacity-0 translate-y-10 pointer-events-none'
                   : 'opacity-100 translate-y-0'
@@ -1011,7 +1034,7 @@ export default function MovieDetailPage() {
               >
                 <div className="mb-4 flex items-center justify-between gap-2">
                   <h3 className="text-white font-black uppercase tracking-tighter text-base md:text-lg flex items-center gap-2 min-w-0">
-                    <Play className="w-4 h-4 text-netflix-red fill-current shrink-0" />
+                    <Play className="w-4 h-4 text-sage-accent fill-current shrink-0" />
                     <span className="truncate">
                       Up Next: More From {movie.production_companies?.[0]?.name || 'the Studio'}
                     </span>
@@ -1037,7 +1060,7 @@ export default function MovieDetailPage() {
                         const mediaType = m.media_type || (m.first_air_date ? 'tv' : 'movie');
                         router.push(`/movie/${m.id}/${mediaType}-${slug}`);
                       }}
-                      className="relative min-w-[110px] md:min-w-[130px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-transparent hover:border-netflix-red transition-all cursor-pointer group/card shrink-0 shadow-2xl"
+                      className="relative min-w-[110px] md:min-w-[130px] aspect-[2/3] rounded-lg overflow-hidden border-2 border-transparent hover:border-sage-accent transition-all cursor-pointer group/card shrink-0 shadow-2xl"
                     >
                       <Image
                         src={`${THUMB_URL}${m.poster_path}`}
@@ -1048,7 +1071,7 @@ export default function MovieDetailPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-60" />
                       <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <p className="text-white text-xs font-black line-clamp-1 group-hover/card:text-netflix-red">
+                        <p className="text-white text-xs font-black line-clamp-1 group-hover/card:text-sage-accent">
                           {m.title || m.name}
                         </p>
                         <div className="flex items-center gap-2 mt-1">

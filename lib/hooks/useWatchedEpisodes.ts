@@ -10,6 +10,50 @@ function epKey(tvId: number | string, season: number, episode: number): string {
   return `${tvId}:S${season}E${episode}`;
 }
 
+const LAST_EPISODE_KEY = 'sage_movies_last_episode';
+
+export interface LastEpisode {
+  season: number;
+  episode: number;
+}
+
+// Continue Watching support: remember where each show left off so reopening
+// it preselects that episode instead of resetting to S1E1.
+export function recordLastEpisode(
+  tvId: number | string,
+  season: number,
+  episode: number
+): void {
+  try {
+    const raw = localStorage.getItem(LAST_EPISODE_KEY);
+    const map = raw ? (JSON.parse(raw) as Record<string, LastEpisode>) : {};
+    map[String(tvId)] = { season, episode };
+    localStorage.setItem(LAST_EPISODE_KEY, JSON.stringify(map));
+  } catch {
+    /* Storage can be denied; episode restore is best-effort. */
+  }
+}
+
+export function getLastEpisode(tvId: number | string): LastEpisode | null {
+  try {
+    const raw = localStorage.getItem(LAST_EPISODE_KEY);
+    if (!raw) return null;
+    const entry = (JSON.parse(raw) as Record<string, LastEpisode>)[String(tvId)];
+    if (
+      entry &&
+      Number.isInteger(entry.season) &&
+      entry.season >= 1 &&
+      Number.isInteger(entry.episode) &&
+      entry.episode >= 1
+    ) {
+      return { season: entry.season, episode: entry.episode };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function useWatchedEpisodes() {
   const [watched, setWatched] = useState<Set<string>>(new Set());
 

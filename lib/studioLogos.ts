@@ -106,6 +106,6 @@ export function getStudioInfo(companies?: { id: number; name: string; logo_path?
   return {
     name: first.name,
     iconUrl: '',
-    bgColor: 'bg-netflix-red',
+    bgColor: 'bg-sage-accent',
   };
 }

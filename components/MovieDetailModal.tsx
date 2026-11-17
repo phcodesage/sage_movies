@@ -71,7 +71,7 @@ export default function MovieDetailModal({
           </p>
           <button
             onClick={handlePlay}
-            className="flex items-center gap-2 rounded bg-netflix-red px-6 py-3 font-bold"
+            className="flex items-center gap-2 rounded bg-sage-accent px-6 py-3 font-bold"
           >
             <Play size={20} /> Watch now
           </button>

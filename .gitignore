@@ -11,6 +11,10 @@ node_modules
 /out/
 build
 
+# legacy pre-Next build artifacts (removed; do not re-add)
+dist/
+old_assets/
+
 # misc
 .DS_Store
 *.pem

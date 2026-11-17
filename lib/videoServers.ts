@@ -106,6 +106,14 @@ export function getServer(id?: string, type: MediaType = 'movie'): VideoServer {
   return getServers(type).find((s) => s.id === id) || VIDEO_SERVERS[0];
 }
 
+export const SERVER_STORAGE_KEY = 'sage_movies_server';
+
+// A stored preference may name a retired provider or a movie-only one used
+// for TV; resolve it through getServer so it always lands on a live choice.
+export function storedServerOrDefault(value: string | null, type: MediaType): string {
+  return getServer(value || undefined, type).id;
+}
+
 export function parseEpisodeNumber(value: string | null): number | null {
   if (value === null) return 1;
   return /^[1-9]\d{0,3}$/.test(value) ? Number(value) : null;
