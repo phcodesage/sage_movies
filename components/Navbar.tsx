@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, ChevronDown, History, Trash2, Smartphone, Gamepad2 } from 'lucide-react';
+import { Search, ChevronDown, History, Trash2, Smartphone } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useScroll } from '../lib/hooks/useScroll';
 import { useAppContext } from '../lib/context/AppContext';
@@ -56,9 +56,13 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             onClick={() => router.push('/')}
             className="flex items-center space-x-2 cursor-pointer group"
           >
-            <div className="w-10 h-10 bg-[#107C10] text-white border-3 border-black flex items-center justify-center font-black text-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] group-hover:bg-[#0E7A0D] group-hover:-translate-y-0.5 transition-all">
-              <Gamepad2 className="w-6 h-6 stroke-[3]" />
-            </div>
+            <img
+              src="/icons/icon.svg"
+              alt="Sage Movies"
+              width={40}
+              height={40}
+              className="w-10 h-10 border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-y-0.5 transition-all"
+            />
             <h1 className="text-white text-xl md:text-2xl font-black tracking-tighter uppercase">
               <span className="hidden sm:inline">SAGE</span>
               <span className="bg-[#FFE600] text-black px-1.5 py-0.5 ml-1 border-2 border-black">

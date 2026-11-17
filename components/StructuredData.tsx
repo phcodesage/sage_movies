@@ -33,7 +33,7 @@ export function OrganizationStructuredData() {
     '@type': 'Organization',
     name: 'Sage Movies',
     url: 'https://sagemovies.com',
-    logo: 'https://sagemovies.com/logo.png',
+    logo: 'https://sagemovies.com/icons/icon-512.png',
     description: 'Watch free movies, TV shows and anime online. Stream trending movies, 123movies alternatives, movies for kids and popular TV series without registration.',
     contactPoint: {
       '@type': 'ContactPoint',

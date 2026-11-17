@@ -14,8 +14,8 @@ export async function GET(request, { params }) {
   try {
     const results = [];
     
-    // Fetch trending items (page 1 and 2)
-    for (let currentPage = 1; currentPage <= 2; currentPage++) {
+    // Fetch trending items (the requested page and the next one)
+    for (let currentPage = page; currentPage <= page + 1; currentPage++) {
       const response = await fetch(
         `https://api.themoviedb.org/3/trending/${type}/week?api_key=${apiKey}&page=${currentPage}`,
         { next: { revalidate: 3600 } } // Cache for 1 hour
@@ -50,7 +50,10 @@ export async function GET(request, { params }) {
       }
     }
     
-    const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
+    // Movie and TV ids collide numerically; dedupe per media type.
+    const uniqueResults = Array.from(
+      new Map(results.map(item => [`${item.media_type || type}:${item.id}`, item])).values()
+    );
     uniqueResults.sort((a, b) => b.popularity - a.popularity);
     
     return NextResponse.json(

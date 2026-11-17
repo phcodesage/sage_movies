@@ -124,7 +124,11 @@ export async function GET(request) {
       }
     }
 
-    const uniqueResults = Array.from(new Map(results.map((item) => [item.id, item])).values());
+    // Movie and TV ids live in separate TMDB namespaces and collide numerically;
+    // keying on id alone silently drops one of each colliding pair.
+    const uniqueResults = Array.from(
+      new Map(results.map((item) => [`${item.media_type}:${item.id}`, item])).values()
+    );
     uniqueResults.sort((a, b) => {
       if (b.relevance_score !== a.relevance_score) return b.relevance_score - a.relevance_score;
       return b.popularity - a.popularity;
@@ -148,11 +152,14 @@ export async function GET(request) {
 }
 
 function calculateRelevance(title, query) {
-  const t = title.toLowerCase();
+  const t = (title || '').toLowerCase();
   const q = query.toLowerCase();
   if (t === q) return 100;
   if (t.startsWith(q)) return 90;
-  if (new RegExp(`\\b${q}\\b`, 'i').test(t)) return 80;
+  // Escape the query: raw user input in a RegExp throws on '(' or '[' and
+  // 500s the whole search for titles that reach this branch.
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (new RegExp(`\\b${escaped}\\b`, 'i').test(t)) return 80;
   if (t.includes(q)) return 70;
   return 50;
 }
