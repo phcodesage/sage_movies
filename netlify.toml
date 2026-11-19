@@ -1,6 +1,10 @@
 [build]
   edge_functions = "netlify/edge-functions"
 
+[build.environment]
+  # Public TMDB base/image URLs appear in source files and are not secrets.
+  SECRETS_SCAN_OMIT_KEYS = "TMDB_BASE_URL,TMDB_IMG_URL"
+
 [[edge_functions]]
   path = "/api/*"
   function = "api-rate-limit"
