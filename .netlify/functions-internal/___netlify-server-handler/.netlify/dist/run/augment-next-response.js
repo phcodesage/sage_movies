@@ -4,7 +4,7 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/run/augment-next-response.ts
 import { isPromise } from "node:util/types";

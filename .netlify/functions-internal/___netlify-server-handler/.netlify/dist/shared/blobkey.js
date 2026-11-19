@@ -4,14 +4,21 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
 
 // src/shared/blobkey.ts
 import { Buffer } from "node:buffer";
 import { webcrypto as crypto } from "node:crypto";
 var maxLength = 180;
+function decodeKeyForConsistentEncoding(key) {
+  try {
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
+}
 async function encodeBlobKey(key) {
-  const buffer = Buffer.from(key);
+  const buffer = Buffer.from(decodeKeyForConsistentEncoding(key));
   const base64 = buffer.toString("base64url");
   if (base64.length <= maxLength) {
     return base64;

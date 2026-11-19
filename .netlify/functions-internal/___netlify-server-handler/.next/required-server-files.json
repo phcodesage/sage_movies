@@ -48,7 +48,7 @@
       "loaderFile": "",
       "domains": [],
       "disableStaticImages": false,
-      "minimumCacheTTL": 60,
+      "minimumCacheTTL": 86400,
       "formats": [
         "image/avif",
         "image/webp"
@@ -126,7 +126,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/macmini/Documents/code-proj/nextjs-proj/sage_movies",
+    "outputFileTracingRoot": "/Users/macmini/projects/sage_movies",
     "allowedDevOrigins": [
       "192.168.0.100"
     ],
@@ -330,11 +330,38 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.mjs",
     "turbopack": {
-      "root": "/Users/macmini/Documents/code-proj/nextjs-proj/sage_movies"
+      "root": "/Users/macmini/projects/sage_movies"
     },
-    "distDirRoot": ".next"
+    "distDirRoot": ".next",
+    "_originalRedirects": [
+      {
+        "source": "/sagemovies-latest.apk",
+        "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-latest.apk",
+        "permanent": true
+      },
+      {
+        "source": "/sagemovies-v1.4.7.apk",
+        "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.4.7.apk",
+        "permanent": true
+      },
+      {
+        "source": "/sagemovies-v1.5.0.apk",
+        "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.5.0.apk",
+        "permanent": true
+      },
+      {
+        "source": "/downloads/sagemovies-v1.4.8.apk",
+        "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.4.8.apk",
+        "permanent": true
+      },
+      {
+        "source": "/downloads/sagemovies-v1.5.0.apk",
+        "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.5.0.apk",
+        "permanent": true
+      }
+    ]
   },
-  "appDir": "/Users/macmini/Documents/code-proj/nextjs-proj/sage_movies",
+  "appDir": "/Users/macmini/projects/sage_movies",
   "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",

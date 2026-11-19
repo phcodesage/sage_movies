@@ -8,7 +8,7 @@ import {
   trace,
   wrapTracer
 } from "./esm-chunks/chunk-QCOH52QC.js";
-import "./esm-chunks/chunk-6BT4RYQJ.js";
+import "./esm-chunks/chunk-VJBIAOVP.js";
 
 // src/index.ts
 import { rm } from "fs/promises";

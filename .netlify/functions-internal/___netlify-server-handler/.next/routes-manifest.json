@@ -12,9 +12,76 @@
       "priority": true,
       "statusCode": 308,
       "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    },
+    {
+      "source": "/sagemovies-latest.apk",
+      "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-latest.apk",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/sagemovies-latest\\.apk(?:/)?$"
+    },
+    {
+      "source": "/sagemovies-v1.4.7.apk",
+      "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.4.7.apk",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/sagemovies-v1\\.4\\.7\\.apk(?:/)?$"
+    },
+    {
+      "source": "/sagemovies-v1.5.0.apk",
+      "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.5.0.apk",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/sagemovies-v1\\.5\\.0\\.apk(?:/)?$"
+    },
+    {
+      "source": "/downloads/sagemovies-v1.4.8.apk",
+      "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.4.8.apk",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/downloads/sagemovies-v1\\.4\\.8\\.apk(?:/)?$"
+    },
+    {
+      "source": "/downloads/sagemovies-v1.5.0.apk",
+      "destination": "https://sagemovies-downloads.rechceltoledo.workers.dev/sagemovies-v1.5.0.apk",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/downloads/sagemovies-v1\\.5\\.0\\.apk(?:/)?$"
     }
   ],
-  "headers": [],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'"
+        }
+      ],
+      "regex": "^/sw\\.js(?:/)?$"
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ],
+      "regex": "^/manifest\\.json(?:/)?$"
+    }
+  ],
   "onMatchHeaders": [],
   "rewrites": {
     "beforeFiles": [],
@@ -53,14 +120,6 @@
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/api/movies/studio/(?<nxtPid>[^/]+?)(?:/)?$"
-    },
-    {
-      "page": "/api/trending/[type]",
-      "regex": "^/api/trending/([^/]+?)(?:/)?$",
-      "routeKeys": {
-        "nxtPtype": "nxtPtype"
-      },
-      "namedRegex": "^/api/trending/(?<nxtPtype>[^/]+?)(?:/)?$"
     },
     {
       "page": "/api/video-health/[type]/[id]",
@@ -130,12 +189,6 @@
       "namedRegex": "^/api/app\\-version(?:/)?$"
     },
     {
-      "page": "/api/check-servers",
-      "regex": "^/api/check\\-servers(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/check\\-servers(?:/)?$"
-    },
-    {
       "page": "/api/genres",
       "regex": "^/api/genres(?:/)?$",
       "routeKeys": {},
@@ -146,6 +199,18 @@
       "regex": "^/api/movies/collection(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/movies/collection(?:/)?$"
+    },
+    {
+      "page": "/api/movies/latest",
+      "regex": "^/api/movies/latest(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/movies/latest(?:/)?$"
+    },
+    {
+      "page": "/api/movies/top-rated",
+      "regex": "^/api/movies/top\\-rated(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/movies/top\\-rated(?:/)?$"
     },
     {
       "page": "/api/search",

@@ -21,11 +21,15 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var blob_types_exports = {};
 __export(blob_types_exports, {
   isHtmlBlob: () => isHtmlBlob,
-  isTagManifest: () => isTagManifest
+  isTagManifest: () => isTagManifest,
+  isTagRevalidationMarker: () => isTagRevalidationMarker
 });
 module.exports = __toCommonJS(blob_types_exports);
 var isTagManifest = (value) => {
-  return typeof value === "object" && value !== null && "staleAt" in value && typeof value.staleAt === "number" && "expiredAt" in value && typeof value.expiredAt === "number" && Object.keys(value).length === 2;
+  return typeof value === "object" && value !== null && "staleAt" in value && typeof value.staleAt === "number" && "expireAt" in value && typeof value.expireAt === "number" && Object.keys(value).length === 2;
+};
+var isTagRevalidationMarker = (value) => {
+  return typeof value === "object" && value !== null && "revalidatedAt" in value && typeof value.revalidatedAt === "number" && Object.keys(value).length === 1;
 };
 var isHtmlBlob = (value) => {
   return typeof value === "object" && value !== null && "html" in value && "isFullyStaticPage" in value && typeof value.html === "string" && typeof value.isFullyStaticPage === "boolean" && Object.keys(value).length === 2;
@@ -33,5 +37,6 @@ var isHtmlBlob = (value) => {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   isHtmlBlob,
-  isTagManifest
+  isTagManifest,
+  isTagRevalidationMarker
 });

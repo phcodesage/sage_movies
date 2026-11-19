@@ -4,11 +4,46 @@
         return createRequire(import.meta.url);
       })();
     
-import "../esm-chunks/chunk-6BT4RYQJ.js";
+import "../esm-chunks/chunk-VJBIAOVP.js";
+
+// edge-runtime/lib/private-request-meta.ts
+var REQUEST_META_HEADER = "x-next-request-meta";
 
 // src/run/headers.ts
 import { recordWarning } from "./handlers/tracer.cjs";
 import { getMemoizedKeyValueStoreBackedByRegionalBlobStore } from "./storage/storage.cjs";
+var getRequestMeta = (request) => {
+  const header = request.headers.get(REQUEST_META_HEADER);
+  const requestID = request.headers.get("x-nf-request-id");
+  if (!header || !requestID) {
+    return;
+  }
+  try {
+    const meta = JSON.parse(header);
+    return meta?.requestID === requestID ? meta : void 0;
+  } catch {
+  }
+};
+var getRewritePublicUrl = (request) => {
+  const publicUrlHeader = getRequestMeta(request)?.publicUrl;
+  if (!publicUrlHeader) {
+    return;
+  }
+  try {
+    const publicUrl = new URL(publicUrlHeader, request.url);
+    const url = new URL(request.url);
+    url.pathname = publicUrl.pathname;
+    const search = new URLSearchParams(publicUrl.search);
+    for (const [key, value] of new URL(request.url).searchParams) {
+      if (!search.has(key)) {
+        search.append(key, value);
+      }
+    }
+    url.search = search.toString();
+    return url;
+  } catch {
+  }
+};
 var ALL_VARIATIONS = /* @__PURE__ */ Symbol.for("ALL_VARIATIONS");
 var NetlifyVaryKeys = /* @__PURE__ */ new Set(["header", "language", "cookie", "query", "country"]);
 var isNetlifyVaryKey = (key) => NetlifyVaryKeys.has(key);
@@ -213,6 +248,7 @@ var setCacheStatusHeader = (headers, nextCache) => {
 };
 export {
   adjustDateHeader,
+  getRewritePublicUrl,
   setCacheControlHeaders,
   setCacheStatusHeader,
   setCacheTagsHeaders,

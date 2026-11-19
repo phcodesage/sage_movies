@@ -1424,6 +1424,9 @@ var estimateBlobKnownTypeSize = (valueToStore) => {
   if ((0, import_blob_types.isTagManifest)(data)) {
     return baseSize;
   }
+  if ((0, import_blob_types.isTagRevalidationMarker)(data)) {
+    return baseSize;
+  }
   if ((0, import_blob_types.isHtmlBlob)(data)) {
     return baseSize + data.html.length;
   }

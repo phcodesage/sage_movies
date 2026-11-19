@@ -54,8 +54,8 @@ var getMemoizedKeyValueStoreBackedByRegionalBlobStore = (...args) => {
       if (memoizedValue?.conditional === false && typeof memoizedValue?.currentRequestValue !== "undefined") {
         return memoizedValue.currentRequestValue;
       }
-      const blobKey = await encodeBlobKey(key);
       const getPromise = (0, import_tracer.withActiveSpan)(tracer, otelSpanTitle, async (span) => {
+        const blobKey = await encodeBlobKey(key);
         const { etag: previousEtag, globalValue: previousBlob } = memoizedValue?.conditional ? memoizedValue : {};
         span?.setAttributes({ key });
         const result = await store.getWithMetadata(blobKey, {

@@ -1,4 +1,11 @@
 {
   "version": 1,
-  "functions": []
+  "functions": [
+    {
+      "function": "___netlify-edge-handler-node-middleware",
+      "name": "Next.js Middleware Handler",
+      "pattern": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/api(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
+      "generator": "@netlify/plugin-nextjs@5.16.8"
+    }
+  ]
 }

@@ -1,21 +1,9 @@
 headersOrigin = "inline"
 redirectsOrigin = "inline"
 
-[images]
-remote_images = ["^(?:https:\\/\\/image\\.tmdb\\.org\\/t\\/p(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$", "^(?:https:\\/\\/ui-avatars\\.com\\/api(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$", "^(?:https:\\/\\/via\\.placeholder\\.com(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
-
-[functions]
-
-[functions."*"]
-
-[[plugins]]
-origin = "default"
-package = "@netlify/plugin-nextjs"
-
-[plugins.inputs]
-
 [build]
-publish = "/Users/macmini/Documents/code-proj/nextjs-proj/sage_movies/.next"
+edge_functions = "/Users/macmini/projects/sage_movies/netlify/edge-functions"
+publish = "/Users/macmini/projects/sage_movies/.next"
 publishOrigin = "ui"
 commandOrigin = "ui"
 command = "npm run build"
@@ -33,6 +21,28 @@ command = "npm run build"
 [build.processing.js]
 
 [build.services]
+
+[[edge_functions]]
+path = "/api/*"
+function = "api-rate-limit"
+
+[[edge_functions]]
+path = "/api/video-health/*"
+function = "video-health-rate-limit"
+
+[images]
+remote_images = ["^(?:https:\\/\\/image\\.tmdb\\.org\\/t\\/p(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$", "^(?:https:\\/\\/ui-avatars\\.com\\/api(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$", "^(?:https:\\/\\/via\\.placeholder\\.com(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"]
+
+[functions]
+
+[functions."*"]
+
+[[plugins]]
+origin = "default"
+package = "@netlify/plugin-nextjs"
+pinned_version = "5"
+
+[plugins.inputs]
 
 [[headers]]
 for = "/_next/static/*"

@@ -20,10 +20,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/run/handlers/tags-handler.cts
 var tags_handler_exports = {};
 __export(tags_handler_exports, {
+  TAG_REVALIDATION_MARKER_KEY: () => TAG_REVALIDATION_MARKER_KEY,
   getMostRecentTagExpirationTimestamp: () => getMostRecentTagExpirationTimestamp,
   isAnyTagStaleOrExpired: () => isAnyTagStaleOrExpired,
   markTagsAsStaleAndPurgeEdgeCache: () => markTagsAsStaleAndPurgeEdgeCache,
-  purgeEdgeCache: () => purgeEdgeCache
+  prefetchTagRevalidationMarker: () => prefetchTagRevalidationMarker,
+  purgeEdgeCache: () => purgeEdgeCache,
+  toCdnCacheTag: () => toCdnCacheTag
 });
 module.exports = __toCommonJS(tags_handler_exports);
 
@@ -99,12 +102,56 @@ var pipeline = (0, import_util.promisify)(import_stream.pipeline);
 
 // package.json
 var name = "@netlify/plugin-nextjs";
-var version = "5.15.13";
+var version = "5.16.8";
 
 // src/run/handlers/tags-handler.cts
 var import_storage = require("../storage/storage.cjs");
 var import_request_context = require("./request-context.cjs");
 var purgeCacheUserAgent = `${name}@${version}`;
+var OUT_OF_HEADER_SAFE_CLASS_CHAR = /[^\t -~]/;
+var OUT_OF_HEADER_SAFE_CLASS_RUN = /[^\t -~]+/g;
+function toCdnCacheTag(tag) {
+  return OUT_OF_HEADER_SAFE_CLASS_CHAR.test(tag) ? tag.replace(OUT_OF_HEADER_SAFE_CLASS_RUN, (run) => encodeURIComponent(run)) : tag;
+}
+var TAG_REVALIDATION_MARKER_KEY = "netlify:tags-revalidated";
+var MARKER_SEEN = /* @__PURE__ */ Symbol.for("nf-tag-revalidation-marker-seen");
+var extendedGlobalThis = globalThis;
+async function hasAnyTagBeenRevalidated(cacheStore) {
+  if (extendedGlobalThis[MARKER_SEEN]) {
+    return true;
+  }
+  const marker = await cacheStore.get(
+    TAG_REVALIDATION_MARKER_KEY,
+    "tagRevalidationMarker.get"
+  );
+  if (marker) {
+    extendedGlobalThis[MARKER_SEEN] = true;
+  }
+  return Boolean(marker);
+}
+function prefetchTagRevalidationMarker() {
+  if (extendedGlobalThis[MARKER_SEEN]) {
+    return;
+  }
+  const cacheStore = (0, import_storage.getMemoizedKeyValueStoreBackedByRegionalBlobStore)({ consistency: "strong" });
+  cacheStore.get(TAG_REVALIDATION_MARKER_KEY, "tagRevalidationMarker.get").catch(() => {
+  });
+}
+async function writeTagRevalidationMarker(cacheStore) {
+  if (extendedGlobalThis[MARKER_SEEN]) {
+    return;
+  }
+  try {
+    await cacheStore.set(
+      TAG_REVALIDATION_MARKER_KEY,
+      { revalidatedAt: Date.now() },
+      "tagRevalidationMarker.set"
+    );
+    extendedGlobalThis[MARKER_SEEN] = true;
+  } catch (error) {
+    (0, import_request_context.getLogger)().withError(error).log("[NextRuntime] Failed to write tag revalidation marker");
+  }
+}
 async function getTagManifest(tag, cacheStore) {
   const tagManifest = await cacheStore.get(tag, "tagManifest.get");
   if (!tagManifest) {
@@ -117,6 +164,9 @@ async function getMostRecentTagExpirationTimestamp(tags) {
     return 0;
   }
   const cacheStore = (0, import_storage.getMemoizedKeyValueStoreBackedByRegionalBlobStore)({ consistency: "strong" });
+  if (!await hasAnyTagBeenRevalidated(cacheStore)) {
+    return 0;
+  }
   const manifestsOrNulls = await Promise.all(tags.map((tag) => getTagManifest(tag, cacheStore)));
   const expirationTimestamps = manifestsOrNulls.filter((manifest) => manifest !== null).map((manifest) => manifest.expireAt);
   if (expirationTimestamps.length === 0) {
@@ -124,11 +174,14 @@ async function getMostRecentTagExpirationTimestamp(tags) {
   }
   return Math.max(...expirationTimestamps);
 }
-function isAnyTagStaleOrExpired(tags, timestamp) {
+async function isAnyTagStaleOrExpired(tags, timestamp) {
   if (tags.length === 0 || !timestamp) {
-    return Promise.resolve({ stale: false, expired: false });
+    return { stale: false, expired: false };
   }
   const cacheStore = (0, import_storage.getMemoizedKeyValueStoreBackedByRegionalBlobStore)({ consistency: "strong" });
+  if (!await hasAnyTagBeenRevalidated(cacheStore)) {
+    return { stale: false, expired: false };
+  }
   return new Promise((resolve, reject) => {
     const tagManifestPromises = [];
     for (const tag of tags) {
@@ -206,16 +259,17 @@ async function doRevalidateTagAndPurgeEdgeCache(tags, durations) {
     expireAt: now + (durations?.expire ? durations.expire * 1e3 : 0)
   };
   const cacheStore = (0, import_storage.getMemoizedKeyValueStoreBackedByRegionalBlobStore)({ consistency: "strong" });
-  await Promise.all(
-    tags.map(async (tag) => {
+  await Promise.all([
+    writeTagRevalidationMarker(cacheStore),
+    ...tags.map(async (tag) => {
       try {
         await cacheStore.set(tag, tagManifest, "tagManifest.set");
       } catch (error) {
         (0, import_request_context.getLogger)().withError(error).log(`[NextRuntime] Failed to update tag manifest for ${tag}`);
       }
     })
-  );
-  await purgeEdgeCache(tags);
+  ]);
+  await purgeEdgeCache(tags.map(toCdnCacheTag));
 }
 function markTagsAsStaleAndPurgeEdgeCache(tagOrTags, durations) {
   const tags = getCacheTagsFromTagOrTags(tagOrTags);
@@ -240,8 +294,11 @@ function markTagsAsStaleAndPurgeEdgeCache(tagOrTags, durations) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  TAG_REVALIDATION_MARKER_KEY,
   getMostRecentTagExpirationTimestamp,
   isAnyTagStaleOrExpired,
   markTagsAsStaleAndPurgeEdgeCache,
-  purgeEdgeCache
+  prefetchTagRevalidationMarker,
+  purgeEdgeCache,
+  toCdnCacheTag
 });

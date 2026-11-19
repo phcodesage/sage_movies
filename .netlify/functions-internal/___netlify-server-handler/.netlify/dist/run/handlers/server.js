@@ -7,7 +7,7 @@
 import {
   __commonJS,
   __toESM
-} from "../../esm-chunks/chunk-6BT4RYQJ.js";
+} from "../../esm-chunks/chunk-VJBIAOVP.js";
 
 // node_modules/node-inspect-extracted/dist/inspect.js
 var require_inspect = __commonJS({
@@ -3095,6 +3095,7 @@ import { augmentNextResponse } from "../augment-next-response.js";
 import { getRunConfig, setRunConfig } from "../config.js";
 import {
   adjustDateHeader,
+  getRewritePublicUrl,
   setCacheControlHeaders,
   setCacheStatusHeader,
   setCacheTagsHeaders,
@@ -3127,6 +3128,22 @@ var disableFaultyTransferEncodingHandling = (res) => {
     return originalStoreHeader.call(this, firstLine, headers);
   };
 };
+var NEXT_REQUEST_META = /* @__PURE__ */ Symbol.for("NextInternalRequestMeta");
+var lockInitURL = (req, initURL) => {
+  const meta = {};
+  Object.defineProperty(meta, "initURL", {
+    get: () => initURL,
+    set() {
+    },
+    enumerable: true,
+    configurable: true
+  });
+  Object.defineProperty(req, NEXT_REQUEST_META, {
+    value: meta,
+    writable: true,
+    configurable: true
+  });
+};
 var server_default = async (request, _context, topLevelSpan, requestContext) => {
   const tracer = getTracer();
   if (!nextHandler) {
@@ -3151,9 +3168,19 @@ var server_default = async (request, _context, topLevelSpan, requestContext) => 
     Object.defineProperty(req, "socket", {
       get() {
         return {};
+      },
+      set(value) {
+        if (value === null) {
+          return;
+        }
+        throw new Error("Unsupported attempt to set socket on request");
       }
     });
     disableFaultyTransferEncodingHandling(res);
+    const publicUrl = getRewritePublicUrl(request);
+    if (publicUrl) {
+      lockInitURL(req, publicUrl.href);
+    }
     const resProxy = augmentNextResponse(res, requestContext);
     const nextHandlerPromise = nextHandler(req, resProxy).catch((error) => {
       getLogger().withError(error).error("next handler error");
@@ -3163,6 +3190,7 @@ var server_default = async (request, _context, topLevelSpan, requestContext) => 
       resProxy.end("Internal Server Error");
     });
     const response = await toComputeResponse(resProxy);
+    response.headers.delete("x-middleware-set-cookie");
     if (requestContext.responseCacheKey) {
       topLevelSpan?.setAttribute("responseCacheKey", requestContext.responseCacheKey);
     }
